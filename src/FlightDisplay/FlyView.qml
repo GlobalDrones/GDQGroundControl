@@ -1983,11 +1983,6 @@ Item {
 
         Item {
             id: cameraControlOverlay
-            anchors.right: videoControl.pipState.state === videoControl.pipState.fullState
-                           ? parent.right : _pipOverlay.right
-            anchors.top: videoControl.pipState.state === videoControl.pipState.fullState
-                         ? parent.top : _pipOverlay.top
-            anchors.margins: _toolsMargin
             z: QGroundControl.zOrderTopMost
             visible: QGroundControl.videoManager.hasVideo
 
@@ -1998,6 +1993,28 @@ Item {
                 { name: "FPV",     url: "rtsp://192.168.144.26:554/main.264" }
             ]
             property int cameraIndex: 0
+
+            states: [
+                State {
+                    name: "full"
+                    when: !((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
+                    PropertyChanges {
+                        target: cameraControlOverlay
+                        anchors.top: parent.top
+                        anchors.bottom: null
+                        anchors.right: parent.right
+                        anchors.margins: 25
+                    }
+                },
+                State {
+                    name: "hidden"
+                    when: ((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
+                    PropertyChanges {
+                        target: cameraControlOverlay
+                        visible: false
+                    }
+                }
+            ]
 
             Row {
                 spacing: ScreenTools.defaultFontPixelWidth
@@ -2049,6 +2066,5 @@ Item {
                 }
             }
         }
-    }
     }
 }
