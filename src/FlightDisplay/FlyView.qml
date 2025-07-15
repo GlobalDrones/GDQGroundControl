@@ -1980,6 +1980,75 @@ Item {
                 }
             }
         }
-    }
 
+        Item {
+            id: cameraControlOverlay
+            anchors.right: videoControl.pipState.state === videoControl.pipState.fullState
+                           ? parent.right : _pipOverlay.right
+            anchors.top: videoControl.pipState.state === videoControl.pipState.fullState
+                         ? parent.top : _pipOverlay.top
+            anchors.margins: _toolsMargin
+            z: QGroundControl.zOrderTopMost
+            visible: QGroundControl.videoManager.hasVideo
+
+            // Lista com pares: texto + URL correspondente
+            property var cameraList: [
+                { name: "Video 1", url: "rtsp://192.168.144.25:8554/video1" },
+                { name: "Video 2", url: "rtsp://192.168.144.25:8554/video2" },
+                { name: "FPV",     url: "rtsp://192.168.144.26:554/main.264" }
+            ]
+            property int cameraIndex: 0
+
+            Row {
+                spacing: ScreenTools.defaultFontPixelWidth
+                anchors.right: parent.right
+                anchors.top: parent.top
+
+                Rectangle {
+                    id: cameraTextBackground
+                    color: "#80000000" // preto com 50% de opacidade (hex: 80 = 128 = 50%)
+                    radius: 4
+                    anchors.verticalCenter: parent.verticalCenter
+                    // anchors.left: cameraButton.right
+                    anchors.leftMargin: ScreenTools.defaultFontPixelWidth / 2
+                    anchors.rightMargin: ScreenTools.defaultFontPixelWidth / 2
+                    height: cameraText.implicitHeight + ScreenTools.defaultFontPixelHeight
+                    width: cameraText.implicitWidth + ScreenTools.defaultFontPixelWidth * 2
+
+                    Text {
+                        id: cameraText
+                        anchors.centerIn: parent
+                        text: cameraControlOverlay.cameraList[cameraControlOverlay.cameraIndex].name
+                        color: "white"
+                        font.bold: true
+                    }
+                }
+
+
+                QGCColoredImage {
+                    id: cameraButton
+                    source: "/qmlimages/camera"
+                    width: ScreenTools.defaultFontPixelHeight * 2
+                    height: width
+                    fillMode: Image.PreserveAspectFit
+                    color: "white"
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            // Avança para o próximo índice
+                            cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % cameraControlOverlay.cameraList.length
+
+                            // Atualiza o texto
+                            // cameraStatusText.text = cameraControlOverlay.cameraList[cameraControlOverlay.cameraIndex].name
+
+                            // Atualiza a URL da câmera
+                            QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = cameraControlOverlay.cameraList[cameraControlOverlay.cameraIndex].url
+                        }
+                    }
+                }
+            }
+        }
+    }
+    }
 }
