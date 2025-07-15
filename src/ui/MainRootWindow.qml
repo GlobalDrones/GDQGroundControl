@@ -48,7 +48,7 @@ ApplicationWindow {
     Timer {
         interval: 500; running: true; repeat: true
         onTriggered: {
-            if (!flyView._GD60){
+            if (!flightView._GD60){
                 flightView._aceleracao_rotor_1 = controller4._RPM_R1
                 flightView._aceleracao_rotor_2 = controller4._RPM_R2
                 flightView._aceleracao_rotor_3 = controller4._RPM_R3

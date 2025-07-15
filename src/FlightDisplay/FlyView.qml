@@ -585,273 +585,183 @@ Item {
             }
         }
         Rectangle{
-            id: textBoxBatteryInfo_1
-            anchors.verticalCenter: batteryPercentageIcon_1 .verticalCenter
-            //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
-            anchors.left: batteryPercentageIcon_1.right
-            anchors.rightMargin: _toolsMargin
-            height: batteryPercentageIcon_1.height*0.7
-            width: batteryPercentageIcon_1.width
-            visible: true//batMouseArea_1.containsMouse? true: false
-            color: "transparent"// desktop version "black"
-            border.width: 0
-            border.color: "transparent"// desktop version "lightgray"
-            Component.onCompleted: gasolineIconLoader.active = true
+                    id: textBoxBatteryInfo_1
+                    anchors.verticalCenter: batteryPercentageIcon_1 .verticalCenter
+                    //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
+                    anchors.left: batteryPercentageIcon_1.right
+                    anchors.rightMargin: _toolsMargin
+                    height: batteryPercentageIcon_1.height*0.7
+                    width: batteryPercentageIcon_1.width*0.7
+                    visible: true//batMouseArea_1.containsMouse? true: false
+                    color: "transparent"// desktop version "black"
+                    border.width: 0
+                    border.color: "transparent"// desktop version "lightgray"
+                    Component.onCompleted: gasolineIconLoader.active = true
 
-        }
-        ColumnLayout {
-                id:                     batteryInfoColumn_1
-                anchors.top: textBoxBatteryInfo_1.top
-                anchors.horizontalCenter: textBoxBatteryInfo_1.horizontalCenter
-                spacing:                0
-                visible: true//textBoxBatteryInfo_1.visible
 
-                Text {
-                    id: textBoxBatteryInfo_1PCT
-                    Layout.alignment:       Qt.AlignHCenter
-                    verticalAlignment:      Text.AlignVCenter
-                    color:                  "White"
-                    text:                   _pct_bateria_1 > 9? _pct_bateria_1+"%": "0"+_pct_bateria_1+"%"
-                   font.pixelSize:       _androidBuild ?  13 : 24//ScreenTools.smallFontPixelHeight
-                    visible: textBoxBatteryInfo_1.visible
-                    font.bold: true
+                ColumnLayout {
+                        id:                     batteryInfoColumn_1
+                        //anchors.top: textBoxBatteryInfo_1.top
+                        //anchors.horizontalCenter: textBoxBatteryInfo_1.horizontalCenter
+                        anchors.fill:parent
+                        spacing:                0
+                        visible: true//textBoxBatteryInfo_1.visible
+
+                        Text {
+                            id: textBoxBatteryInfo_1PCT
+                            Layout.alignment:       Qt.AlignHCenter
+                            verticalAlignment:      Text.AlignVCenter
+                            color:                  "White"
+                            text:                   _pct_bateria_1 > 9? _pct_bateria_1+"%": "0"+_pct_bateria_1+"%"
+                           font.pixelSize:       _androidBuild ?  13 : 21//ScreenTools.smallFontPixelHeight
+                            visible: textBoxBatteryInfo_1.visible
+                            font.bold: true
+                        }
+                        Text {
+                            id: textBoxBatteryInfo_1TENSION
+                            Layout.alignment:       Qt.AlignHCenter
+                            verticalAlignment:      Text.AlignVCenter
+                            color:                  "White"
+                            text:                   _tensao_bateria_1 + " V"
+                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
+                            visible: textBoxBatteryInfo_1.visible
+                            font.bold: true
+                        }
+                        Text {
+                            id: textBoxBatteryInfo_1CURRENT
+                            Layout.alignment:       Qt.AlignHCenter
+                            verticalAlignment:      Text.AlignVCenter
+                            color:                  "White"
+                            text:                   _current_bateria_1 + " A"
+                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
+                            visible: textBoxBatteryInfo_1.visible
+                            font.bold: true
+                        }
+
+                    }
                 }
-                Text {
-                    id: textBoxBatteryInfo_1TENSION
-                    Layout.alignment:       Qt.AlignHCenter
-                    verticalAlignment:      Text.AlignVCenter
-                    color:                  "White"
-                    text:                   _tensao_bateria_1 + " V"
-                    font.pixelSize:         _androidBuild ?  13 : 24///ScreenTools.smallFontPixelHeight
-                    visible: textBoxBatteryInfo_1.visible
-                    font.bold: true
-                }
-                Text {
-                    id: textBoxBatteryInfo_1CURRENT
-                    Layout.alignment:       Qt.AlignHCenter
-                    verticalAlignment:      Text.AlignVCenter
-                    color:                  "White"
-                    text:                   _current_bateria_1 + " A"
-                    font.pixelSize:         _androidBuild ?  13 : 24///ScreenTools.smallFontPixelHeight
-                    visible: textBoxBatteryInfo_1.visible
-                    font.bold: true
-                }
 
-            }
+                QGCColoredImage {
+                        id: batteryPercentageIcon_2
+                        anchors.top:        parent.top
+                        anchors.left:       textBoxBatteryInfo_1.right
+                        anchors.margins:    _toolsMargin
+                        width:              height
+                        height:             parent.height*2/3
+                        source:             "/qmlimages/Battery.svg"
+                        fillMode:           Image.PreserveAspectFit
+                        color:              "white"
+                        visible: _GD60//true
+                    }
 
-        QGCColoredImage {
-                id: batteryPercentageIcon_2
-                anchors.top:        parent.top
-                anchors.left:       batteryInfoColumn_1.right
-                anchors.margins:    _toolsMargin
-                width:              height
-                height:             parent.height*2/3
-                source:             "/qmlimages/Battery.svg"
-                fillMode:           Image.PreserveAspectFit
-                color:              "white"
-                visible: _GD60//true
-            }
-
-        Rectangle{
-                id: batteryPercentageBar_2
-                anchors.top: batteryPercentageIcon_2.top
-                anchors.left: batteryPercentageIcon_2.left
-                //anchors.margins: _toolsMargin
-                width: batteryPercentageIcon_2.width
-                height: batteryPercentageIcon_2.height
-                color: "transparent"//batMouseArea.containsMouse? "green": "red"
-                visible: false
                 Rectangle{
-                    y: parent.height*0.1
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    //anchors.left: parent.left
-                    width: parent.width/2
-                    height: parent.height*0.85 //fixo pra não ultrapassar o desenho
-                    color: (_pct_bateria_1) > 50 ? "green" : ((_pct_bateria_1) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria_1
-                }
-                Rectangle{ //BARRA DE ALTURA DINAMICA PRA INDICAR O NÍVEL DE bateria -> HEIGHT = 1-bateria%
+                        id: batteryPercentageBar_2
+                        anchors.top: batteryPercentageIcon_2.top
+                        anchors.left: batteryPercentageIcon_2.left
+                        //anchors.margins: _toolsMargin
+                        width: batteryPercentageIcon_2.width
+                        height: batteryPercentageIcon_2.height
+                        color: "transparent"//batMouseArea.containsMouse? "green": "red"
+                        visible: false
+                        Rectangle{
+                            y: parent.height*0.1
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            //anchors.left: parent.left
+                            width: parent.width/2
+                            height: parent.height*0.85 //fixo pra não ultrapassar o desenho
+                            color: (_pct_bateria_2) > 50 ? "green" : ((_pct_bateria_2) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria_1
+                        }
+                        Rectangle{ //BARRA DE ALTURA DINAMICA PRA INDICAR O NÍVEL DE bateria -> HEIGHT = 1-bateria%
 
-                     anchors.horizontalCenter: parent.horizontalCenter
-                     //anchors.left: parent.left
-                     width: parent.width/2
-                     height: parent.height*(0.15 + 0.85*(1-_pct_bateria_1/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
-                     color: qgcPal.toolbarBackground
-                }
+                             anchors.horizontalCenter: parent.horizontalCenter
+                             //anchors.left: parent.left
+                             width: parent.width/2
+                             height: parent.height*(0.15 + 0.85*(1-_pct_bateria_2/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
+                             color: qgcPal.toolbarBackground
+                        }
 
-       }
-
-        OpacityMask{
-            anchors.fill: batteryPercentageBar_2
-            source: batteryPercentageBar_2
-            maskSource: batteryPercentageIcon_2
-            invert: true
-            MouseArea{
-                id: batMouseArea_2
-                anchors.fill: parent
-                hoverEnabled : true
-
-            }
-        }
-        Rectangle{
-            id: textBoxBatteryInfo_2
-            anchors.verticalCenter: batteryPercentageIcon_2 .verticalCenter
-            //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
-            anchors.left: batteryPercentageIcon_2.right
-            anchors.rightMargin: _toolsMargin
-            height: batteryPercentageIcon_2.height*0.7
-            width: batteryPercentageIcon_2.width
-            visible: _GD60//true//batMouseArea_1.containsMouse? true: false
-            color: "transparent"// desktop version "black"
-            border.width: 0
-            border.color: "transparent"// desktop version "lightgray"
-            Component.onCompleted: gasolineIconLoader.active = true
-
-        }
-        ColumnLayout {
-                id:                     batteryInfoColumn_2
-                anchors.top: textBoxBatteryInfo_2.top
-                anchors.horizontalCenter: textBoxBatteryInfo_2.horizontalCenter
-                spacing:                0
-                visible: _GD60//true//textBoxBatteryInfo_1.visible
-
-                Text {
-                    id: textBoxBatteryInfo_2PCT
-                    Layout.alignment:       Qt.AlignHCenter
-                    verticalAlignment:      Text.AlignVCenter
-                    color:                  "White"
-                    text:                   _pct_bateria_2 > 9? _pct_bateria_2+"%": "0"+_pct_bateria_2+"%"
-                   font.pixelSize:       _androidBuild ?  13 : 24//ScreenTools.smallFontPixelHeight
-                    visible: _GD60//textBoxBatteryInfo_1.visible
-                    font.bold: true
-                }
-                Text {
-                    id: textBoxBatteryInfo_2TENSION
-                    Layout.alignment:       Qt.AlignHCenter
-                    verticalAlignment:      Text.AlignVCenter
-                    color:                  "White"
-                    text:                   _tensao_bateria_2 + " V"
-                    font.pixelSize:         _androidBuild ?  13 : 24///ScreenTools.smallFontPixelHeight
-                    visible: _GD60//textBoxBatteryInfo_1.visible
-                    font.bold: true
-                }
-                Text {
-                    id: textBoxBatteryInfo_2CURRENT
-                    Layout.alignment:       Qt.AlignHCenter
-                    verticalAlignment:      Text.AlignVCenter
-                    color:                  "White"
-                    text:                   _current_bateria_2 + " A"
-                    font.pixelSize:         _androidBuild ?  13 : 24///ScreenTools.smallFontPixelHeight
-                    visible: _GD60//textBoxBatteryInfo_1.visible
-                    font.bold: true
-                }
-
-            }
-/*
-        Rectangle {
-               id: cellsTensionArea
-               anchors.top: parent.top
-               anchors.left: textBoxBatteryInfo_1.right
-               anchors.margins: _toolsMargin * 1.5
-               width: height * 2
-               height: batteryPercentageIcon_1.height
-               color: "black" // Background color
-
-               // Borda com aparência de aço
-               Rectangle {
-                   anchors.fill: parent
-                   color: "transparent"
-                   border.width: 2
-                   z: parent.z+13
-                   border.color: "lightgray" // Cor base da borda
                }
-               Rectangle {
-                       anchors.fill: parent
-                       z: -1
-                       color: "black"
-                       opacity: 0.3
-                       scale: 1.05
-                       anchors.verticalCenter: parent.verticalCenter
-                       anchors.horizontalCenter: parent.horizontalCenter
-                   }
 
-               // Modelo dinâmico com tensões das células
-                   ListModel {
-                       id: tensaoCelasModel
-                   }
+                OpacityMask{
+                    anchors.fill: batteryPercentageBar_2
+                    source: batteryPercentageBar_2
+                    maskSource: batteryPercentageIcon_2
+                    invert: true
+                    MouseArea{
+                        id: batMouseArea_2
+                        anchors.fill: parent
+                        hoverEnabled : true
 
-                   // Popula o modelo com valores dinamicamente
-                   Component.onCompleted: {
-                       tensaoCelasModel.append({ tensao: _tensao_cell_1 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_2 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_3 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_4 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_5 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_6 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_7 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_8 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_9 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_10 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_11 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_12 });
-                   }
-
-                   Timer{//Atualiza os valores periodicamente [TODO: mudar interval depois]
-                        interval: 10000; running: true; repeat: true
-                        onTriggered: {
-                        tensaoCelasModel.set(0, { tensao: _tensao_cell_1 });
-                        tensaoCelasModel.set(1, { tensao: _tensao_cell_2 });
-                        tensaoCelasModel.set(2, { tensao: _tensao_cell_3 });
-                        tensaoCelasModel.set(3, { tensao: _tensao_cell_4 });
-                        tensaoCelasModel.set(4, { tensao: _tensao_cell_5 });
-                        tensaoCelasModel.set(5, { tensao: _tensao_cell_6 });
-                        tensaoCelasModel.set(6, { tensao: _tensao_cell_7 });
-                        tensaoCelasModel.set(7, { tensao: _tensao_cell_8 });
-                        tensaoCelasModel.set(8, { tensao: _tensao_cell_9 });
-                        tensaoCelasModel.set(9, { tensao: _tensao_cell_10 });
-                        tensaoCelasModel.set(10, { tensao: _tensao_cell_11 });
-                        tensaoCelasModel.set(11, { tensao: 10 });
-                       }
                     }
+                }
+                Rectangle{
+                    id: textBoxBatteryInfo_2
+                    anchors.verticalCenter: batteryPercentageIcon_2 .verticalCenter
+                    //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
+                    anchors.left: batteryPercentageIcon_2.right
+                    anchors.rightMargin: _toolsMargin
+                    height: batteryPercentageIcon_2.height*0.7
+                    width: batteryPercentageIcon_2.width*0.7
+                    visible: _GD60//true//batMouseArea_1.containsMouse? true: false
+                    color: "transparent"// desktop version "black"
+                    border.width: 0
+                    border.color: "transparent"// desktop version "lightgray"
+                    Component.onCompleted: gasolineIconLoader.active = true
 
-                   Repeater {
-                       model: tensaoCelasModel
 
-                       Rectangle {
-                           width: parent.width / 12
-                           height: model.tensao // Altura proporcional à tensão
-                           x: index * parent.width / 12 // Posiciona horizontalmente
-                           anchors.bottom: parent.bottom
-                           z: parent.z + 1
-                           color: "green"
-                           border.color: "black"//index === 0 ? (motor1_selected ? "yellow" : "black") : "black"
-                           border.width: 3//index === 0 && motor1_selected ? 3 : 1
+                    ColumnLayout {
+                            id:                     batteryInfoColumn_2
+                            anchors.top: textBoxBatteryInfo_2.top
+                            anchors.horizontalCenter: textBoxBatteryInfo_2.horizontalCenter
+                            spacing:                0
+                            visible: _GD60//true//textBoxBatteryInfo_1.visible
 
-                           MouseArea { // Torna a barra interativa
-                               anchors.fill: parent
-                               onClicked: {console.log("Célula", index + 1, "tensão:", model.tensao);
-                               console.log(_activeVehicle)
-                                   console.log(_activeVehicle.batteries.count)
-                                   console.log(_activeVehicle.batteries.get(0).percentRemaining.valueString)
-                                   console.log(_distanceToHome)
-                                   console.log(_distanceToWP)
-                               }
+                            Text {
+                                id: textBoxBatteryInfo_2PCT
+                                Layout.alignment:       Qt.AlignHCenter
+                                verticalAlignment:      Text.AlignVCenter
+                                color:                  "White"
+                                text:                   _pct_bateria_2 > 9? _pct_bateria_2+"%": "0"+_pct_bateria_2+"%"
+                               font.pixelSize:       _androidBuild ?  13 : 21//ScreenTools.smallFontPixelHeight
+                                visible: _GD60//textBoxBatteryInfo_1.visible
+                                font.bold: true
+                            }
+                            Text {
+                                id: textBoxBatteryInfo_2TENSION
+                                Layout.alignment:       Qt.AlignHCenter
+                                verticalAlignment:      Text.AlignVCenter
+                                color:                  "White"
+                                text:                   _tensao_bateria_2 + " V"
+                                font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
+                                visible: _GD60//textBoxBatteryInfo_1.visible
+                                font.bold: true
+                            }
+                            Text {
+                                id: textBoxBatteryInfo_2CURRENT
+                                Layout.alignment:       Qt.AlignHCenter
+                                verticalAlignment:      Text.AlignVCenter
+                                color:                  "White"
+                                text:                   _current_bateria_2 + " A"
+                                font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
+                                visible: _GD60//textBoxBatteryInfo_1.visible
+                                font.bold: true
+                            }
 
-                           }
-                       }
-                    }
+                        }
+                }
 
-           }
-*/
         //gasolina
-        Loader {
-            id: gasolineIconLoader
-            anchors.top: parent.top
-            anchors.left: _GD60 ? batteryInfoColumn_2.right :batteryInfoColumn_1.right
-            anchors.margins: _toolsMargin
-            width: gasolineIconLoader.item ? gasolineIconLoader.item.height : 0
-            height: parent.height * 2 / 3
-            active: false  // set true when you want to load it
-            visible: gasolineIconLoader.item ? gasolineIconLoader.item.visible : false
+            Loader {
+                id: gasolineIconLoader
+                anchors.top: parent.top
+                anchors.left: _GD60 ? textBoxBatteryInfo_2.right :textBoxBatteryInfo_1.right
+                anchors.rightMargin: _toolsMargin
+                anchors.leftMargin: _toolsMargin*2
+                anchors.topMargin: _toolsMargin
+                width: gasolineIconLoader.item ? gasolineIconLoader.item.height : 0
+                height: parent.height * 2 / 3
+                active: false  // set true when you want to load it
+                visible: gasolineIconLoader.item ? gasolineIconLoader.item.visible : false
 
             sourceComponent: Component {
                 QGCColoredImage {

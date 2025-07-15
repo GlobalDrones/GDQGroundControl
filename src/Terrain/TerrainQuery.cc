@@ -287,7 +287,7 @@ void TerrainOfflineAirMapQuery::requestCoordinateHeights(const QList<QGeoCoordin
         return;
     }
 
-    _terrainTileManager->addCoordinateQuery(this, coordinates);
+    _terrainTileManager()->addCoordinateQuery(this, coordinates);
 }
 
 void TerrainOfflineAirMapQuery::requestPathHeights(const QGeoCoordinate& fromCoord, const QGeoCoordinate& toCoord)
@@ -297,7 +297,7 @@ void TerrainOfflineAirMapQuery::requestPathHeights(const QGeoCoordinate& fromCoo
         return;
     }
 
-    _terrainTileManager->addPathQuery(this, fromCoord, toCoord);
+    _terrainTileManager()->addPathQuery(this, fromCoord, toCoord);
 }
 
 void TerrainOfflineAirMapQuery::requestCarpetHeights(const QGeoCoordinate& swCoord, const QGeoCoordinate& neCoord, bool statsOnly)
@@ -711,12 +711,12 @@ void TerrainAtCoordinateQuery::requestData(const QList<QGeoCoordinate>& coordina
         return;
     }
 
-    _TerrainAtCoordinateBatchManager->addQuery(this, coordinates);
+    _TerrainAtCoordinateBatchManager()->addQuery(this, coordinates);
 }
 
 bool TerrainAtCoordinateQuery::getAltitudesForCoordinates(const QList<QGeoCoordinate>& coordinates, QList<double>& altitudes, bool& error)
 {
-    return _terrainTileManager->getAltitudesForCoordinates(coordinates, altitudes, error);
+    return _terrainTileManager()->getAltitudesForCoordinates(coordinates, altitudes, error);
 }
 
 void TerrainAtCoordinateQuery::_signalTerrainData(bool success, QList<double>& heights)

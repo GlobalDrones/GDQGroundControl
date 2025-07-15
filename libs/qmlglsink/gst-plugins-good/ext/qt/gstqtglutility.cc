@@ -56,18 +56,19 @@ GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 GstGLDisplay *
 gst_qt_get_gl_display ()
 {
-  GstGLDisplay *display = NULL;
-  QGuiApplication *app = static_cast<QGuiApplication *> (QCoreApplication::instance ());
-  static volatile gsize _debug;
+    GstGLDisplay *display = NULL;
+    QGuiApplication *app = static_cast<QGuiApplication *> (QCoreApplication::instance ());
+    static gpointer _debug_ptr = nullptr;
 
-  g_assert (app != NULL);
+    g_assert (app != NULL);
 
-  if (g_once_init_enter (&_debug)) {
-    GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "qtglutility", 0,
-        "Qt gl utility functions");
-    g_once_init_leave (&_debug, 1);
-  }
-  GST_INFO ("QGuiApplication::instance()->platformName() %s", app->platformName().toUtf8().data());
+    if (g_once_init_enter_pointer (&_debug_ptr)) {
+        GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "qtglutility", 0,
+                                "Qt gl utility functions");
+        g_once_init_leave_pointer(&_debug_ptr, reinterpret_cast<gpointer>(1));
+    }
+
+    GST_INFO ("QGuiApplication::instance()->platformName() %s", app->platformName().toUtf8().data());
 
 #if GST_GL_HAVE_WINDOW_X11 && defined (HAVE_QT_X11)
   if (QString::fromUtf8 ("xcb") == app->platformName())

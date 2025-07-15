@@ -35,21 +35,21 @@ GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 
 GstQSGTexture::GstQSGTexture ()
 {
-  static volatile gsize _debug;
+    static gpointer _debug_ptr = NULL;  // NÃO volatile!
 
-  initializeOpenGLFunctions();
+    initializeOpenGLFunctions();
 
-  if (g_once_init_enter (&_debug)) {
-    GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "qtqsgtexture", 0,
-        "Qt Scenegraph Texture");
-    g_once_init_leave (&_debug, 1);
-  }
+    if (g_once_init_enter_pointer (&_debug_ptr)) {
+        GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "qtqsgtexture", 0,
+                                "Qt Scenegraph Texture");
+        g_once_init_leave_pointer (&_debug_ptr, (gpointer)1);
+    }
 
-  gst_video_info_init (&this->v_info);
-  this->buffer_ = NULL;
-  this->qt_context_ = NULL;
-  this->sync_buffer_ = gst_buffer_new ();
-  this->dummy_tex_id_ = 0;
+    gst_video_info_init (&this->v_info);
+    this->buffer_ = NULL;
+    this->qt_context_ = NULL;
+    this->sync_buffer_ = gst_buffer_new ();
+    this->dummy_tex_id_ = 0;
 }
 
 GstQSGTexture::~GstQSGTexture ()
