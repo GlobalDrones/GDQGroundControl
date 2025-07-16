@@ -14,7 +14,13 @@
 #include <QUrl>
 #include <QDir>
 #include <QQuickWindow>
-
+#include <QStandardPaths>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QDir>
+#include <QDebug>
 #ifndef QGC_DISABLE_UVC
 #include <QCameraInfo>
 #endif
@@ -495,6 +501,126 @@ void
 VideoManager::_rtspUrlChanged()
 {
     _restartVideo(0);
+}
+
+//-----------------------------------------------------------------------------
+QVariantList VideoManager::loadSavedUrls() {
+    QVariantList list;
+
+    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+                   + "/saved_urls.json";
+
+    QFile file(path);
+    if (!file.exists()) {
+        qInfo() << "ℹ️ Nenhum arquivo de URLs salvo encontrado em" << path;
+        return list;
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "❌ Falha ao abrir arquivo para leitura:" << file.errorString();
+        return list;
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    file.close();
+
+    if (!doc.isArray()) {
+        qWarning() << "❌ JSON inválido no arquivo de URLs";
+        return list;
+    }
+
+    for (auto value : doc.array()) {
+        if (value.isObject()) {
+            QJsonObject obj = value.toObject();
+            QVariantMap map;
+            map["url"] = obj["url"].toString();
+            list.append(map);
+        }
+    }
+
+    qDebug() << "✅ URLs carregadas:" << list;
+    return list;
+}
+
+void VideoManager::saveUrls(const QVariantList &urls) {
+
+    qDebug() << "🔎 VideoManager::saveUrls recebeu" << urls.size() << "itens:";
+    for (int i = 0; i < urls.size(); ++i) {
+        qDebug() << "   Item" << i << ":" << urls[i];
+    }
+
+    QJsonArray array;
+
+    for (const QVariant &itemVar : urls) {
+        QVariantMap itemMap = itemVar.toMap();
+        QString url = itemMap.value("url").toString();
+        if (!url.isEmpty()) {
+            QJsonObject obj;
+            obj["url"] = url;
+            array.append(obj);
+        }
+    }
+
+    QJsonDocument doc(array);
+
+    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+                   + "/saved_urls.json";
+    QDir().mkpath(QFileInfo(path).absolutePath());
+
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qWarning() << "❌ Falha ao salvar URLs:" << file.errorString();
+        return;
+    }
+
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+
+    qDebug() << "✅ URLs salvas em" << path << ":" << doc.toJson(QJsonDocument::Indented);
+}
+
+void VideoManager::removeUrl(const QString &urlToRemove) {
+    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/saved_urls.json";
+
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "❌ Falha ao abrir arquivo para remoção:" << file.errorString();
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    file.close();
+
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    if (!doc.isArray()) {
+        qWarning() << "❌ Arquivo JSON não é um array válido.";
+        return;
+    }
+
+    QJsonArray array = doc.array();
+    QJsonArray newArray;
+
+    // Filtra e copia todos os objetos exceto o que deve ser removido
+    for (const QJsonValue &value : array) {
+        if (!value.isObject()) continue;
+
+        QJsonObject obj = value.toObject();
+        if (obj.value("url").toString() != urlToRemove) {
+            newArray.append(obj);
+        }
+    }
+
+    QJsonDocument newDoc(newArray);
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qWarning() << "❌ Falha ao abrir arquivo para escrita:" << file.errorString();
+        return;
+    }
+
+    file.write(newDoc.toJson(QJsonDocument::Indented));
+    file.close();
+
+    qDebug() << "✅ URL removida e arquivo salvo:" << urlToRemove;
 }
 
 //-----------------------------------------------------------------------------

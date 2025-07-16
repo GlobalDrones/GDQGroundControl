@@ -111,6 +111,10 @@ public:
 
     Q_INVOKABLE void grabImage(const QString& imageFile = QString());
 
+    Q_INVOKABLE QVariantList loadSavedUrls();
+    Q_INVOKABLE void saveUrls(const QVariantList &urls);
+    Q_INVOKABLE void removeUrl(const QString &urlToRemove);
+
 signals:
     void hasVideoChanged            ();
     void isGStreamerChanged         ();
