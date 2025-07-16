@@ -286,7 +286,7 @@ Rectangle {
                                 text:           qsTr("RTSP URLs Adicionais")
                                 Layout.columnSpan: 2
                                 Layout.alignment:  Qt.AlignHCenter
-                                visible:        _isRTSP && !_videoAutoStreamConfig
+                                visible:        True /*_isRTSP && !_videoAutoStreamConfig*/
                             }
                             Repeater {
                                 model: ipModel
@@ -294,22 +294,29 @@ Rectangle {
                                     Layout.columnSpan: 2
                                     spacing: _margins
 
-                                    // caixa de texto estilizada igual aos FactTextField
-                                    TextField {
-                                        text:           model.url
-                                        placeholderText: "rtsp://<IP>:<porta>/…"
-                                        // ajusta a largura pra bater com as fact fields
-                                        Layout.preferredWidth:  _comboFieldWidth
-                                        onTextChanged: {
-                                            ipModel.set(index, { url: text })
-                                            // se quiser, dispara validação:
-                                            // CameraUtils.analyzeIp(text)
-                                        }
+                                    Rectangle{
+                                        color: "white"
+                                        width: _comboFieldWidth*1.2
+                                        height: FactTextField.height
+                                        anchors.horizontalCenter: parent.horizontalCenter
+
+                                        // // caixa de texto estilizada igual aos FactTextField
+                                        // QGCTextField  {
+                                        //     text:           model.url
+                                        //     placeholderText: "rtsp://<IP>:<porta>/…"
+                                        //     // ajusta a largura pra bater com as fact fields
+                                        //     Layout.preferredWidth:  _comboFieldWidth*2
+                                        //     onTextChanged: {
+                                        //         ipModel.set(index, { url: text })
+                                        //         // se quiser, dispara validação:
+                                        //         // CameraUtils.analyzeIp(text)
+                                        //     }
+                                        // }
                                     }
 
                                     // ícone de lixeira
                                     QGCColoredImage {
-                                        source:         "/qmlimages/trash"
+                                        source:         "/qmlimages/trash.svg"
                                         width:          ScreenTools.defaultFontPixelHeight
                                         height:         width
                                         fillMode:       Image.PreserveAspectFit
@@ -327,7 +334,7 @@ Rectangle {
                                 Layout.alignment:  Qt.AlignHCenter
                                 onClicked:          ipModel.append({ url: "" })
                                 Layout.preferredWidth: _comboFieldWidth
-                                visible:            _isRTSP && !_videoAutoStreamConfig
+                                visible:            True /*_isRTSP && !_videoAutoStreamConfig*/
                             }
 
                             QGCLabel {
