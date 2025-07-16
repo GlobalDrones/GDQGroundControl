@@ -183,6 +183,30 @@ Item {
         onTriggered: canShowBreachAlert = true
     }
 
+    ListModel {
+        id: ipModel
+        // você pode pré‑popular se quiser:
+        // ListElement { url: _videoSettings.rtspUrl.rawValue }
+    }
+    Component.onCompleted: {
+        var loaded = QGroundControl.videoManager.loadSavedUrls()
+        console.log("✅ URLs carregadas do C++:", loaded)
+        ipModel.clear()
+        for (var i = 0; i < loaded.length; ++i) {
+            ipModel.append({"url": loaded[i].url})
+            console.log("✅ Adicionado ao ipModel:", loaded[i].url)
+        }
+    }
+
+    function syncUrls() {
+        var list = []
+        for (var i = 0; i < ipModel.count; ++i) {
+            var entry = ipModel.get(i)
+            console.log("➡️ Salvando URL:", entry.url)
+            list.push({"url": entry.url}) // garante formato certo
+        }
+        QGroundControl.videoManager.saveUrls(list)
+    }
 
     function _calcCenterViewPort() {
         var newToolInset = Qt.rect(0, 0, width, height)
@@ -2030,11 +2054,11 @@ Item {
             visible: QGroundControl.videoManager.hasVideo
 
             // Lista com pares: texto + URL correspondente
-            property var cameraList: [
+            /*property var cameraList: [
                 { name: "Video 1", url: "rtsp://192.168.144.25:8554/video1" },
                 { name: "Video 2", url: "rtsp://192.168.144.25:8554/video2" },
                 { name: "FPV",     url: "rtsp://192.168.144.26:554/main.264" }
-            ]
+            ]*/
             property int cameraIndex: 0
 
             states: [
@@ -2066,10 +2090,9 @@ Item {
 
                 Rectangle {
                     id: cameraTextBackground
-                    color: "#80000000" // preto com 50% de opacidade (hex: 80 = 128 = 50%)
+                    color: "#80000000"
                     radius: 4
                     anchors.verticalCenter: parent.verticalCenter
-                    // anchors.left: cameraButton.right
                     anchors.leftMargin: ScreenTools.defaultFontPixelWidth / 2
                     anchors.rightMargin: ScreenTools.defaultFontPixelWidth / 2
                     height: cameraText.implicitHeight + ScreenTools.defaultFontPixelHeight
@@ -2078,7 +2101,17 @@ Item {
                     Text {
                         id: cameraText
                         anchors.centerIn: parent
-                        text: cameraControlOverlay.cameraList[cameraControlOverlay.cameraIndex].name
+                        text: {
+                            // Verifica se há itens no ipModel
+                            if (ipModel.count > 0 && cameraControlOverlay.cameraIndex < ipModel.count) {
+                                // se o seu ipModel só tem `url`, você pode criar um nome automático
+                                // ou usar ipModel.get(i).name caso tenha salvo esse campo no JSON
+                                var element = ipModel.get(cameraControlOverlay.cameraIndex)
+                                return element.name ? element.name : element.url
+                            } else {
+                                return "Sem câmeras"
+                            }
+                        }
                         color: "white"
                         font.bold: true
                     }
@@ -2096,14 +2129,19 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            // Avança para o próximo índice
-                            cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % cameraControlOverlay.cameraList.length
+                            var loaded = QGroundControl.videoManager.loadSavedUrls()
+                            ipModel.clear()
+                            for (var i = 0; i < loaded.length; ++i) {
+                                ipModel.append({"url": loaded[i].url})
+                            }
+                            if (ipModel.count > 0) {
+                                cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % ipModel.count
 
-                            // Atualiza o texto
-                            // cameraStatusText.text = cameraControlOverlay.cameraList[cameraControlOverlay.cameraIndex].name
-
-                            // Atualiza a URL da câmera
-                            QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = cameraControlOverlay.cameraList[cameraControlOverlay.cameraIndex].url
+                                var element = ipModel.get(cameraControlOverlay.cameraIndex)
+                                if (element.url) {
+                                    QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = element.url
+                                }
+                            }
                         }
                     }
                 }
