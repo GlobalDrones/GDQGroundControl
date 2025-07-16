@@ -1,5 +1,3 @@
-
-
 /****************************************************************************
  *
  * (c) 2009-2020 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
@@ -8,6 +6,7 @@
  * COPYING.md in the root of the source code directory.
  *
  ****************************************************************************/
+
 import QtQuick 2.12
 import QtQuick.Controls 2.4
 import QtQuick.Dialogs 1.3
@@ -39,7 +38,7 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: false
+    property bool _GD60: true
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
@@ -65,7 +64,7 @@ Item {
     property var    _guidedActionList:      guidedActionList
     property var    _guidedValueSlider:     guidedValueSlider
     property var    _widgetLayer:           widgetLayer
-    property real   _toolsMargin:           ScreenTools.defaultFontPixelWidth
+    property real   _toolsMargin:           ScreenTools.defaultFontPixelWidth * 0.75
     property rect   _centerViewport:        Qt.rect(0, 0, width, height)
     property real   _rightPanelWidth:       ScreenTools.defaultFontPixelWidth * 30
     property var    _mapControl:            mapControl
@@ -73,11 +72,21 @@ Item {
     property real  mainViewHeight: parent.height*5/6
     property real  mainViewWidth : parent.width - (parent.height - mainViewHeight) //garantir simetria
     property bool _cameraExchangeActive : false
-    property var _pct_bateria: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
-    property var _tensao_bateria:  0 //modificado em MainWindow
-    property var _current_bateria:  0
+    property var _pct_bateria_1: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
+    property var _tensao_bateria_1:  0 //modificado em MainWindow
+    property var _current_bateria_1:  0
+
+    property var _pct_bateria_2: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
+    property var _tensao_bateria_2:  0 //modificado em MainWindow
+    property var _current_bateria_2:  0
+
     property var _current_generator: 0
     property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage
+
+    property int _battery1Index: _GD60? 0:0
+    property int _gasolineIndex: _GD60? 0:1
+    property int _generatorIndex: _GD60? 0:2
+    property int _battery2Index: _GD60? 0:0
 
     property int _satCount: 0
     property int _satPDOP: 0
@@ -137,6 +146,9 @@ Item {
 
     property real _motor_temp: 30
     property real _motor_rpm: 3000
+
+    property int _rpm_horizontal1: 0
+    property int _rpm_horizontal2: 0
 
     property int horas_restantes:0
     property int minutos_restantes:0
@@ -330,18 +342,24 @@ Item {
             console.log(_activeVehicle.batteries.get(1).voltage.rawValue)*/
             //console.log(_activeVehicle.batteries.index(1,0).voltage.rawValue)
 
-            _pct_bateria = ((((_activeVehicle.batteries.get(0).voltage.rawValue).toFixed(2) - 42)/8.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
-            _tensao_bateria = (_activeVehicle.batteries.get(0).voltage.rawValue).toFixed(2)
-            _current_bateria = (_activeVehicle.batteries.get(0).current.rawValue).toFixed(2)
+            _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 42)/8.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
+            _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
+            _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
+
+            _pct_bateria_2 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 20)/5.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
+            _tensao_bateria_2 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
+            _current_bateria_2 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
+
             _satCount = _activeVehicle.gps.count.rawValue
             _satPDOP = _activeVehicle.gps.lock.rawValue
 
 
             // console.log(_activeVehicle.rcRSSI.valueOf())
-            _gasolina = _activeVehicle.batteries.get(1).percentRemaining.rawValue//_activeVehicle.batteries.index(0,1).voltage.rawValue
+            _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue//_activeVehicle.batteries.index(0,1).voltage.rawValue
 
 
             _rcQuality = _activeVehicle.rcSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
+            _rcQuality_ARRAY.push(_rcQuality)
             if(_rcQuality_ARRAY.length === 10){
                 var qual_temp1 = 0;
                 for(var i =0; i<10; i++){
@@ -398,17 +416,25 @@ Item {
 
 
             //Monitoramento do gerador TODO: DESCOMENTAR DEPOIS
-            //_current_battery_ARRAY.push(_current_bateria) //populando dinamicamente array de valores de corrente da bateria
+            //_current_battery_ARRAY.push(_current_bateria_1) //populando dinamicamente array de valores de corrente da bateria
             //_current_generator_ARRAY.push(_current_generator)//populando dinamicamente array de valores de corrente do gerador
-
-            _current_generator_ARRAY.push(_current_generator)
-            aceleracao_rotor_1_ARRAY.push(_aceleracao_rotor_1)
-            aceleracao_rotor_2_ARRAY.push(_aceleracao_rotor_2)
-            aceleracao_rotor_3_ARRAY.push(_aceleracao_rotor_3)
-            aceleracao_rotor_4_ARRAY.push(_aceleracao_rotor_4)
-            aceleracao_rotor_5_ARRAY.push(_aceleracao_rotor_5)
-            aceleracao_rotor_6_ARRAY.push(_aceleracao_rotor_6)
-
+            if(_GD60){
+                if (_activeVehicle.armed || _activeVehicle.flying){
+                    _aceleracao_rotor_1 = Math.random() * (555-480) + 480
+                    _aceleracao_rotor_2 = Math.random() * (555-480) + 480
+                    _aceleracao_rotor_3 = Math.random() * (555-480) + 480
+                    _aceleracao_rotor_4 = Math.random() * (555-480) + 480
+                }
+            }
+            else{
+                _current_generator_ARRAY.push(_current_generator)
+                aceleracao_rotor_1_ARRAY.push(_aceleracao_rotor_1)
+                aceleracao_rotor_2_ARRAY.push(_aceleracao_rotor_2)
+                aceleracao_rotor_3_ARRAY.push(_aceleracao_rotor_3)
+                aceleracao_rotor_4_ARRAY.push(_aceleracao_rotor_4)
+                aceleracao_rotor_5_ARRAY.push(_aceleracao_rotor_5)
+                aceleracao_rotor_6_ARRAY.push(_aceleracao_rotor_6)
+            }
 
             //AQUI PRA CIMA É SÓ PRA TESTE
             // console.log((oldGeneratorMediamValue/20)/maxGeneratorCurrent, (40/maxGeneratorCurrent))
@@ -418,8 +444,8 @@ Item {
             //var params = _activeVehicle.parameterNames(1); // Chama a função C++
             //console.log("Parameters:", params); // Imprime no console do QML
             //params.forEach(param => console.log(param.toString())); //TODO: typeError. QStringList e QString não são reconhecidos pelo QML padrão. Resolver isso depois
-            _current_generator = _activeVehicle.batteries.get(2).current.rawValue.toFixed(2)
-            _current_bateria = _activeVehicle.batteries.get(0).current.rawValue.toFixed(2)
+            _current_generator = _activeVehicle.batteries.get(_generatorIndex).current.rawValue.toFixed(2)
+            _current_bateria_1 = _activeVehicle.batteries.get(_battery1Index).current.rawValue.toFixed(2)
 
 
 
@@ -462,8 +488,8 @@ Item {
                 aceleracao_rotor_5_ARRAY.shift();
                 aceleracao_rotor_6_ARRAY.shift();
             }
-            //console.log(_pct_bateria)
-            //console.log(_pct_bateria/100)
+            //console.log(_pct_bateria_1)
+            //console.log(_pct_bateria_1/100)
         }
     }
 
@@ -506,7 +532,7 @@ Item {
                 }
 
                 QGCColoredImage {
-                    id: batteryPercentageIcon
+                    id: batteryPercentageIcon_1
                     anchors.top:        parent.top
                     anchors.left:       parent.left
                     anchors.margins:    _toolsMargin
@@ -519,12 +545,12 @@ Item {
                 }
 
                 Rectangle{
-                    id: batteryPercentageBar
-                    anchors.top: batteryPercentageIcon.top
-                    anchors.left: batteryPercentageIcon.left
+                    id: batteryPercentageBar_1
+                    anchors.top: batteryPercentageIcon_1.top
+                    anchors.left: batteryPercentageIcon_1.left
                     //anchors.margins: _toolsMargin
-                    width: batteryPercentageIcon.width
-                    height: batteryPercentageIcon.height
+                    width: batteryPercentageIcon_1.width
+                    height: batteryPercentageIcon_1.height
                     color: "transparent"//batMouseArea.containsMouse? "green": "red"
                     visible: false
                     Rectangle{
@@ -533,187 +559,205 @@ Item {
                         //anchors.left: parent.left
                         width: parent.width/2
                         height: parent.height*0.85 //fixo pra não ultrapassar o desenho
-                        color: (_pct_bateria) > 50 ? "green" : ((_pct_bateria) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria
+                        color: (_pct_bateria_1) > 50 ? "green" : ((_pct_bateria_1) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria_1
                     }
                     Rectangle{ //BARRA DE ALTURA DINAMICA PRA INDICAR O NÍVEL DE bateria -> HEIGHT = 1-bateria%
 
                         anchors.horizontalCenter: parent.horizontalCenter
                         //anchors.left: parent.left
                         width: parent.width/2
-                        height: parent.height*(0.15 + 0.85*(1-_pct_bateria/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
+                        height: parent.height*(0.15 + 0.85*(1-_pct_bateria_1/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
                         color: qgcPal.toolbarBackground
                     }
 
                 }
 
                 OpacityMask{
-                    anchors.fill: batteryPercentageBar
-                    source: batteryPercentageBar
-                    maskSource: batteryPercentageIcon
+                    anchors.fill: batteryPercentageBar_1
+                    source: batteryPercentageBar_1
+                    maskSource: batteryPercentageIcon_1
                     invert: true
                     MouseArea{
-                        id: batMouseArea
+                        id: batMouseArea_1
                         anchors.fill: parent
                         hoverEnabled : true
 
                     }
                 }
                 Rectangle{
-                    id: textBoxBatteryInfo
-                    anchors.verticalCenter: batteryPercentageIcon .verticalCenter
-                    //anchors.horizontalCenter: batteryPercentageIcon.horizontalCenter
-                    anchors.left: batteryPercentageIcon.right
+                    id: textBoxBatteryInfo_1
+                    anchors.verticalCenter: batteryPercentageIcon_1 .verticalCenter
+                    //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
+                    anchors.left: batteryPercentageIcon_1.right
                     anchors.rightMargin: _toolsMargin
-                    height: batteryPercentageIcon.height*0.7
-                    width: batteryPercentageIcon.width
-                    visible: true//batMouseArea.containsMouse? true: false
+                    height: batteryPercentageIcon_1.height*0.7
+                    width: batteryPercentageIcon_1.width*0.7
+                    visible: true//batMouseArea_1.containsMouse? true: false
                     color: "transparent"// desktop version "black"
                     border.width: 0
                     border.color: "transparent"// desktop version "lightgray"
                     Component.onCompleted: gasolineIconLoader.active = true
 
+
+                    ColumnLayout {
+                        id:                     batteryInfoColumn_1
+                        //anchors.top: textBoxBatteryInfo_1.top
+                        //anchors.horizontalCenter: textBoxBatteryInfo_1.horizontalCenter
+                        anchors.fill:parent
+                        spacing:                0
+                        visible: true//textBoxBatteryInfo_1.visible
+
+                        Text {
+                            id: textBoxBatteryInfo_1PCT
+                            Layout.alignment:       Qt.AlignHCenter
+                            verticalAlignment:      Text.AlignVCenter
+                            color:                  "White"
+                            text:                   _pct_bateria_1 > 9? _pct_bateria_1+"%": "0"+_pct_bateria_1+"%"
+                            font.pixelSize:       _androidBuild ?  13 : 21//ScreenTools.smallFontPixelHeight
+                            visible: textBoxBatteryInfo_1.visible
+                            font.bold: true
+                        }
+                        Text {
+                            id: textBoxBatteryInfo_1TENSION
+                            Layout.alignment:       Qt.AlignHCenter
+                            verticalAlignment:      Text.AlignVCenter
+                            color:                  "White"
+                            text:                   _tensao_bateria_1 + " V"
+                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
+                            visible: textBoxBatteryInfo_1.visible
+                            font.bold: true
+                        }
+                        Text {
+                            id: textBoxBatteryInfo_1CURRENT
+                            Layout.alignment:       Qt.AlignHCenter
+                            verticalAlignment:      Text.AlignVCenter
+                            color:                  "White"
+                            text:                   _current_bateria_1 + " A"
+                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
+                            visible: textBoxBatteryInfo_1.visible
+                            font.bold: true
+                        }
+
+                    }
                 }
-                ColumnLayout {
-                    id:                     batteryInfoColumn
-                    anchors.top: textBoxBatteryInfo.top
-                    anchors.horizontalCenter: textBoxBatteryInfo.horizontalCenter
-                    spacing:                0
-                    visible: true//textBoxBatteryInfo.visible
 
-                    Text {
-                        id: textBoxBatteryInfoPCT
-                        Layout.alignment:       Qt.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _pct_bateria > 9? _pct_bateria+"%": "0"+_pct_bateria+"%"
-                        //font.pixelSize:       _androidBuild ?  13 : 24//ScreenTools.smallFontPixelHeight
-                        visible: textBoxBatteryInfo.visible
-                        font.bold: true
+                QGCColoredImage {
+                    id: batteryPercentageIcon_2
+                    anchors.top:        parent.top
+                    anchors.left:       textBoxBatteryInfo_1.right
+                    anchors.margins:    _toolsMargin
+                    width:              height
+                    height:             parent.height*2/3
+                    source:             "/qmlimages/Battery.svg"
+                    fillMode:           Image.PreserveAspectFit
+                    color:              "white"
+                    visible: _GD60//true
+                }
+
+                Rectangle{
+                    id: batteryPercentageBar_2
+                    anchors.top: batteryPercentageIcon_2.top
+                    anchors.left: batteryPercentageIcon_2.left
+                    //anchors.margins: _toolsMargin
+                    width: batteryPercentageIcon_2.width
+                    height: batteryPercentageIcon_2.height
+                    color: "transparent"//batMouseArea.containsMouse? "green": "red"
+                    visible: false
+                    Rectangle{
+                        y: parent.height*0.1
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        //anchors.left: parent.left
+                        width: parent.width/2
+                        height: parent.height*0.85 //fixo pra não ultrapassar o desenho
+                        color: (_pct_bateria_2) > 50 ? "green" : ((_pct_bateria_2) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria_1
                     }
-                    Text {
-                        id: textBoxBatteryInfoTENSION
-                        Layout.alignment:       Qt.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _tensao_bateria + " V"
-                        //font.pixelSize:         _androidBuild ?  13 : 24///ScreenTools.smallFontPixelHeight
-                        visible: textBoxBatteryInfo.visible
-                        font.bold: true
-                    }
-                    Text {
-                        id: textBoxBatteryInfoCURRENT
-                        Layout.alignment:       Qt.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _current_bateria + " A"
-                        //font.pixelSize:         _androidBuild ?  13 : 24///ScreenTools.smallFontPixelHeight
-                        visible: textBoxBatteryInfo.visible
-                        font.bold: true
+                    Rectangle{ //BARRA DE ALTURA DINAMICA PRA INDICAR O NÍVEL DE bateria -> HEIGHT = 1-bateria%
+
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        //anchors.left: parent.left
+                        width: parent.width/2
+                        height: parent.height*(0.15 + 0.85*(1-_pct_bateria_2/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
+                        color: qgcPal.toolbarBackground
                     }
 
                 }
-                /*
-        Rectangle {
-               id: cellsTensionArea
-               anchors.top: parent.top
-               anchors.left: textBoxBatteryInfo.right
-               anchors.margins: _toolsMargin * 1.5
-               width: height * 2
-               height: batteryPercentageIcon.height
-               color: "black" // Background color
 
-               // Borda com aparência de aço
-               Rectangle {
-                   anchors.fill: parent
-                   color: "transparent"
-                   border.width: 2
-                   z: parent.z+13
-                   border.color: "lightgray" // Cor base da borda
-               }
-               Rectangle {
-                       anchors.fill: parent
-                       z: -1
-                       color: "black"
-                       opacity: 0.3
-                       scale: 1.05
-                       anchors.verticalCenter: parent.verticalCenter
-                       anchors.horizontalCenter: parent.horizontalCenter
-                   }
+                OpacityMask{
+                    anchors.fill: batteryPercentageBar_2
+                    source: batteryPercentageBar_2
+                    maskSource: batteryPercentageIcon_2
+                    invert: true
+                    MouseArea{
+                        id: batMouseArea_2
+                        anchors.fill: parent
+                        hoverEnabled : true
 
-               // Modelo dinâmico com tensões das células
-                   ListModel {
-                       id: tensaoCelasModel
-                   }
-
-                   // Popula o modelo com valores dinamicamente
-                   Component.onCompleted: {
-                       tensaoCelasModel.append({ tensao: _tensao_cell_1 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_2 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_3 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_4 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_5 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_6 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_7 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_8 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_9 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_10 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_11 });
-                       tensaoCelasModel.append({ tensao: _tensao_cell_12 });
-                   }
-
-                   Timer{//Atualiza os valores periodicamente [TODO: mudar interval depois]
-                        interval: 10000; running: true; repeat: true
-                        onTriggered: {
-                        tensaoCelasModel.set(0, { tensao: _tensao_cell_1 });
-                        tensaoCelasModel.set(1, { tensao: _tensao_cell_2 });
-                        tensaoCelasModel.set(2, { tensao: _tensao_cell_3 });
-                        tensaoCelasModel.set(3, { tensao: _tensao_cell_4 });
-                        tensaoCelasModel.set(4, { tensao: _tensao_cell_5 });
-                        tensaoCelasModel.set(5, { tensao: _tensao_cell_6 });
-                        tensaoCelasModel.set(6, { tensao: _tensao_cell_7 });
-                        tensaoCelasModel.set(7, { tensao: _tensao_cell_8 });
-                        tensaoCelasModel.set(8, { tensao: _tensao_cell_9 });
-                        tensaoCelasModel.set(9, { tensao: _tensao_cell_10 });
-                        tensaoCelasModel.set(10, { tensao: _tensao_cell_11 });
-                        tensaoCelasModel.set(11, { tensao: 10 });
-                       }
                     }
+                }
+                Rectangle{
+                    id: textBoxBatteryInfo_2
+                    anchors.verticalCenter: batteryPercentageIcon_2 .verticalCenter
+                    //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
+                    anchors.left: batteryPercentageIcon_2.right
+                    anchors.rightMargin: _toolsMargin
+                    height: batteryPercentageIcon_2.height*0.7
+                    width: batteryPercentageIcon_2.width*0.7
+                    visible: _GD60//true//batMouseArea_1.containsMouse? true: false
+                    color: "transparent"// desktop version "black"
+                    border.width: 0
+                    border.color: "transparent"// desktop version "lightgray"
+                    Component.onCompleted: gasolineIconLoader.active = true
 
-                   Repeater {
-                       model: tensaoCelasModel
 
-                       Rectangle {
-                           width: parent.width / 12
-                           height: model.tensao // Altura proporcional à tensão
-                           x: index * parent.width / 12 // Posiciona horizontalmente
-                           anchors.bottom: parent.bottom
-                           z: parent.z + 1
-                           color: "green"
-                           border.color: "black"//index === 0 ? (motor1_selected ? "yellow" : "black") : "black"
-                           border.width: 3//index === 0 && motor1_selected ? 3 : 1
+                    ColumnLayout {
+                        id:                     batteryInfoColumn_2
+                        anchors.top: textBoxBatteryInfo_2.top
+                        anchors.horizontalCenter: textBoxBatteryInfo_2.horizontalCenter
+                        spacing:                0
+                        visible: _GD60//true//textBoxBatteryInfo_1.visible
 
-                           MouseArea { // Torna a barra interativa
-                               anchors.fill: parent
-                               onClicked: {console.log("Célula", index + 1, "tensão:", model.tensao);
-                               console.log(_activeVehicle)
-                                   console.log(_activeVehicle.batteries.count)
-                                   console.log(_activeVehicle.batteries.get(0).percentRemaining.valueString)
-                                   console.log(_distanceToHome)
-                                   console.log(_distanceToWP)
-                               }
+                        Text {
+                            id: textBoxBatteryInfo_2PCT
+                            Layout.alignment:       Qt.AlignHCenter
+                            verticalAlignment:      Text.AlignVCenter
+                            color:                  "White"
+                            text:                   _pct_bateria_2 > 9? _pct_bateria_2+"%": "0"+_pct_bateria_2+"%"
+                            font.pixelSize:       _androidBuild ?  13 : 21//ScreenTools.smallFontPixelHeight
+                            visible: _GD60//textBoxBatteryInfo_1.visible
+                            font.bold: true
+                        }
+                        Text {
+                            id: textBoxBatteryInfo_2TENSION
+                            Layout.alignment:       Qt.AlignHCenter
+                            verticalAlignment:      Text.AlignVCenter
+                            color:                  "White"
+                            text:                   _tensao_bateria_2 + " V"
+                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
+                            visible: _GD60//textBoxBatteryInfo_1.visible
+                            font.bold: true
+                        }
+                        Text {
+                            id: textBoxBatteryInfo_2CURRENT
+                            Layout.alignment:       Qt.AlignHCenter
+                            verticalAlignment:      Text.AlignVCenter
+                            color:                  "White"
+                            text:                   _current_bateria_2 + " A"
+                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
+                            visible: _GD60//textBoxBatteryInfo_1.visible
+                            font.bold: true
+                        }
 
-                           }
-                       }
                     }
+                }
 
-           }
-*/
                 //gasolina
                 Loader {
                     id: gasolineIconLoader
                     anchors.top: parent.top
-                    anchors.left: batteryInfoColumn.right
-                    anchors.margins: _toolsMargin
+                    anchors.left: _GD60 ? textBoxBatteryInfo_2.right :textBoxBatteryInfo_1.right
+                    anchors.rightMargin: _toolsMargin
+                    anchors.leftMargin: _toolsMargin*2
+                    anchors.topMargin: _toolsMargin
                     width: gasolineIconLoader.item ? gasolineIconLoader.item.height : 0
                     height: parent.height * 2 / 3
                     active: false  // set true when you want to load it
@@ -822,7 +866,7 @@ Item {
                         anchors.top:generatorCurrentBar.top
                         anchors.left:generatorCurrentBar.left
                         width:generatorCurrentBar.width
-                        height: generatorCurrentBar.height * (1-(_current_generator/maxGeneratorCurrent))
+                        height: _current_generator >= 0 ?  generatorCurrentBar.height * (1-(_current_generator/maxGeneratorCurrent)): generatorCurrentBar.height
                         color:"black"
                     }
                     Rectangle{
@@ -934,7 +978,7 @@ Item {
                         color:                  "White"
                         text:                   "Count: " + _satCount
                         font.bold: true
-                        //font.pixelSize:         _androidBuild ?  13 : 24
+                        font.pixelSize:         _androidBuild ?  13 : 24
                     }
                     Text {
                         Layout.alignment:       Qt.AlignHCenter
@@ -942,7 +986,7 @@ Item {
                         color:                  "White"
                         text:                   "PDOP: "+ _satPDOP
                         font.bold: true
-                        //font.pixelSize:         _androidBuild ?  13 : 24
+                        font.pixelSize:         _androidBuild ?  13 : 24
                         //font.pointSize:         ScreenTools.mediumFontPixelHeight
                     }
 
@@ -953,7 +997,7 @@ Item {
                     id: rcInformationIcon
                     anchors.top:        parent.top
                     anchors.left:       textBoxSatteliteInfo.right
-                    anchors.leftMargin: _toolsMargin*3
+                    //anchors.leftMargin: _toolsMargin
                     anchors.topMargin:  _toolsMargin*2
                     width:              height
                     height:             parent.height*2/3
@@ -1096,7 +1140,7 @@ Item {
                         color:                  "White"
                         text:                   _motor_temp.toString()+"°C"
                         font.bold: true
-                        // font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
+                        font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
                     }
 
                     Text {
@@ -1105,7 +1149,7 @@ Item {
                         color:                  "White"
                         text:                   "RPM: "+_motor_rpm.toFixed(0)
                         font.bold: true
-                        // font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
+                        font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
                     }
                     Text {
                         Layout.alignment:       Qt.AlignHCenter
@@ -1113,7 +1157,7 @@ Item {
                         color:                  "White"
                         text:                   _motor_temp.toString()+"°C"
                         font.bold: true
-                        // font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
+                        font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
                         visible: _GD60? true:false
                     }
 
@@ -1123,7 +1167,7 @@ Item {
                         color:                  "White"
                         text:                   "RPM: "+_motor_rpm.toFixed(0)
                         font.bold: true
-                        // font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
+                        font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
                         visible: _GD60? true:false
                     }
 
@@ -1308,7 +1352,7 @@ Item {
                             ctx.strokeStyle = "green"//"gray" // Arc color
                             ctx.lineWidth = 8
                             ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(50)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal1/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
                             //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
                             ctx.stroke()
                         }
@@ -1338,7 +1382,7 @@ Item {
                     Text{
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "2000"
+                        text: _rpm_horizontal1
                         color:"green"
                         font.bold: true
                     }
@@ -1368,7 +1412,7 @@ Item {
                             ctx.strokeStyle = "green"//"gray" // Arc color
                             ctx.lineWidth = 8
                             ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(75)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal2/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
                             //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
                             ctx.stroke()
                         }
@@ -1398,7 +1442,7 @@ Item {
                     Text{
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "3000"
+                        text: _rpm_horizontal2
                         color:"green"
                         font.bold: true
                     }
@@ -1415,7 +1459,6 @@ Item {
     //**************************************************************************************************//
     //                          LATERAL VIEW AREA                                                       //
     //**************************************************************************************************//
-
     Loader{
         id: lateralDataLoader
         anchors.right : parent.right
@@ -1464,7 +1507,7 @@ Item {
                     color: "white"
                     z:1000
                 }*/
-                    Column {
+                    ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -1476,7 +1519,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Est. Time"
-                            // font.pixelSize:         _androidBuild ?  15 : 24//ScreenTools.smallFontPixelHeight
+                            font.pixelSize:         _androidBuild ?  15 : 24//ScreenTools.smallFontPixelHeight
                             font.bold: true
                         }
                         Text {
@@ -1484,7 +1527,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   horas_restantes_string+":"+minutos_restantes_string+":"+segundos_restantes_string
-                            // font.pixelSize:         _androidBuild ?  15 : 24//ScreenTools.smallFontPixelHeight
+                            font.pixelSize:         _androidBuild ?  15 : 24//ScreenTools.smallFontPixelHeight
                             font.bold: true
                         }
                     }
@@ -1495,7 +1538,7 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     height: (parent.height -bottomDataLoader.height)/6
-                    Column {
+                    ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -1507,7 +1550,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Dist. Home"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                         Text {
@@ -1515,7 +1558,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _activeVehicle.distanceToHome.value === "NaN"? 0 : _activeVehicle.distanceToHome.value.toFixed(2)+"m"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                     }
@@ -1527,7 +1570,7 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     height: (parent.height -bottomDataLoader.height)/6
-                    Column {
+                    ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -1539,7 +1582,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Dist. WP"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                         Text {
@@ -1547,7 +1590,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _activeVehicle.distanceToNextWP.value == "NaN"? 0 : _activeVehicle.distanceToNextWP.value+"m"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                     }
@@ -1558,7 +1601,7 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     height: (parent.height -bottomDataLoader.height)/6
-                    Column {
+                    ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -1570,7 +1613,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Alt. LIDAR"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                         Text {
@@ -1578,7 +1621,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _activeVehicle.rangeFinderDist.value.toFixed(2) + "m" //altitudeRelative.value*10)/10 + "m"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                     }
@@ -1589,7 +1632,7 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     height: (parent.height -bottomDataLoader.height)/6
-                    Column {
+                    ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -1601,7 +1644,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Alt. AMSL"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                         Text {
@@ -1609,7 +1652,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   Math.round(_activeVehicle.altitudeAMSL.value*10)/10 + "m"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                     }
@@ -1620,7 +1663,7 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     height: (parent.height -bottomDataLoader.height)/6
-                    Column {
+                    ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -1632,7 +1675,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Hor. speed"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                         Text {
@@ -1640,7 +1683,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  Math.round(_activeVehicle.airSpeed.value*10)/10 < 17? "White" : "Red"
                             text:                   Math.round(_activeVehicle.airSpeed.value*10)/10 +"m/s"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                     }
@@ -1651,7 +1694,7 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     height: (parent.height -bottomDataLoader.height)/6
-                    Column {
+                    ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -1663,7 +1706,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Vert. speed"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                         Text {
@@ -1671,7 +1714,7 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   Math.round(_activeVehicle.climbRate.value*10)/10+"m/s"
-                            // font.pixelSize:         _androidBuild ?  15 : 24
+                            font.pixelSize:         _androidBuild ?  15 : 24
                             font.bold: true
                         }
                     }
@@ -1684,7 +1727,7 @@ Item {
                     anchors.bottom: maxSpeedText.top
                     anchors.margins: _toolsMargin // Adiciona um pequeno espaço do canto
                     font.bold: true
-                    // font.pixelSize:         _androidBuild ?  7 : 12
+                    font.pixelSize:         _androidBuild ?  7 : 12
                     color: qgcPal.toolbarBackground
                     z:1000
                 }
@@ -1695,7 +1738,7 @@ Item {
                     anchors.bottom: parent.bottom
                     anchors.margins: _toolsMargin // Adiciona um pequeno espaço do canto
                     font.bold: true
-                    // font.pixelSize:         _androidBuild ?  7 : 12
+                    font.pixelSize:         _androidBuild ?  7 : 12
                     color: qgcPal.toolbarBackground
                     z:1000
                     Component.onCompleted: aircraftAndRotorsLoader.active = true
@@ -1896,14 +1939,14 @@ Item {
 
 
         /*GuidedActionConfirm {
-            id:                         guidedActionConfirm
-            anchors.margins:            _margins
-            anchors.bottom:             parent.bottom
-            anchors.horizontalCenter:   parent.horizontalCenter
-            z:                          QGroundControl.zOrderTopMost
-            guidedController:           _guidedController
-            altitudeSlider:             _guidedAltSlider
-        }*/
+                id:                         guidedActionConfirm
+                anchors.margins:            _margins
+                anchors.bottom:             parent.bottom
+                anchors.horizontalCenter:   parent.horizontalCenter
+                z:                          QGroundControl.zOrderTopMost
+                guidedController:           _guidedController
+                altitudeSlider:             _guidedAltSlider
+            }*/
         GuidedActionList {
             id: guidedActionList
             anchors.margins: _margins

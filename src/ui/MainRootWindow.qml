@@ -46,23 +46,25 @@ ApplicationWindow {
     }
 
     Timer {
-               interval: 500; running: true; repeat: true
-               onTriggered: {
-               flightView._aceleracao_rotor_1 = controller4._RPM_R1
-               flightView._aceleracao_rotor_2 = controller4._RPM_R2
-               flightView._aceleracao_rotor_3 = controller4._RPM_R3
-               flightView._aceleracao_rotor_4 = controller4._RPM_R4
-               flightView._aceleracao_rotor_5 = controller4._RPM_R5
-               flightView._aceleracao_rotor_6 = controller4._RPM_R6
-               //console.log("RPMs: ",controller4._RPM_R1,controller4._RPM_R2,controller4._RPM_R3,controller4._RPM_R4,controller4._RPM_R5,controller4._RPM_R6, "MAINWINDOW")
-               flightView._motor_rpm    = controller4._RPM_MOTOR
-               flightView._motor_temp   = controller4._TEMP_MOTOR
-               //flightView._tensao_bateria = controller4.battery_tension
-               //flightView._gasolina = controller4.gasoline_value / 1000
-                   //console.log("GASOLINA MAINROOTWINDOW: ", controller4.gasoline_value / 1000)
-               //flightView._current_generator = controller4.generator_curr/100
-               }
-           }
+        interval: 500; running: true; repeat: true
+        onTriggered: {
+            if (!flightView._GD60){
+                flightView._aceleracao_rotor_1 = controller4._RPM_R1
+                flightView._aceleracao_rotor_2 = controller4._RPM_R2
+                flightView._aceleracao_rotor_3 = controller4._RPM_R3
+                flightView._aceleracao_rotor_4 = controller4._RPM_R4
+                flightView._aceleracao_rotor_5 = controller4._RPM_R5
+                flightView._aceleracao_rotor_6 = controller4._RPM_R6
+            }
+            //console.log("RPMs: ",controller4._RPM_R1,controller4._RPM_R2,controller4._RPM_R3,controller4._RPM_R4,controller4._RPM_R5,controller4._RPM_R6, "MAINWINDOW")
+            flightView._motor_rpm    = controller4._RPM_MOTOR
+            flightView._motor_temp   = controller4._TEMP_MOTOR
+            //flightView._tensao_bateria = controller4.battery_tension
+            //flightView._gasolina = controller4.gasoline_value / 1000
+            //console.log("GASOLINA MAINROOTWINDOW: ", controller4.gasoline_value / 1000)
+            //flightView._current_generator = controller4.generator_curr/100
+        }
+    }
 
     Item{
             id: mvipArea
