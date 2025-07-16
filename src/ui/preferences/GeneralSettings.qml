@@ -71,6 +71,27 @@ Rectangle {
         // você pode pré‑popular se quiser:
         // ListElement { url: _videoSettings.rtspUrl.rawValue }
     }
+    Component.onCompleted: {
+        var loaded = QGroundControl.videoManager.loadSavedUrls()
+        console.log("✅ URLs carregadas do C++:", loaded)
+        ipModel.clear()
+        for (var i = 0; i < loaded.length; ++i) {
+            ipModel.append({"url": loaded[i].url})
+            console.log("✅ Adicionado ao ipModel:", loaded[i].url)
+        }
+    }
+
+    function syncUrls() {
+        var list = []
+        for (var i = 0; i < ipModel.count; ++i) {
+            var entry = ipModel.get(i)
+            console.log("➡️ Salvando URL:", entry.url)
+            list.push({"url": entry.url}) // garante formato certo
+        }
+        QGroundControl.videoManager.saveUrls(list)
+    }
+
+
 
     QGCFlickable {
         clip:               true
@@ -289,29 +310,32 @@ Rectangle {
                                 visible:        True /*_isRTSP && !_videoAutoStreamConfig*/
                             }
                             Repeater {
+                                id: repeaterURLS
                                 model: ipModel
                                 delegate: RowLayout {
                                     Layout.columnSpan: 2
-                                    spacing: _margins
+                                    Layout.bottomMargin:index === (ipModel.count - 1) ? _margins*2 : _margins*1.3
+
 
                                     Rectangle{
                                         color: "white"
                                         width: _comboFieldWidth*1.2
                                         height: FactTextField.height
+                                        anchors.top: parent.top
                                         anchors.horizontalCenter: parent.horizontalCenter
 
-                                        // // caixa de texto estilizada igual aos FactTextField
-                                        // QGCTextField  {
-                                        //     text:           model.url
-                                        //     placeholderText: "rtsp://<IP>:<porta>/…"
-                                        //     // ajusta a largura pra bater com as fact fields
-                                        //     Layout.preferredWidth:  _comboFieldWidth*2
-                                        //     onTextChanged: {
-                                        //         ipModel.set(index, { url: text })
-                                        //         // se quiser, dispara validação:
-                                        //         // CameraUtils.analyzeIp(text)
-                                        //     }
-                                        // }
+
+                                        // caixa de texto estilizada igual aos FactTextField
+                                        QGCTextField  {
+                                            text:           model.url
+                                            placeholderText: "rtsp://<IP>:<porta>/…"
+                                            // ajusta a largura pra bater com as fact fields
+                                            Layout.preferredWidth:  _comboFieldWidth
+                                            onTextChanged: {
+                                                ipModel.set(index, { url: text })
+                                                syncUrls() // <--- adicionar isso para salvar
+                                            }
+                                        }
                                     }
 
                                     // ícone de lixeira
@@ -323,7 +347,11 @@ Rectangle {
                                         color:          "white"
                                         MouseArea {
                                             anchors.fill: parent
-                                            onClicked: ipModel.remove(index)
+                                            onClicked: {
+                                                var urlToRemove = ipModel.get(index).url
+                                                QGroundControl.videoManager.removeUrl(urlToRemove)
+                                                ipModel.remove(index)  // remover do modelo também
+                                            }
                                         }
                                     }
                                 }
@@ -335,6 +363,9 @@ Rectangle {
                                 onClicked:          ipModel.append({ url: "" })
                                 Layout.preferredWidth: _comboFieldWidth
                                 visible:            True /*_isRTSP && !_videoAutoStreamConfig*/
+                                anchors.bottom: forceVideoDecoderComboBox.top
+                                anchors.margins: _margins
+
                             }
 
                             QGCLabel {
