@@ -183,21 +183,6 @@ Item {
         onTriggered: canShowBreachAlert = true
     }
 
-    ListModel {
-        id: ipModel
-        // você pode pré‑popular se quiser:
-        // ListElement { url: _videoSettings.rtspUrl.rawValue }
-    }
-    Component.onCompleted: {
-        var loaded = QGroundControl.videoManager.loadSavedUrls()
-        console.log("✅ URLs carregadas do C++:", loaded)
-        ipModel.clear()
-        for (var i = 0; i < loaded.length; ++i) {
-            ipModel.append({"url": loaded[i].url})
-            console.log("✅ Adicionado ao ipModel:", loaded[i].url)
-        }
-    }
-
     function _calcCenterViewPort() {
         var newToolInset = Qt.rect(0, 0, width, height)
         toolstrip.adjustToolInset(newToolInset)
@@ -372,7 +357,7 @@ Item {
             _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue//_activeVehicle.batteries.index(0,1).voltage.rawValue
 
 
-            _rcQuality = _activeVehicle.rcSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
+            _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
             _rcQuality_ARRAY.push(_rcQuality)
             if(_rcQuality_ARRAY.length === 10){
                 var qual_temp1 = 0;
@@ -1074,12 +1059,11 @@ Item {
                     spacing:                0
                     visible: textBoxRCInfo.visible
 
-
                     Text {
                         Layout.alignment:       Qt.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
-                        text:                   _rcQuality_mean.toString()+"%"//_activeVehicle.rcRSSI.toString() +"%"//_rcQuality + "%"
+                        text:                   _rcQuality_mean.toString()+"%" /*_activeVehicle.rcRSSI.toString() +"%"*/ /*_rcQuality + "%"*/
                         font.bold: true
                         //font.pointSize:         ScreenTools.mediumFontPixelHeight
                     }
