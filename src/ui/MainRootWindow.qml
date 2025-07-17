@@ -48,14 +48,14 @@ ApplicationWindow {
     Timer {
         interval: 500; running: true; repeat: true
         onTriggered: {
-            if (!flightView._GD60){
-                flightView._aceleracao_rotor_1 = controller4._RPM_R1
-                flightView._aceleracao_rotor_2 = controller4._RPM_R2
-                flightView._aceleracao_rotor_3 = controller4._RPM_R3
-                flightView._aceleracao_rotor_4 = controller4._RPM_R4
-                flightView._aceleracao_rotor_5 = controller4._RPM_R5
-                flightView._aceleracao_rotor_6 = controller4._RPM_R6
-            }
+           // if (!flyView._GD60){
+                flightView._aceleracao_rotor_1 = (controller4._RPM_R1).toInt()
+                flightView._aceleracao_rotor_2 = (controller4._RPM_R2).toInt()
+                flightView._aceleracao_rotor_3 = (controller4._RPM_R3).toInt()
+                flightView._aceleracao_rotor_4 = (controller4._RPM_R4).toInt()
+                flightView._aceleracao_rotor_5 = (controller4._RPM_R5).toInt()
+                flightView._aceleracao_rotor_6 = (controller4._RPM_R6).toInt()
+           // }
             //console.log("RPMs: ",controller4._RPM_R1,controller4._RPM_R2,controller4._RPM_R3,controller4._RPM_R4,controller4._RPM_R5,controller4._RPM_R6, "MAINWINDOW")
             flightView._motor_rpm    = controller4._RPM_MOTOR
             flightView._motor_temp   = controller4._TEMP_MOTOR
