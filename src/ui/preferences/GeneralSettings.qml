@@ -367,7 +367,6 @@ Rectangle {
                                 visible:            _isRTSP && !_videoAutoStreamConfig
                                 anchors.bottom: _androidBuild ?  aspectRadtio.top : forceVideoDecoderComboBox.top
                                 anchors.margins: _margins
-
                             }
 
                             QGCLabel {
@@ -382,11 +381,11 @@ Rectangle {
                             }
 
                             QGCLabel {
-                                id:                     aspectRadtio
                                 text:                   qsTr("Aspect Ratio")
                                 visible:                !_videoAutoStreamConfig && _isGst && _videoSettings.aspectRatio.visible
                             }
                             FactTextField {
+                                id:                     aspectRadtio
                                 Layout.preferredWidth:  _comboFieldWidth
                                 fact:                   _videoSettings.aspectRatio
                                 visible:                !_videoAutoStreamConfig && _isGst && _videoSettings.aspectRatio.visible
