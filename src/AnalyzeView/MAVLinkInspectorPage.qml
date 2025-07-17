@@ -58,7 +58,7 @@ AnalyzePage {
                 //console.log(controller.activeSystem.messages.count)
                 for (var i = 0; i < controller.activeSystem.messages.count; i++){
 
-                    /*if(controller.activeSystem.messages.get(i).name === "ESC_TELEMETRY_1_TO_4"){
+                    if(controller.activeSystem.messages.get(i).name === "ESC_TELEMETRY_1_TO_4"){
                         curSystem.selected = i
                        // console.log(controller.activeSystem.messages.get(i).fields.get(4).name, controller.activeSystem.messages.get(i).fields.get(4).value)
                         _RPM_FULL1 = controller.activeSystem.messages.get(i).fields.get(4).value
@@ -66,7 +66,7 @@ AnalyzePage {
                         _RPM_R1 = parseInt(_RPM_FULL1[0].trim())
                         _RPM_R2 = parseInt(_RPM_FULL1[1].trim())
                         _RPM_R3 = parseInt(_RPM_FULL1[2].trim())
-                        _RPM_R4 = parseInt(_RPM_FULL1[3].trim())*/
+                        _RPM_R4 = parseInt(_RPM_FULL1[3].trim())
                         //_RPM_R5 = _RPM_FULL1[4]
                        // _RPM_R6 = _RPM_FULL1[5]
                         /*_RPM_R1 = controller.activeSystem.messages.get(i).fields.get(4).value[0]
@@ -77,25 +77,26 @@ AnalyzePage {
                         _RPM_R6 = controller.activeSystem.messages.get(i).fields.get(4).value[5]*/
                         //console.log("RPMs: ",_RPM_R1,_RPM_R2,_RPM_R3,_RPM_R4,_RPM_R5,_RPM_R6, "MAVINSPECTOR")
 
-                   // }
+                    }
 
-                    /*if(controller.activeSystem.messages.get(i).name === "ESC_TELEMETRY_5_TO_8"){
+                    if(controller.activeSystem.messages.get(i).name === "ESC_TELEMETRY_5_TO_8"){
                         curSystem.selected = i
                        // console.log(controller.activeSystem.messages.get(i).fields.get(4).name, controller.activeSystem.messages.get(i).fields.get(4).value)
                         _RPM_FULL2 = controller.activeSystem.messages.get(i).fields.get(4).value
                         _RPM_FULL2 = String(_RPM_FULL2).split(",")
                         _RPM_R5 = parseInt(_RPM_FULL2[0].trim())
                         _RPM_R6 = parseInt(_RPM_FULL2[1].trim())
-                    }*/
+                    }
                     if(controller.activeSystem.messages.get(i).name === "RPM"){
                         curSystem.selected = i
+                        _RPM_MOTOR = controller.activeSystem.messages.get(i).fields.get(0).value
                         // console.log(controller.activeSystem.messages.get(i).fields.get(4).name, controller.activeSystem.messages.get(i).fields.get(4).value)
-                        _RPM_R1 = controller.activeSystem.messages.get(i).fields.get(0).value
+                        /*_RPM_R1 = controller.activeSystem.messages.get(i).fields.get(0).value
                         _RPM_R2 = controller.activeSystem.messages.get(i).fields.get(1).value
                         _RPM_R3 = controller.activeSystem.messages.get(i).fields.get(2).value
                         _RPM_R4 = controller.activeSystem.messages.get(i).fields.get(3).value
                         _RPM_R5 = controller.activeSystem.messages.get(i).fields.get(4).value
-                        _RPM_R6 = controller.activeSystem.messages.get(i).fields.get(5).value
+                        _RPM_R6 = controller.activeSystem.messages.get(i).fields.get(5).value*/
                     }
 
                     if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){
@@ -103,7 +104,7 @@ AnalyzePage {
                         //console.log(controller.activeSystem.messages.get(i).fields.get(1).name, controller.activeSystem.messages.get(i).fields.get(2).value)
                        // console.log(controller.activeSystem.messages.get(i).fields.get(1).value)
                         if(controller.activeSystem.messages.get(i).fields.get(1).value === "ICE_RPM"){
-                            _RPM_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
+                            //_RPM_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value;;
                         }
                         else{
                             _TEMP_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
