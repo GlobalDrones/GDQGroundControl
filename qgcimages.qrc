@@ -218,5 +218,6 @@
         <file alias="rotor2mask_lowres.png">resources/rotor2mask_lowres.png</file>
         <file alias="rotor1mask_lowres.png">resources/rotor1mask_lowres.png</file>
         <file alias="GD60_lowres.png">resources/gd60_whiteIcon.png</file>
+        <file alias="trash.svg">resources/trash.svg</file>
     </qresource>
 </RCC>

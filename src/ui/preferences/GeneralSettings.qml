@@ -83,18 +83,6 @@ Rectangle {
         }
     }
 
-    function syncUrls() {
-        var list = []
-        for (var i = 0; i < ipModel.count; ++i) {
-            var entry = ipModel.get(i)
-            console.log("➡️ Salvando URL:", entry.url)
-            list.push({"url": entry.url}) // garante formato certo
-        }
-        QGroundControl.videoManager.saveUrls(list)
-    }
-
-
-
     QGCFlickable {
         clip:               true
         anchors.fill:       parent
@@ -306,67 +294,94 @@ Rectangle {
                             }
 
                             QGCLabel {
-                                text:           qsTr("RTSP URLs Adicionais")
-                                Layout.columnSpan: 2
-                                Layout.alignment:  Qt.AlignHCenter
-                                visible:        _isRTSP && !_videoAutoStreamConfig
+                                text:               qsTr("RTSP URLs List")
+                                Layout.columnSpan:  2
+                                Layout.alignment:   Qt.AlignHCenter
+                                visible:            _isRTSP && !_videoAutoStreamConfig
                             }
-                            Repeater {
-                                id: repeaterURLS
-                                model: ipModel
-                                delegate: RowLayout {
-                                    Layout.columnSpan: 2
-                                    Layout.bottomMargin:index === (ipModel.count - 1) ? _margins*2 : _margins*1.3
 
+                            Column {
+                                Layout.columnSpan: 2
+                                Layout.fillWidth:  true
+                                Layout.alignment:  Qt.AlignHCenter
+                                spacing:           _margins
+                                visible:    !_videoAutoStreamConfig && _isRTSP && _videoSettings.rtspUrl.visible
 
-                                    Rectangle{
-                                        color: "white"
-                                        width: _comboFieldWidth*1.2
-                                        height: FactTextField.height
-                                        anchors.top: parent.top
-                                        anchors.horizontalCenter: parent.horizontalCenter
+                                ListView {
+                                    id:     streamListView
+                                    clip:   true
+                                    model:  QGroundControl.videoManager.streams
 
+                                    height: contentHeight
+                                    width:  parent.width
 
-                                        // caixa de texto estilizada igual aos FactTextField
-                                        QGCTextField  {
-                                            text:           model.url
-                                            placeholderText: "rtsp://<IP>:<porta>/…"
-                                            // ajusta a largura pra bater com as fact fields
-                                            Layout.preferredWidth:  _comboFieldWidth
-                                            onTextChanged: {
-                                                ipModel.set(index, { url: text })
-                                                syncUrls() // <--- adicionar isso para salvar
+                                    delegate: RowLayout {
+                                        spacing: _margins
+                                        width:  parent.width
+
+                                        TextField {
+                                            style: TextFieldStyle {
+                                                background: Rectangle {
+                                                    implicitWidth:  ipField.implicitWidth
+                                                    implicitHeight: ipField.implicitHeight
+                                                    color:          "white"       // fundo branco
+                                                    radius:         4             // cantos arredondados (opcional)
+                                                    border.color:   "#888"        // borda cinza (opcional)
+                                                    border.width:   1
+                                                }
                                             }
+                                            text:             modelData.ip
+                                            height:           FactTextField.height
+                                            Layout.preferredWidth: parent.width * 0.4
+                                            placeholderText:  qsTr("rtsp://<IP>:<porta>/…")
+                                            Layout.fillWidth: true
+                                            Layout.bottomMargin: 5
+                                            onEditingFinished:
+                                                QGroundControl.videoManager.updateStream(index, text, modelData.alias)
                                         }
-                                    }
-
-                                    // ícone de lixeira
-                                    QGCColoredImage {
-                                        source:         "/qmlimages/trash.svg"
-                                        width:          ScreenTools.defaultFontPixelHeight
-                                        height:         width
-                                        fillMode:       Image.PreserveAspectFit
-                                        color:          "white"
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            onClicked: {
-                                                var urlToRemove = ipModel.get(index).url
-                                                QGroundControl.videoManager.removeUrl(urlToRemove)
-                                                ipModel.remove(index)  // remover do modelo também
+                                        TextField {
+                                            style: TextFieldStyle {
+                                                background: Rectangle {
+                                                    implicitWidth:  ipField.implicitWidth
+                                                    implicitHeight: ipField.implicitHeight
+                                                    color:          "white"       // fundo branco
+                                                    radius:         4             // cantos arredondados (opcional)
+                                                    border.color:   "#888"        // borda cinza (opcional)
+                                                    border.width:   1
+                                                }
+                                            }
+                                            text:             modelData.alias
+                                            height:           FactTextField.height
+                                            Layout.preferredWidth: parent.width * 0.4
+                                            placeholderText:  qsTr("Alias")
+                                            Layout.fillWidth: true
+                                            Layout.bottomMargin: 5
+                                            onEditingFinished:
+                                                QGroundControl.videoManager.updateStream(index, modelData.ip, text)
+                                        }
+                                        QGCColoredImage {
+                                            source:         "/qmlimages/trash.svg"
+                                            width:          ScreenTools.defaultFontPixelHeight
+                                            height:         width
+                                            fillMode:       Image.PreserveAspectFit
+                                            color:          "white"
+                                            Layout.bottomMargin: 5
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                onClicked: QGroundControl.videoManager.removeStream(index)
                                             }
                                         }
                                     }
                                 }
                             }
+
                             QGCButton {
-                                text:               qsTr("+ Adicionar IP")
+                                text:             qsTr("+ Adicionar IP")
                                 Layout.columnSpan:  2
-                                Layout.alignment:  Qt.AlignHCenter
-                                onClicked:          ipModel.append({ url: "" })
+                                Layout.alignment: Qt.AlignHCenter
+                                onClicked:        QGroundControl.videoManager.addStream("", "")
                                 Layout.preferredWidth: _comboFieldWidth
-                                visible:            _isRTSP && !_videoAutoStreamConfig
-                                anchors.bottom: _androidBuild ?  aspectRadtio.top : forceVideoDecoderComboBox.top
-                                anchors.margins: _margins
+                                visible:    !_videoAutoStreamConfig && _isRTSP && _videoSettings.rtspUrl.visible
                             }
 
                             QGCLabel {

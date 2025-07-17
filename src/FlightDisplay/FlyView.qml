@@ -198,16 +198,6 @@ Item {
         }
     }
 
-    function syncUrls() {
-        var list = []
-        for (var i = 0; i < ipModel.count; ++i) {
-            var entry = ipModel.get(i)
-            console.log("➡️ Salvando URL:", entry.url)
-            list.push({"url": entry.url}) // garante formato certo
-        }
-        QGroundControl.videoManager.saveUrls(list)
-    }
-
     function _calcCenterViewPort() {
         var newToolInset = Qt.rect(0, 0, width, height)
         toolstrip.adjustToolInset(newToolInset)
@@ -1132,14 +1122,12 @@ Item {
                     id: textBoxMotorTempInfo
                     anchors.verticalCenter: motorTemperatureInformationIcon.verticalCenter
                     anchors.horizontalCenter: motorTemperatureInformationIcon.horizontalCenter
-                    height: motorTemperatureInformationIcon.height*0.7
+                    height: motorTemperatureInformationIcon.height*1.2
                     width: motorTemperatureInformationIcon.width
                     visible:  _androidBuild ? false : motorTempMouseArea.containsMouse//motorTempMouseArea.containsMouse? true: false
                     color: "black"
                     border.width: 1
                     border.color: "lightgray"
-
-
                 }
                 MouseArea{
                     id:motorTempMouseArea
@@ -1164,16 +1152,23 @@ Item {
                         color:                  "White"
                         text:                   _motor_temp.toString()+"°C"
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
+                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
                     }
-
                     Text {
                         Layout.alignment:       Qt.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
-                        text:                   "RPM: "+_motor_rpm.toFixed(0)
+                        text:                   "RPM: "
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
+                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
+                    }
+                    Text {
+                        Layout.alignment:       Qt.AlignHCenter
+                        verticalAlignment:      Text.AlignVCenter
+                        color:                  "White"
+                        text:                   _motor_rpm.toFixed(0)
+                        font.bold: true
+                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
                     }
                     Text {
                         Layout.alignment:       Qt.AlignHCenter
@@ -1181,7 +1176,7 @@ Item {
                         color:                  "White"
                         text:                   _motor_temp.toString()+"°C"
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
+                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
                         visible: _GD60? true:false
                     }
 
@@ -1191,10 +1186,9 @@ Item {
                         color:                  "White"
                         text:                   "RPM: "+_motor_rpm.toFixed(0)
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  8 : (_GD60? 10:20)
+                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
                         visible: _GD60? true:false
                     }
-
                 }
 
 
@@ -2103,11 +2097,9 @@ Item {
                         anchors.centerIn: parent
                         text: {
                             // Verifica se há itens no ipModel
-                            if (ipModel.count > 0 && cameraControlOverlay.cameraIndex < ipModel.count) {
-                                // se o seu ipModel só tem `url`, você pode criar um nome automático
-                                // ou usar ipModel.get(i).name caso tenha salvo esse campo no JSON
-                                var element = ipModel.get(cameraControlOverlay.cameraIndex)
-                                return element.name ? element.name : element.url
+                            if (QGroundControl.videoManager.streams.length > 0 && cameraControlOverlay.cameraIndex < QGroundControl.videoManager.streams.length) {
+                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
+                                return element.alias ? element.alias : element.url
                             } else {
                                 return "Sem câmeras"
                             }
@@ -2129,17 +2121,17 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            var loaded = QGroundControl.videoManager.loadSavedUrls()
-                            ipModel.clear()
-                            for (var i = 0; i < loaded.length; ++i) {
-                                ipModel.append({"url": loaded[i].url})
-                            }
-                            if (ipModel.count > 0) {
-                                cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % ipModel.count
+                            // var loaded = QGroundControl.videoManager.loadSavedUrls()
+                            // ipModel.clear()
+                            // for (var i = 0; i < loaded.length; ++i) {
+                            //     ipModel.append({"url": loaded[i].url})
+                            // }
+                            if (QGroundControl.videoManager.streams.length > 0) {
+                                cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % QGroundControl.videoManager.streams.length
 
-                                var element = ipModel.get(cameraControlOverlay.cameraIndex)
-                                if (element.url) {
-                                    QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = element.url
+                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
+                                if (element.ip) {
+                                    QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = element.ip
                                 }
                             }
                         }

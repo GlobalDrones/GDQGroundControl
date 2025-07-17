@@ -14,13 +14,15 @@
 #include <QUrl>
 #include <QDir>
 #include <QQuickWindow>
-#include <QStandardPaths>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QDir>
-#include <QDebug>
+
+// #include <QDebug>
+// #include <QDir>
+// #include <QFile>
+// #include <QJsonArray>
+// #include <QJsonDocument>
+// #include <QJsonObject>
+// #include <QStandardPaths>
+
 #ifndef QGC_DISABLE_UVC
 #include <QCameraInfo>
 #endif
@@ -98,6 +100,9 @@ VideoManager::setToolbox(QGCToolbox *toolbox)
    QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
    qmlRegisterUncreatableType<VideoManager> ("QGroundControl.VideoManager", 1, 0, "VideoManager", "Reference only");
    qmlRegisterUncreatableType<VideoReceiver>("QGroundControl",              1, 0, "VideoReceiver","Reference only");
+
+   // Carrega de QSettings para _streams (antes de qualquer uso em QML)
+   loadStreams();
 
    // TODO: Those connections should be Per Video, not per VideoManager.
    _videoSettings = toolbox->settingsManager()->videoSettings();
@@ -504,123 +509,82 @@ VideoManager::_rtspUrlChanged()
 }
 
 //-----------------------------------------------------------------------------
-QVariantList VideoManager::loadSavedUrls() {
+QVariantList VideoManager::streamsVar() const
+{
     QVariantList list;
-
-    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-                   + "/saved_urls.json";
-
-    QFile file(path);
-    if (!file.exists()) {
-        qInfo() << "ℹ️ Nenhum arquivo de URLs salvo encontrado em" << path;
-        return list;
+    for (const auto &si : _streams) {
+        QVariantMap m;
+        m["ip"]    = si.ip;
+        m["alias"] = si.alias;
+        list.append(m);
     }
-
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "❌ Falha ao abrir arquivo para leitura:" << file.errorString();
-        return list;
-    }
-
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-
-    if (!doc.isArray()) {
-        qWarning() << "❌ JSON inválido no arquivo de URLs";
-        return list;
-    }
-
-    for (auto value : doc.array()) {
-        if (value.isObject()) {
-            QJsonObject obj = value.toObject();
-            QVariantMap map;
-            map["url"] = obj["url"].toString();
-            list.append(map);
-        }
-    }
-
-    qDebug() << "✅ URLs carregadas:" << list;
     return list;
 }
 
-void VideoManager::saveUrls(const QVariantList &urls) {
-
-    qDebug() << "🔎 VideoManager::saveUrls recebeu" << urls.size() << "itens:";
-    for (int i = 0; i < urls.size(); ++i) {
-        qDebug() << "   Item" << i << ":" << urls[i];
-    }
-
-    QJsonArray array;
-
-    for (const QVariant &itemVar : urls) {
-        QVariantMap itemMap = itemVar.toMap();
-        QString url = itemMap.value("url").toString();
-        if (!url.isEmpty()) {
-            QJsonObject obj;
-            obj["url"] = url;
-            array.append(obj);
-        }
-    }
-
-    QJsonDocument doc(array);
-
-    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-                   + "/saved_urls.json";
-    QDir().mkpath(QFileInfo(path).absolutePath());
-
-    QFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        qWarning() << "❌ Falha ao salvar URLs:" << file.errorString();
-        return;
-    }
-
-    file.write(doc.toJson(QJsonDocument::Indented));
-    file.close();
-
-    qDebug() << "✅ URLs salvas em" << path << ":" << doc.toJson(QJsonDocument::Indented);
+void VideoManager::addStream(const QString& ip, const QString& alias)
+{
+    _streams.append({ip, alias});
+    saveStreams();
+    emit streamsChanged();
 }
 
-void VideoManager::removeUrl(const QString &urlToRemove) {
-    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/saved_urls.json";
-
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "❌ Falha ao abrir arquivo para remoção:" << file.errorString();
-        return;
+void VideoManager::addStream(int index, const QString& ip, const QString& alias)
+{
+    if (index < 0 || index > _streams.size()) {
+        addStream(ip, alias);
+    } else {
+        _streams.insert(index, {ip, alias});
+        saveStreams();
+        emit streamsChanged();
     }
+}
 
-    QByteArray data = file.readAll();
-    file.close();
+void VideoManager::updateStream(int index, const QString& ip, const QString& alias)
+{
+    if (index < 0 || index >= _streams.size()) return;
+    _streams[index] = {ip, alias};
+    saveStreams();
+    emit streamsChanged();
+}
 
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (!doc.isArray()) {
-        qWarning() << "❌ Arquivo JSON não é um array válido.";
-        return;
+void VideoManager::removeStream(int index)
+{
+    if (index < 0 || index >= _streams.size()) return;
+    _streams.removeAt(index);
+    saveStreams();
+    emit streamsChanged();
+}
+
+void VideoManager::loadStreams()
+{
+    QSettings s;
+    s.beginGroup("VideoManager");
+    int size = s.beginReadArray("streams");
+    _streams.clear();
+    for (int i = 0; i < size; ++i) {
+        s.setArrayIndex(i);
+        StreamInfo si;
+        si.ip    = s.value("ip"   ).toString();
+        si.alias = s.value("alias").toString();
+        _streams.append(si);
     }
+    s.endArray();
+    s.endGroup();
+}
 
-    QJsonArray array = doc.array();
-    QJsonArray newArray;
-
-    // Filtra e copia todos os objetos exceto o que deve ser removido
-    for (const QJsonValue &value : array) {
-        if (!value.isObject()) continue;
-
-        QJsonObject obj = value.toObject();
-        if (obj.value("url").toString() != urlToRemove) {
-            newArray.append(obj);
-        }
+void VideoManager::saveStreams()
+{
+    QSettings s;
+    s.beginGroup("VideoManager");
+    s.beginWriteArray("streams");
+    for (int i = 0; i < _streams.size(); ++i) {
+        s.setArrayIndex(i);
+        s.setValue("ip"   , _streams[i].ip);
+        s.setValue("alias", _streams[i].alias);
     }
-
-    QJsonDocument newDoc(newArray);
-
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        qWarning() << "❌ Falha ao abrir arquivo para escrita:" << file.errorString();
-        return;
-    }
-
-    file.write(newDoc.toJson(QJsonDocument::Indented));
-    file.close();
-
-    qDebug() << "✅ URL removida e arquivo salvo:" << urlToRemove;
+    s.endArray();
+    s.endGroup();
+    s.sync();
 }
 
 //-----------------------------------------------------------------------------

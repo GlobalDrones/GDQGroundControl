@@ -55,6 +55,7 @@ public:
     Q_PROPERTY(bool             decoding                READ    decoding                                    NOTIFY decodingChanged)
     Q_PROPERTY(bool             recording               READ    recording                                   NOTIFY recordingChanged)
     Q_PROPERTY(QSize            videoSize               READ    videoSize                                   NOTIFY videoSizeChanged)
+    Q_PROPERTY(QVariantList     streams                 READ    streamsVar                                  NOTIFY streamsChanged)
 
     virtual bool        hasVideo            ();
     virtual bool        isGStreamer         ();
@@ -111,9 +112,12 @@ public:
 
     Q_INVOKABLE void grabImage(const QString& imageFile = QString());
 
-    Q_INVOKABLE QVariantList loadSavedUrls();
-    Q_INVOKABLE void saveUrls(const QVariantList &urls);
-    Q_INVOKABLE void removeUrl(const QString &urlToRemove);
+    // Expor para QML:
+    Q_INVOKABLE QVariantList streamsVar() const;
+    Q_INVOKABLE void addStream(int index, const QString& ip, const QString& alias);
+    Q_INVOKABLE void addStream(const QString& ip, const QString& alias);
+    Q_INVOKABLE void updateStream(int index, const QString& ip, const QString& alias);
+    Q_INVOKABLE void removeStream(int index);
 
 signals:
     void hasVideoChanged            ();
@@ -130,6 +134,7 @@ signals:
     void recordingChanged           ();
     void recordingStarted           ();
     void videoSizeChanged           ();
+    void streamsChanged             ();
 
 protected slots:
     void _videoSourceChanged        ();
@@ -177,6 +182,12 @@ protected:
     QString                 _videoSourceID;
     bool                    _fullScreen             = false;
     Vehicle*                _activeVehicle          = nullptr;
+    struct StreamInfo { QString ip; QString alias; };
+    QVector<StreamInfo> _streams;
+
+private:
+    void loadStreams();
+    void saveStreams();
 };
 
 #endif
