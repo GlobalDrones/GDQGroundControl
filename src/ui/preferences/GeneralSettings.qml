@@ -66,6 +66,8 @@ Rectangle {
 
     readonly property real _internalWidthRatio: 0.8
 
+    property bool _androidBuild: (Qt.platform.os === "ios" || Qt.platform.os === "android")
+
     ListModel {
         id: ipModel
         // você pode pré‑popular se quiser:
@@ -291,7 +293,7 @@ Rectangle {
                             QGCLabel {
                                 id:         rtspUrlLabel
                                 text:       qsTr("RTSP URL")
-                                visible:    !_videoAutoStreamConfig && _isRTSP && _videoSettings.rtspUrl.visible
+                                visible:    false /*!_videoAutoStreamConfig && _isRTSP && _videoSettings.rtspUrl.visible*/
                             }
                             FactTextField {
                                 Layout.preferredWidth:  _comboFieldWidth
@@ -307,7 +309,7 @@ Rectangle {
                                 text:           qsTr("RTSP URLs Adicionais")
                                 Layout.columnSpan: 2
                                 Layout.alignment:  Qt.AlignHCenter
-                                visible:        True /*_isRTSP && !_videoAutoStreamConfig*/
+                                visible:        _isRTSP && !_videoAutoStreamConfig
                             }
                             Repeater {
                                 id: repeaterURLS
@@ -362,8 +364,8 @@ Rectangle {
                                 Layout.alignment:  Qt.AlignHCenter
                                 onClicked:          ipModel.append({ url: "" })
                                 Layout.preferredWidth: _comboFieldWidth
-                                visible:            True /*_isRTSP && !_videoAutoStreamConfig*/
-                                anchors.bottom: forceVideoDecoderComboBox.top
+                                visible:            _isRTSP && !_videoAutoStreamConfig
+                                anchors.bottom: _androidBuild ?  aspectRadtio.top : forceVideoDecoderComboBox.top
                                 anchors.margins: _margins
 
                             }
@@ -380,6 +382,7 @@ Rectangle {
                             }
 
                             QGCLabel {
+                                id:                     aspectRadtio
                                 text:                   qsTr("Aspect Ratio")
                                 visible:                !_videoAutoStreamConfig && _isGst && _videoSettings.aspectRatio.visible
                             }
