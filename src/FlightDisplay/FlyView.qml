@@ -1008,7 +1008,7 @@ Item {
                     id: rcInformationIcon
                     anchors.top:        parent.top
                     anchors.left:       textBoxSatteliteInfo.right
-                    //anchors.leftMargin: _toolsMargin
+                    anchors.leftMargin: _toolsMargin
                     anchors.topMargin:  _toolsMargin*2
                     width:              height
                     height:             parent.height*2/3
@@ -1035,7 +1035,7 @@ Item {
                     anchors.verticalCenter: rcInformationIcon.verticalCenter
                     anchors.horizontalCenter: rcInformationIcon.horizontalCenter
                     height: satteliteInformationIcon.height*0.7
-                    width: satteliteInformationIcon.width
+                    width: satteliteInformationIcon.width*0.8
                     visible: _androidBuild ? false : rcMouseArea.containsMouse
                     color: "black"
                     border.width: 1
@@ -1044,6 +1044,7 @@ Item {
                 ColumnLayout {
                     id:                     rcInfoColumn
                     anchors.fill: textBoxRCInfo
+                    //anchors.rightMargin: _toolsMargin*2
                     spacing:                0
                     visible: textBoxRCInfo.visible
 
@@ -1177,12 +1178,13 @@ Item {
                     source:             "/qmlimages/rotorsAccell.png"
                     fillMode:           Image.PreserveAspectFit
                     color:              "white"
+                    visible: !_GD60? true:false
 
                 }
                 Rectangle {
                     id: rotorsTempArea
                     anchors.top: parent.top
-                    anchors.left: rotorAccelerationInformationIcon.right
+                    anchors.left: _GD60? motorTempInfoColumn.right : rotorAccelerationInformationIcon.right
                     anchors.margins: _toolsMargin * 1.5
                     width: height * 2
                     height: rotorAccelerationInformationIcon.height
