@@ -403,7 +403,7 @@ Item {
                     _breachAlertColor = "Orange"
                 }
 
-                breachAlertPopup.open()
+                // breachAlertPopup.open()
                 canShowBreachAlert = false
                 breachCooldownTimer.start()
             }
@@ -2011,16 +2011,19 @@ Item {
             focus: false
             background: null
             closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+            visible: false
 
             Rectangle {
                 anchors.fill: parent
                 color: _breachAlertColor
                 border.color: "black"
+                visible: false
 
                 Text {
                     anchors.centerIn: parent
                     text: popUp_breachAlert
                     font.bold: true
+                    visible: false
                     // font.pixelSize: _androidBuild? 8 : 14
                 }
             }
