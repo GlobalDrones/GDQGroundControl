@@ -47,8 +47,8 @@ void TerrainAirMapQuery::requestCoordinateHeights(const QList<QGeoCoordinate>& c
 
     QString points;
     for (const QGeoCoordinate& coord: coordinates) {
-            points += QString::number(coord.latitude(), 'f', 10) + ","
-                    + QString::number(coord.longitude(), 'f', 10) + ",";
+        points += QString::number(coord.latitude(), 'f', 10) + ","
+                  + QString::number(coord.longitude(), 'f', 10) + ",";
     }
     points = points.mid(0, points.length() - 1); // remove the last ',' from string
 
@@ -68,9 +68,9 @@ void TerrainAirMapQuery::requestPathHeights(const QGeoCoordinate& fromCoord, con
 
     QString points;
     points += QString::number(fromCoord.latitude(), 'f', 10) + ","
-            + QString::number(fromCoord.longitude(), 'f', 10) + ",";
+              + QString::number(fromCoord.longitude(), 'f', 10) + ",";
     points += QString::number(toCoord.latitude(), 'f', 10) + ","
-            + QString::number(toCoord.longitude(), 'f', 10);
+              + QString::number(toCoord.longitude(), 'f', 10);
 
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("points"), points);
@@ -88,9 +88,9 @@ void TerrainAirMapQuery::requestCarpetHeights(const QGeoCoordinate& swCoord, con
 
     QString points;
     points += QString::number(swCoord.latitude(), 'f', 10) + ","
-            + QString::number(swCoord.longitude(), 'f', 10) + ",";
+              + QString::number(swCoord.longitude(), 'f', 10) + ",";
     points += QString::number(neCoord.latitude(), 'f', 10) + ","
-            + QString::number(neCoord.longitude(), 'f', 10);
+              + QString::number(neCoord.longitude(), 'f', 10);
 
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("points"), points);
@@ -287,7 +287,7 @@ void TerrainOfflineAirMapQuery::requestCoordinateHeights(const QList<QGeoCoordin
         return;
     }
 
-    _terrainTileManager->addCoordinateQuery(this, coordinates);
+    _terrainTileManager()->addCoordinateQuery(this, coordinates);
 }
 
 void TerrainOfflineAirMapQuery::requestPathHeights(const QGeoCoordinate& fromCoord, const QGeoCoordinate& toCoord)
@@ -297,7 +297,7 @@ void TerrainOfflineAirMapQuery::requestPathHeights(const QGeoCoordinate& fromCoo
         return;
     }
 
-    _terrainTileManager->addPathQuery(this, fromCoord, toCoord);
+    _terrainTileManager()->addPathQuery(this, fromCoord, toCoord);
 }
 
 void TerrainOfflineAirMapQuery::requestCarpetHeights(const QGeoCoordinate& swCoord, const QGeoCoordinate& neCoord, bool statsOnly)
@@ -711,12 +711,12 @@ void TerrainAtCoordinateQuery::requestData(const QList<QGeoCoordinate>& coordina
         return;
     }
 
-    _TerrainAtCoordinateBatchManager->addQuery(this, coordinates);
+    _TerrainAtCoordinateBatchManager()->addQuery(this, coordinates);
 }
 
 bool TerrainAtCoordinateQuery::getAltitudesForCoordinates(const QList<QGeoCoordinate>& coordinates, QList<double>& altitudes, bool& error)
 {
-    return _terrainTileManager->getAltitudesForCoordinates(coordinates, altitudes, error);
+    return _terrainTileManager()->getAltitudesForCoordinates(coordinates, altitudes, error);
 }
 
 void TerrainAtCoordinateQuery::_signalTerrainData(bool success, QList<double>& heights)
@@ -728,7 +728,7 @@ void TerrainAtCoordinateQuery::_signalTerrainData(bool success, QList<double>& h
 }
 
 TerrainPathQuery::TerrainPathQuery(bool autoDelete)
-   : _autoDelete   (autoDelete)
+    : _autoDelete   (autoDelete)
 {
     qRegisterMetaType<PathHeightInfo_t>();
     connect(&_terrainQuery, &TerrainQueryInterface::pathHeightsReceived, this, &TerrainPathQuery::_pathHeights);
@@ -805,11 +805,11 @@ void TerrainPolyPathQuery::_terrainDataReceived(bool success, const TerrainPathQ
 
 const QGeoCoordinate UnitTestTerrainQuery::pointNemo{-48.875556, -123.392500};
 const UnitTestTerrainQuery::Flat10Region UnitTestTerrainQuery::flat10Region{{
-      pointNemo,
-      QGeoCoordinate{
-          pointNemo.latitude() - UnitTestTerrainQuery::regionSizeDeg,
-          pointNemo.longitude() + UnitTestTerrainQuery::regionSizeDeg
-      }
+    pointNemo,
+    QGeoCoordinate{
+        pointNemo.latitude() - UnitTestTerrainQuery::regionSizeDeg,
+        pointNemo.longitude() + UnitTestTerrainQuery::regionSizeDeg
+    }
 }};
 const double UnitTestTerrainQuery::Flat10Region::amslElevation = 10;
 
@@ -851,7 +851,7 @@ void UnitTestTerrainQuery::requestPathHeights(const QGeoCoordinate& fromCoord, c
         pathHeightInfo.distanceBetween,
         pathHeightInfo.finalDistanceBetween,
         pathHeightInfo.rgHeights
-    );
+        );
 }
 
 void UnitTestTerrainQuery::requestCarpetHeights(const QGeoCoordinate& swCoord, const QGeoCoordinate& neCoord, bool) {

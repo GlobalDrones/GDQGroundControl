@@ -28,15 +28,23 @@ linux {
         DEFINES += __STDC_LIMIT_MACROS
         DEFINES += QGC_GST_TAISYNC_ENABLED
         DEFINES += QGC_GST_MICROHARD_ENABLED
+        QMAKE_CXXFLAGS += -std=c++14
+
         linux-clang {
             message("Linux clang")
             QMAKE_CXXFLAGS += -Qunused-arguments -fcolor-diagnostics
         } else {
             #QMAKE_CXXFLAGS += -H # Handy for debugging why something is getting built when an include file is touched
-            QMAKE_CXXFLAGS_WARN_ON += -Werror \
-                -Wno-deprecated-copy \      # These come from mavlink headers
-                -Wno-unused-parameter \     # gst_plugins-good has these errors
-                -Wno-implicit-fallthrough   # gst_plugins-good has these errors
+            QMAKE_CXXFLAGS -= -Werror
+                        QMAKE_CXXFLAGS_WARN_ON += \
+                            -Wno-deprecated-copy \
+                            -Wno-unused-parameter \
+                            -Wno-implicit-fallthrough \
+                            -Wno-mismatched-new-delete \
+                            -Wno-volatile \
+                            -Wno-error=volatile
+
+
         }
     } else : linux-rasp-pi2-g++ {
         message("Linux R-Pi2 build")
@@ -106,7 +114,8 @@ linux {
         DEFINES += QGC_GST_MICROHARD_ENABLED
         QMAKE_CXXFLAGS += -fvisibility=hidden
         QMAKE_CXXFLAGS_WARN_ON += -Werror \
-            -Wno-unused-parameter           # gst-plugins-good
+            -Wno-unused-parameter  \         # gst-plugins-good
+            -Wno-mismatched-new-delete
     } else {
         error("Unsupported Mac toolchain, only 64-bit LLVM+clang is supported")
     }

@@ -957,6 +957,7 @@ Item {
                     //anchors.horizontalCenter: satteliteInformationIcon.horizontalCenter
                     anchors.left: satteliteInformationIcon.right
                     anchors.leftMargin: _toolsMargin
+                    anchors.rightMargin: _toolsMargin
                     height: satteliteInformationIcon.height*0.7
                     width: satteliteInformationIcon.width
                     visible: true//satMouseArea.containsMouse? true: false
@@ -1003,33 +1004,8 @@ Item {
                     source:             "/qmlimages/RC.svg"
                     fillMode:           Image.PreserveAspectFit
                     color:           _rcQuality_mean >= 60 ? "green" : (_rcQuality_mean>=30? "yellow": (_rcQuality_mean >= 20 ? "orange":"red"))
-                    visible: false
-                }
+                    visible: true
 
-                Rectangle{
-                    id: rcQualityBar
-                    anchors.top: parent.top
-                    anchors.left: rcInformationIcon.left
-                    anchors.margins: _toolsMargin
-                    width: rcInformationIcon.width
-                    height: parent.height*2/3
-                    color: _rcQuality_mean >= 60 ? "green" : (_rcQuality_mean>=30? "yellow": (_rcQuality_mean >= 20 ? "orange":"red"))//rcMouseArea.containsMouse? "green": "red"
-                    visible: false
-
-                    Rectangle{
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        width: parent.width
-                        height: parent.height*((0/255)) // dinamico de acordo com 1-(% RC). cor há de ser dinamica também. Ver como pegar esse valor
-                        color: "black"
-                    }
-
-                }
-
-                OpacityMask{
-                    anchors.fill: rcQualityBar
-                    source: rcQualityBar
-                    maskSource: rcInformationIcon
                     MouseArea{
                         id: rcMouseArea
                         anchors.fill: parent
@@ -1039,9 +1015,10 @@ Item {
                                 textBoxRCInfo.visible = !textBoxRCInfo.visible;
                             }
                         }
-
                     }
                 }
+
+
                 Rectangle{
                     id: textBoxRCInfo
                     anchors.verticalCenter: rcInformationIcon.verticalCenter
@@ -1082,7 +1059,7 @@ Item {
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon
                     anchors.top:        parent.top
-                    anchors.left:       rcQualityBar.right
+                    anchors.left:       rcInfoColumn.right
                     anchors.topMargin:  _toolsMargin*2
                     width:              height
                     height:             parent.height*2/3
@@ -1093,7 +1070,7 @@ Item {
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon2
                     anchors.top:        parent.top
-                    anchors.left:       rcQualityBar.right
+                    anchors.left:       rcInfoColumn.right
                     anchors.topMargin:  _toolsMargin*2
                     width:              height
                     height:             parent.height*2/3

@@ -87,8 +87,8 @@ public:
         return QSize((size >> 16) & 0xFFFF, size & 0xFFFF);
     }
 
-// FIXME: AV: they should be removed after finishing multiple video stream support
-// new arcitecture does not assume direct access to video receiver from QML side, even if it works for now
+    // FIXME: AV: they should be removed after finishing multiple video stream support
+    // new arcitecture does not assume direct access to video receiver from QML side, even if it works for now
     virtual VideoReceiver*  videoReceiver           () { return _videoReceiver[0]; }
     virtual VideoReceiver*  thermalVideoReceiver    () { return _videoReceiver[1]; }
 
