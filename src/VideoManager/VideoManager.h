@@ -55,6 +55,7 @@ public:
     Q_PROPERTY(bool             decoding                READ    decoding                                    NOTIFY decodingChanged)
     Q_PROPERTY(bool             recording               READ    recording                                   NOTIFY recordingChanged)
     Q_PROPERTY(QSize            videoSize               READ    videoSize                                   NOTIFY videoSizeChanged)
+    Q_PROPERTY(QVariantList     streams                 READ    streamsVar                                  NOTIFY streamsChanged)
 
     virtual bool        hasVideo            ();
     virtual bool        isGStreamer         ();
@@ -86,8 +87,8 @@ public:
         return QSize((size >> 16) & 0xFFFF, size & 0xFFFF);
     }
 
-// FIXME: AV: they should be removed after finishing multiple video stream support
-// new arcitecture does not assume direct access to video receiver from QML side, even if it works for now
+    // FIXME: AV: they should be removed after finishing multiple video stream support
+    // new arcitecture does not assume direct access to video receiver from QML side, even if it works for now
     virtual VideoReceiver*  videoReceiver           () { return _videoReceiver[0]; }
     virtual VideoReceiver*  thermalVideoReceiver    () { return _videoReceiver[1]; }
 
@@ -111,6 +112,13 @@ public:
 
     Q_INVOKABLE void grabImage(const QString& imageFile = QString());
 
+    // Expor para QML:
+    Q_INVOKABLE QVariantList streamsVar() const;
+    Q_INVOKABLE void addStream(int index, const QString& ip, const QString& alias);
+    Q_INVOKABLE void addStream(const QString& ip, const QString& alias);
+    Q_INVOKABLE void updateStream(int index, const QString& ip, const QString& alias);
+    Q_INVOKABLE void removeStream(int index);
+
 signals:
     void hasVideoChanged            ();
     void isGStreamerChanged         ();
@@ -126,6 +134,7 @@ signals:
     void recordingChanged           ();
     void recordingStarted           ();
     void videoSizeChanged           ();
+    void streamsChanged             ();
 
 protected slots:
     void _videoSourceChanged        ();
@@ -173,6 +182,12 @@ protected:
     QString                 _videoSourceID;
     bool                    _fullScreen             = false;
     Vehicle*                _activeVehicle          = nullptr;
+    struct StreamInfo { QString ip; QString alias; };
+    QVector<StreamInfo> _streams;
+
+private:
+    void loadStreams();
+    void saveStreams();
 };
 
 #endif

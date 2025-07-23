@@ -32,7 +32,7 @@ static void msgHandler(QtMsgType type, const QMessageLogContext &context, const 
 
     // Avoid recursion
     if (!QString(context.category).startsWith("qt.quick")) {
-        debug_model->log(output);
+        debug_model()->log(output);
     }
 
     if (old_handler != nullptr) {
@@ -69,7 +69,7 @@ void AppLogModel::writeMessages(const QString dest_file)
     const QString writebuffer(stringList().join('\n').append('\n'));
 
     QtConcurrent::run([dest_file, writebuffer] {
-        emit debug_model->writeStarted();
+        emit debug_model()->writeStarted();
         bool success = false;
         QFile file(dest_file);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -79,13 +79,13 @@ void AppLogModel::writeMessages(const QString dest_file)
         } else {
             qWarning() << "AppLogModel::writeMessages write failed:" << file.errorString();
         }
-        emit debug_model->writeFinished(success);
+        emit debug_model()->writeFinished(success);
     });
 }
 
 void AppLogModel::log(const QString message)
 {
-    emit debug_model->emitLog(message);
+    emit debug_model()->emitLog(message);
 }
 
 void AppLogModel::threadsafeLog(const QString message)
