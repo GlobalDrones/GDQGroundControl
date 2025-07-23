@@ -38,57 +38,7 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: false
-    //==================== Deletar daqui até o próximo comentário se encher o saco da splash screen============//
-    Rectangle {
-            id: _splash_Choice
-            anchors.fill: parent
-            color: "#222" // dark background
-            z:100000000000000000
-
-            Column {
-                anchors.centerIn: parent
-                spacing: 30
-
-                Text {
-                    text: "Choose your mode:"
-                    color: "white"
-                    font.pixelSize: 26
-                    horizontalAlignment: Text.AlignHCenter
-                    width: parent.width
-                }
-
-                Button {
-                    text: "GD25"
-                    width: 200
-                    height: 50
-                    onClicked: {
-                        _GD60 = false
-                        console.log("Mode set to GD25 ( _GD60 = false )")
-                        lateralDataLoader.active = true;
-                        bottomDataLoader.active = true;
-                        _splash_Choice.visible = false;
-                    }
-
-
-
-                }
-
-                Button {
-                    text: "GD60"
-                    width: 200
-                    height: 50
-                    onClicked: {
-                        _GD60 = true
-                        console.log("Mode set to GD60 ( _GD60 = true )")
-                        lateralDataLoader.active = true;
-                        bottomDataLoader.active = true;
-                        _splash_Choice.visible = false;
-                    }
-                }
-            }
-        }
-    //======================================================================================
+    property bool _GD60: true
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
@@ -1902,7 +1852,7 @@ Item {
 
         Component.onCompleted:{
             let now = new Date();
-            console.log("mainViewArea LOADED at " + now.toLocaleTimeString());}
+            console.log("mainViewArea LOADED at " + now.toLocaleTimeString());lateralDataLoader.active = true; bottomDataLoader.active = true;}
 
         QGCToolInsets {
             id: _toolInsets
