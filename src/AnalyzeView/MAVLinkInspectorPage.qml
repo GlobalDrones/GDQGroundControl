@@ -110,88 +110,9 @@ AnalyzePage {
                             _TEMP_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
                         }
                     }
-                    //PEGAR VIOLAÇÕES DE ESPAÇO AEREO
-                    /*if (controller.activeSystem.messages.get(i).name === "FENCE_STATUS"){
-                    //    console.log("found");
-                    //    console.log(i)
-                        curSystem.selected = i
-                        var breach_count = controller.activeSystem.messages.get(5).fields.get(1).name
-                        var breach_count_number = controller.activeSystem.messages.get(5).fields.get(1).value
-                    //    console.log(controller.activeSystem.messages.get(5).fields.get(1).value)
-
-
-                        for (var j = 0; j < controller.activeSystem.messages.count; j++){
-                            if (controller.activeSystem.messages.get(j).name === "GLOBAL_POSITION_INT"){
-                                curSystem.selected = j
-                        //        console.log(controller.activeSystem.messages.get(j).fields.get(1).name)
-                        //        console.log(controller.activeSystem.messages.get(j).fields.get(2).name)
-                                var current_lat = controller.activeSystem.messages.get(j).fields.get(1).value
-                                var current_lon = controller.activeSystem.messages.get(j).fields.get(2).value
-                                console.log("breach_count", breach_count_number, "pos: ",current_lat, current_lon," " ) //breach status
-                            }
-                        }
-                    }
-
-                    if (controller.activeSystem.messages.get(i).name ==="POWER_STATUS"){
-                        curSystem.selected = i
-                        //battery_tension = controller.activeSystem.messages.get(i).fields.get(0).value
-
-                    }
-
-                    if (controller.activeSystem.messages.get(i).name === "BATTERY_STATUS"){
-                        curSystem.selected = i
-                        var temp_id = controller.activeSystem.messages.get(i).fields.get(0).value
-                        if (temp_id == 0){
-                            battery_tension = controller.activeSystem.messages.get(i).fields.get(4).value.slice(0, 4);
-                            //console.log("bat tension: ", battery_tension)
-                        }
-                        if (temp_id == 1){
-                            gasoline_value = controller.activeSystem.messages.get(i).fields.get(4).value.slice(0, 4);
-                            console.log("gasoline: ", gasoline_value)
-                        }
-                        if (temp_id == 2){
-                            generator_curr = controller.activeSystem.messages.get(i).fields.get(5).value.slice(0, 4);
-                            //console.log("generator curr: ", generator_curr)
-                        }
-                        console.log("ID: ", controller.activeSystem.messages.get(i).fields.get(0).value,controller.activeSystem.messages.get(i).fields.get(4).value)
-
-                    }*/
-
-                       /* console.log(controller.activeSystem.messages.get(5).fields.get(1).type);
-                        console.log(controller.activeSystem.messages.get(5).fields.get(1).value);
-                        console.log(controller.activeSystem.messages.get(5).fields.get(1).rawValue);
-                        console.log(controller.activeSystem.messages.get(5).fields.get(1).valueString);*/
 
                 }
 
-               /* curSystem.selected = 5
-                var breach_count_number1 = controller.activeSystem.messages.get(5).fields.get(1).value
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).value)
-                console.log("breach_count"," B ", breach_count_number1 ) //breach status
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).name) //breach status
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).type)
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).value)
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).rawValue)
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).valueString)
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).get(1))*/
-                /*
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).name)
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).value)
-                console.log(controller.activeSystem.messages.get(5).fields.get(1).type)
-                curSystem.selected = 1
-                console.log(controller.activeSystem.messages.get(1).fields.get(1).name)
-                console.log(controller.activeSystem.messages.get(1).fields.get(1).value)
-                console.log(controller.activeSystem.messages.get(1).fields.get(1).type)
-                curSystem.selected = 2
-                console.log(controller.activeSystem.messages.get(2).fields.get(1).name)
-                console.log(controller.activeSystem.messages.get(2).fields.get(1).value)
-                console.log(controller.activeSystem.messages.get(2).fields.get(1).type)
-                curSystem.selected = 12 //heartbeat
-                console.log("heartbeat " + controller.activeSystem.messages.get(10).count)
-    */
-                //_controller.currentGroupChanged()
-
-                //console.log(tela_parametros._controller.ParameterEditorGroup.groups)
             }
         }
 
