@@ -81,7 +81,7 @@ Item {
     property var _current_bateria_2:  0
 
     property var _current_generator: 0
-    property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage
+    property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage (P/ GD25)
 
     property int _battery1Index: _GD60? 0:0
     property int _battery2Index: _GD60? 1:0
@@ -161,7 +161,7 @@ Item {
 
     property bool _androidBuild: (Qt.platform.os === "ios" || Qt.platform.os === "android")
 
-    property real _maxVel: _activeVehicle.parameterManager.componentIds()
+    //property real _maxVel: _activeVehicle.parameterManager.
 
 
     property real   _fullItemZorder:    0
@@ -236,7 +236,6 @@ Item {
         };
     }
 
-
     function radianCoordsToCartesian(lat,lon){
         const R = 6371; //Raio arredondado da terra
         const x = R * Math.cos(lat)* Math.cos(lon);
@@ -248,14 +247,6 @@ Item {
             z:z
         };
     }
-
-    /*
-            console.log("poly count: ",_geoFenceController.polygons.count.toString())
-            console.log("  poly 0 -> ",_geoFenceController.polygons.get(0).path)
-            console.log("  poly first NS coord -> ",_geoFenceController.polygons.get(0).path[0])
-            console.log("  poly first WE coord -> ",_geoFenceController.polygons.get(0).path[1])
-            console.log("  vehicle pos -> ", _activeVehicle.coordinate.toString())
-    */
 
     function breachDetection() {
         const vehicle_lat = _activeVehicle.coordinate.latitude.valueOf()*radianPI;
@@ -383,7 +374,6 @@ Item {
                 _rcQuality_ARRAY.shift();
             }
 
-            //_gasolina = 15
             horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
             minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
             segundos_restantes = (7200 * (_gasolina/100))%60
@@ -421,15 +411,7 @@ Item {
                 breachCooldownTimer.start()
             }
 
-            //console.log(horas_restantes,minutos_restantes,segundos_restantes)
-            //console.log(res_x, res_y)
 
-            //update()
-
-
-            //Monitoramento do gerador TODO: DESCOMENTAR DEPOIS
-            //_current_battery_ARRAY.push(_current_bateria_1) //populando dinamicamente array de valores de corrente da bateria
-            //_current_generator_ARRAY.push(_current_generator)//populando dinamicamente array de valores de corrente do gerador
             if(_GD60){
                 _aceleracao_rotor_1 = _aceleracao_rotor_1
                 _aceleracao_rotor_2 = _aceleracao_rotor_2
@@ -445,10 +427,6 @@ Item {
                 aceleracao_rotor_6_ARRAY.push(_aceleracao_rotor_6)
             }
             _current_generator_ARRAY.push(_current_generator)
-
-            //AQUI PRA CIMA É SÓ PRA TESTE
-            // console.log((oldGeneratorMediamValue/20)/maxGeneratorCurrent, (40/maxGeneratorCurrent))
-            //_mavlinkLossPercent = _activeVehicle.mavlinkLossPercent.rawValue
 
             // console.log("maxvel: ",_maxVel)
             //var params = _activeVehicle.parameterNames(1); // Chama a função C++
@@ -475,13 +453,13 @@ Item {
                 var temp4 = 0;
                 var temp5 = 0;
                 var temp6 = 0;
-                for (var i = 0; i<20; i++){
-                    temp1 = temp1 + aceleracao_rotor_1_ARRAY[i];
-                    temp2 = temp2 + aceleracao_rotor_2_ARRAY[i];
-                    temp3 = temp3 + aceleracao_rotor_3_ARRAY[i];
-                    temp4 = temp4 + aceleracao_rotor_4_ARRAY[i];
-                    temp5 = temp5 + aceleracao_rotor_5_ARRAY[i];
-                    temp6 = temp6 + aceleracao_rotor_6_ARRAY[i];
+                for (var c = 0; c<20; c++){
+                    temp1 = temp1 + aceleracao_rotor_1_ARRAY[c];
+                    temp2 = temp2 + aceleracao_rotor_2_ARRAY[c];
+                    temp3 = temp3 + aceleracao_rotor_3_ARRAY[c];
+                    temp4 = temp4 + aceleracao_rotor_4_ARRAY[c];
+                    temp5 = temp5 + aceleracao_rotor_5_ARRAY[c];
+                    temp6 = temp6 + aceleracao_rotor_6_ARRAY[c];
                 }
                 medAceleracaoRotor1 = temp1/20
                 medAceleracaoRotor2 = temp2/20
@@ -498,8 +476,6 @@ Item {
                 aceleracao_rotor_5_ARRAY.shift();
                 aceleracao_rotor_6_ARRAY.shift();
             }
-            //console.log(_pct_bateria_1)
-            //console.log(_pct_bateria_1/100)
         }
     }
 
@@ -1056,14 +1032,6 @@ Item {
                         font.bold: true
                         //font.pointSize:         ScreenTools.mediumFontPixelHeight
                     }
-                    /* Text {
-                    Layout.alignment:       Qt.AlignHCenter
-                    verticalAlignment:      Text.AlignVCenter
-                    color:                  "White"
-                    text:                   "pkgs lost: " + _mavlinkLossPercent +"%"
-                    font.bold: true
-                    //font.pointSize:         ScreenTools.mediumFontPixelHeight
-                }*/
                 }
 
 
@@ -1251,7 +1219,6 @@ Item {
                                 accellRotorModel.set(2, { aceleracao: _aceleracao_rotor_3/5000 });
                                 accellRotorModel.set(3, { aceleracao: _aceleracao_rotor_4/5000 });;
                             }
-                            //console.log((_aceleracao_rotor_1-1000)/1000,_aceleracao_rotor_2,_aceleracao_rotor_3)
                         }
                     }
 
@@ -1273,7 +1240,7 @@ Item {
                                 else if (index == 4 && _selected_rotor_5) return "yellow"
                                 else if (index == 5 && _selected_rotor_6) return "yellow"
                                 else return "black"
-                            }//"black"//index === 0 ? (motor1_selected ? "yellow" : "black") : "black"
+                            }
                             border.width: 3//index === 0 && motor1_selected ? 3 : 1
                             MouseArea { // Torna a barra interativa
                                 anchors.fill: parent
@@ -1287,12 +1254,14 @@ Item {
                                 }
 
                                 onContainsMouseChanged: {
-                                    if(index == 0){_selected_rotor_1 = !_selected_rotor_1 }
-                                    else if(index == 1){_selected_rotor_2 = !_selected_rotor_2 }
-                                    else if(index == 2){_selected_rotor_3 = !_selected_rotor_3 }
-                                    else if(index == 3){_selected_rotor_4 = !_selected_rotor_4 }
-                                    else if(index == 4){_selected_rotor_5 = !_selected_rotor_5 }
-                                    else if(index == 5){_selected_rotor_6 = !_selected_rotor_6 }
+                                    if(!_GD60){
+                                        if(index == 0){_selected_rotor_1 = !_selected_rotor_1 }
+                                        else if(index == 1){_selected_rotor_2 = !_selected_rotor_2 }
+                                        else if(index == 2){_selected_rotor_3 = !_selected_rotor_3 }
+                                        else if(index == 3){_selected_rotor_4 = !_selected_rotor_4 }
+                                        else if(index == 4){_selected_rotor_5 = !_selected_rotor_5 }
+                                        else if(index == 5){_selected_rotor_6 = !_selected_rotor_6 }
+                                    }
                                 }
                             }
 
@@ -1314,7 +1283,7 @@ Item {
                                 else if (index == 3) return parent.height*((medAceleracaoRotor4)/4000)
                                 else if (index == 4) return parent.height*((medAceleracaoRotor5)/4000)
                                 else if (index == 5) return parent.height*((medAceleracaoRotor6)/4000)
-                            }//parent.height*(oldGeneratorMediamValue/20)/maxGeneratorCurrent
+                            }
                             x: index*parent.width/6
                             z:1000
                             color: "white"
@@ -1356,7 +1325,7 @@ Item {
                             ctx.stroke()
                         }
                     }
-                    MouseArea { // Torna o  interativa
+                    /*MouseArea { // Torna o  interativa
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: {
@@ -1365,7 +1334,7 @@ Item {
                         onContainsMouseChanged: {
                             _selected_rotor_1 = !_selected_rotor_1
                         }
-                    }
+                    }*/
                     DropShadow {
                         anchors.fill: parent
                         source: rotor1Arc
@@ -1416,7 +1385,7 @@ Item {
                             ctx.stroke()
                         }
                     }
-                    MouseArea { // Torna o  interativa
+                    /*MouseArea { // Torna o  interativa
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: {
@@ -1425,7 +1394,7 @@ Item {
                         onContainsMouseChanged: {
                             _selected_rotor_1 = !_selected_rotor_1
                         }
-                    }
+                    }*/
                     DropShadow {
                         anchors.fill: parent
                         source: rotor2Arc
@@ -1478,15 +1447,10 @@ Item {
             Item {
                 id: lateralDataArea
                 anchors.fill: parent
-                //Ilustração Aeronave {EXPERIMENTAR COLOCAR NO FUNDO DO LATERAL VIEW AREA PRA MANTER CENTRALIZAÇÃO HORIZONTAL}
 
                 Rectangle {
                     anchors.fill: parent
                     color:qgcPal.toolbarBackground
-                    //gradient: Gradient {
-                    //    GradientStop { position: 0.7; color:  qgcPal.toolbarBackground} // Top color
-                    //    GradientStop { position: 1.0; color:  toolbar._mainStatusBGColor} // Bottom color
-                    //}
                 }
                 Item{
                     id: flightTimeArea
@@ -1494,18 +1458,6 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     height: (parent.height -bottomDataLoader.height)/6
-                    /*Text {
-                    text: "Flight Time\n 00.00.00"
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottom: maxSpeedText.top
-                    anchors.margins: _toolsMargin // Adiciona um pequeno espaço do canto
-                    font.bold: true
-                    Layout.alignment:       Qt.AlignHCenter
-                    verticalAlignment:      Text.AlignVCenter
-                    font.pointSize: ScreenTools.smallFontPixelHeight
-                    color: "white"
-                    z:1000
-                }*/
                     ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
@@ -2080,7 +2032,6 @@ Item {
                         id: cameraText
                         anchors.centerIn: parent
                         text: {
-                            // Verifica se há itens no ipModel
                             if (QGroundControl.videoManager.streams.length > 0 && cameraControlOverlay.cameraIndex < QGroundControl.videoManager.streams.length) {
                                 var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
                                 return element.alias ? element.alias : element.url
@@ -2105,11 +2056,6 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            // var loaded = QGroundControl.videoManager.loadSavedUrls()
-                            // ipModel.clear()
-                            // for (var i = 0; i < loaded.length; ++i) {
-                            //     ipModel.append({"url": loaded[i].url})
-                            // }
                             if (QGroundControl.videoManager.streams.length > 0) {
                                 cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % QGroundControl.videoManager.streams.length
 

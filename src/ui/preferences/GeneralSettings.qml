@@ -68,20 +68,6 @@ Rectangle {
 
     property bool _androidBuild: (Qt.platform.os === "ios" || Qt.platform.os === "android")
 
-    ListModel {
-        id: ipModel
-        // você pode pré‑popular se quiser:
-        // ListElement { url: _videoSettings.rtspUrl.rawValue }
-    }
-    Component.onCompleted: {
-        var loaded = QGroundControl.videoManager.loadSavedUrls()
-        console.log("✅ URLs carregadas do C++:", loaded)
-        ipModel.clear()
-        for (var i = 0; i < loaded.length; ++i) {
-            ipModel.append({"url": loaded[i].url})
-            console.log("✅ Adicionado ao ipModel:", loaded[i].url)
-        }
-    }
 
     QGCFlickable {
         clip:               true
