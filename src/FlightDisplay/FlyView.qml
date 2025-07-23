@@ -38,7 +38,7 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: false
+    property bool _GD60: true
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
@@ -84,9 +84,10 @@ Item {
     property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage
 
     property int _battery1Index: _GD60? 0:0
+    property int _battery2Index: _GD60? 1:0
     property int _gasolineIndex: _GD60? 0:1
     property int _generatorIndex: _GD60? 0:2
-    property int _battery2Index: _GD60? 0:0
+
 
     property int _satCount: 0
     property int _satPDOP: 0
@@ -341,13 +342,25 @@ Item {
             console.log(_activeVehicle.batteries.get(1).voltage.rawValue)*/
             //console.log(_activeVehicle.batteries.index(1,0).voltage.rawValue)
 
-            _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 42)/8.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
-            _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
-            _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
+            if(_GD60){
 
-            _pct_bateria_2 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 20)/5.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
-            _tensao_bateria_2 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
-            _current_bateria_2 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
+                _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 20)/5.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
+                _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
+                _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
+
+                _pct_bateria_2 = ((((_activeVehicle.batteries.get(_battery2Index).voltage.rawValue).toFixed(2) - 47.6)/13.3)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
+                _tensao_bateria_2 = (_activeVehicle.batteries.get(_battery2Index).voltage.rawValue).toFixed(2)
+                _current_bateria_2 = (_activeVehicle.batteries.get(_battery2Index).current.rawValue).toFixed(2)
+
+
+            }
+            else{
+                _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 42)/8.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
+                _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
+                _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
+            }
+
+
 
             _satCount = _activeVehicle.gps.count.rawValue
             _satPDOP = _activeVehicle.gps.lock.rawValue
@@ -418,15 +431,12 @@ Item {
             //_current_battery_ARRAY.push(_current_bateria_1) //populando dinamicamente array de valores de corrente da bateria
             //_current_generator_ARRAY.push(_current_generator)//populando dinamicamente array de valores de corrente do gerador
             if(_GD60){
-                if (_activeVehicle.armed || _activeVehicle.flying){
-                    _aceleracao_rotor_1 = Math.random() * (555-480) + 480
-                    _aceleracao_rotor_2 = Math.random() * (555-480) + 480
-                    _aceleracao_rotor_3 = Math.random() * (555-480) + 480
-                    _aceleracao_rotor_4 = Math.random() * (555-480) + 480
-                }
+                _aceleracao_rotor_1 = _aceleracao_rotor_1
+                _aceleracao_rotor_2 = _aceleracao_rotor_2
+                _aceleracao_rotor_3 = _aceleracao_rotor_3
+                _aceleracao_rotor_4 = _aceleracao_rotor_4
             }
             else{
-                _current_generator_ARRAY.push(_current_generator)
                 aceleracao_rotor_1_ARRAY.push(_aceleracao_rotor_1)
                 aceleracao_rotor_2_ARRAY.push(_aceleracao_rotor_2)
                 aceleracao_rotor_3_ARRAY.push(_aceleracao_rotor_3)
@@ -434,6 +444,7 @@ Item {
                 aceleracao_rotor_5_ARRAY.push(_aceleracao_rotor_5)
                 aceleracao_rotor_6_ARRAY.push(_aceleracao_rotor_6)
             }
+            _current_generator_ARRAY.push(_current_generator)
 
             //AQUI PRA CIMA É SÓ PRA TESTE
             // console.log((oldGeneratorMediamValue/20)/maxGeneratorCurrent, (40/maxGeneratorCurrent))
@@ -1203,12 +1214,12 @@ Item {
                     // Popula o modelo com valores dinamicamente
                     Component.onCompleted: {
                         if (_GD60){
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_1)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_2)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_3)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_4)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_5)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_6)/3850 });
+                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_1)/5000 });
+                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_2)/5000 });
+                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_3)/5000 });
+                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_4)/5000 });
+                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_5)/5000 });
+                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_6)/5000 });
                         }
                         else{
                             accellRotorModel.append({ aceleracao: (_aceleracao_rotor_1)/3850 });
@@ -1224,13 +1235,20 @@ Item {
                     Timer{//Atualiza os valores periodicamente [TODO: mudar interval depois]
                         interval: 100; running: true; repeat: true
                         onTriggered: {
-                            accellRotorModel.set(0, { aceleracao: _aceleracao_rotor_1/3850 });
-                            accellRotorModel.set(1, { aceleracao: _aceleracao_rotor_2/3850 });
-                            accellRotorModel.set(2, { aceleracao: _aceleracao_rotor_3/3850 });
-                            accellRotorModel.set(3, { aceleracao: _aceleracao_rotor_4/3850 });
+
                             if (!_GD60){
+                                accellRotorModel.set(0, { aceleracao: _aceleracao_rotor_1/3850 });
+                                accellRotorModel.set(1, { aceleracao: _aceleracao_rotor_2/3850 });
+                                accellRotorModel.set(2, { aceleracao: _aceleracao_rotor_3/3850 });
+                                accellRotorModel.set(3, { aceleracao: _aceleracao_rotor_4/3850 });
                                 accellRotorModel.set(4, { aceleracao: _aceleracao_rotor_5/3850 });
                                 accellRotorModel.set(5, { aceleracao: _aceleracao_rotor_6/3850 });}
+                            else{
+                                accellRotorModel.set(0, { aceleracao: _aceleracao_rotor_1/5000 });
+                                accellRotorModel.set(1, { aceleracao: _aceleracao_rotor_2/5000 });
+                                accellRotorModel.set(2, { aceleracao: _aceleracao_rotor_3/5000 });
+                                accellRotorModel.set(3, { aceleracao: _aceleracao_rotor_4/5000 });;
+                            }
                             //console.log((_aceleracao_rotor_1-1000)/1000,_aceleracao_rotor_2,_aceleracao_rotor_3)
                         }
                     }
