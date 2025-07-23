@@ -96,25 +96,25 @@ VideoManager::~VideoManager()
 void
 VideoManager::setToolbox(QGCToolbox *toolbox)
 {
-    QGCTool::setToolbox(toolbox);
-    QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
-    qmlRegisterUncreatableType<VideoManager> ("QGroundControl.VideoManager", 1, 0, "VideoManager", "Reference only");
-    qmlRegisterUncreatableType<VideoReceiver>("QGroundControl",              1, 0, "VideoReceiver","Reference only");
+   QGCTool::setToolbox(toolbox);
+   QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
+   qmlRegisterUncreatableType<VideoManager> ("QGroundControl.VideoManager", 1, 0, "VideoManager", "Reference only");
+   qmlRegisterUncreatableType<VideoReceiver>("QGroundControl",              1, 0, "VideoReceiver","Reference only");
 
-    // Carrega de QSettings para _streams (antes de qualquer uso em QML)
-    loadStreams();
+   // Carrega de QSettings para _streams (antes de qualquer uso em QML)
+   loadStreams();
 
-    // TODO: Those connections should be Per Video, not per VideoManager.
-    _videoSettings = toolbox->settingsManager()->videoSettings();
-    QString videoSource = _videoSettings->videoSource()->rawValue().toString();
-    connect(_videoSettings->videoSource(),   &Fact::rawValueChanged, this, &VideoManager::_videoSourceChanged);
-    connect(_videoSettings->udpPort(),       &Fact::rawValueChanged, this, &VideoManager::_udpPortChanged);
-    connect(_videoSettings->rtspUrl(),       &Fact::rawValueChanged, this, &VideoManager::_rtspUrlChanged);
-    connect(_videoSettings->tcpUrl(),        &Fact::rawValueChanged, this, &VideoManager::_tcpUrlChanged);
-    connect(_videoSettings->aspectRatio(),   &Fact::rawValueChanged, this, &VideoManager::_aspectRatioChanged);
-    connect(_videoSettings->lowLatencyMode(),&Fact::rawValueChanged, this, &VideoManager::_lowLatencyModeChanged);
-    MultiVehicleManager *pVehicleMgr = qgcApp()->toolbox()->multiVehicleManager();
-    connect(pVehicleMgr, &MultiVehicleManager::activeVehicleChanged, this, &VideoManager::_setActiveVehicle);
+   // TODO: Those connections should be Per Video, not per VideoManager.
+   _videoSettings = toolbox->settingsManager()->videoSettings();
+   QString videoSource = _videoSettings->videoSource()->rawValue().toString();
+   connect(_videoSettings->videoSource(),   &Fact::rawValueChanged, this, &VideoManager::_videoSourceChanged);
+   connect(_videoSettings->udpPort(),       &Fact::rawValueChanged, this, &VideoManager::_udpPortChanged);
+   connect(_videoSettings->rtspUrl(),       &Fact::rawValueChanged, this, &VideoManager::_rtspUrlChanged);
+   connect(_videoSettings->tcpUrl(),        &Fact::rawValueChanged, this, &VideoManager::_tcpUrlChanged);
+   connect(_videoSettings->aspectRatio(),   &Fact::rawValueChanged, this, &VideoManager::_aspectRatioChanged);
+   connect(_videoSettings->lowLatencyMode(),&Fact::rawValueChanged, this, &VideoManager::_lowLatencyModeChanged);
+   MultiVehicleManager *pVehicleMgr = qgcApp()->toolbox()->multiVehicleManager();
+   connect(pVehicleMgr, &MultiVehicleManager::activeVehicleChanged, this, &VideoManager::_setActiveVehicle);
 
 #if defined(QGC_GST_STREAMING)
     GStreamer::blacklist(static_cast<VideoSettings::VideoDecoderOptions>(_videoSettings->forceVideoDecoder()->rawValue().toInt()));
