@@ -38,7 +38,7 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: true
+    property bool _GD60: false
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
