@@ -38,7 +38,7 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: false
+    property bool _GD60: true
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
@@ -69,7 +69,7 @@ Item {
     property real   _rightPanelWidth:       ScreenTools.defaultFontPixelWidth * 30
     property var    _mapControl:            mapControl
 
-    property real  mainViewHeight: parent.height*5/6
+    property real  mainViewHeight: _GD60? parent.height*0.845:parent.height*5/6
     property real  mainViewWidth : parent.width - (parent.height - mainViewHeight) //garantir simetria
     property bool _cameraExchangeActive : false
     property var _pct_bateria_1: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
@@ -395,7 +395,7 @@ Item {
 
             var breach_val = breachDetection()
             if (breach_val.level > -1 && canShowBreachAlert) {
-                //console.log("VIOLACAO DE ESPAÇO AEREO NÍVEL ", breach_val.level + 1)
+                console.log("VIOLACAO DE ESPAÇO AEREO NÍVEL ", breach_val.level + 1)
 
                 if (breach_val.level === 0) {
                     popUp_breachAlert = "Invasão do Volume de Contingência!"
@@ -847,6 +847,7 @@ Item {
                     width:height/3
                     height: parent.height*2/3
                     color:"green"
+                    visible: _GD60? false:true
                     //z:1000000
                     Rectangle{
                         anchors.top:generatorCurrentBar.top
@@ -908,7 +909,7 @@ Item {
                 QGCColoredImage {
                     id: satteliteInformationIcon
                     anchors.top:        parent.top
-                    anchors.left:       generatorCurrentBar.right
+                    anchors.left:       _GD60? generatorFunctionalityIcon.right :generatorCurrentBar.right
                     anchors.leftMargin: _toolsMargin
                     anchors.topMargin:  _toolsMargin*2
                     width:              height
@@ -1093,7 +1094,7 @@ Item {
                         color:                  "White"
                         text:                   _motor_temp.toString()+"°C"
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
+                        font.pixelSize:         (_GD60? 15:20)
                     }
                     Text {
                         Layout.alignment:       Qt.AlignHCenter
@@ -1101,7 +1102,7 @@ Item {
                         color:                  "White"
                         text:                   "RPM: "
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
+                        font.pixelSize:         (_GD60? 15:20)
                     }
                     Text {
                         Layout.alignment:       Qt.AlignHCenter
@@ -1109,7 +1110,7 @@ Item {
                         color:                  "White"
                         text:                   _motor_rpm.toFixed(0)
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
+                        font.pixelSize:         (_GD60? 15:20)
                     }
                     Text {
                         Layout.alignment:       Qt.AlignHCenter
@@ -1117,7 +1118,7 @@ Item {
                         color:                  "White"
                         text:                   _motor_temp.toString()+"°C"
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
+                        font.pixelSize:         (_GD60? 15:20)
                         visible: _GD60? true:false
                     }
 
@@ -1127,7 +1128,7 @@ Item {
                         color:                  "White"
                         text:                   "RPM: "+_motor_rpm.toFixed(0)
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  20 : (_GD60? 10:20)
+                        font.pixelSize:         (_GD60? 15:20)
                         visible: _GD60? true:false
                     }
                 }
