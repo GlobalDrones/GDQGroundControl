@@ -67,19 +67,20 @@ LinuxBuild {
     }
 } else:AndroidBuild {
     #- gstreamer assumed to be installed in $$PWD/../../gstreamer-1.0-android-universal-1.18.5/***
-    message("gstreamer assumed to be installed in $$PWD/../../gstreamer-1.0-android-universal-1.18.5/***")
+    message("gstreamer assumed to be installed in $$PWD/gstreamer-1.0-android-universal-1.18.6/***")
     message("IF VIDEO OPTIONS NOT AVAILABLE, CHANGE PATH IN VIDEORECEIVER.PRI LINES 75 TO 83")
-   #- gstreamer assumed to be installed in $$PWD/../../gstreamer-1.0-android-universal-1.18.5/***
-   #- gstreamer deve agora estar incluso no download do repositório na pasta siyiqgroundcontrol/src/gstreamer-1.0-android-universal-1;18.5/
+    INCLUDEPATH += \
+        $$PWD
+
     contains(ANDROID_TARGET_ARCH, armeabi-v7a) {
-        GST_ROOT = /home/russi/Downloads/gstreamer-1.0-android-universal-1.18.6/armv7
+        GST_ROOT = $$PWD/gstreamer-1.0-android-universal-1.18.6/armv7
     } else:contains(ANDROID_TARGET_ARCH, arm64-v8a) {
-        GST_ROOT = /home/russi/Downloads/gstreamer-1.0-android-universal-1.18.6/arm64
+        GST_ROOT = $$PWD/gstreamer-1.0-android-universal-1.18.6/arm64
     } else:contains(ANDROID_TARGET_ARCH, x86_64) {
-        GST_ROOT = /home/russi/Downloads/gstreamer-1.0-android-universal-1.18.6/x86_64
+        GST_ROOT = $$PWD/gstreamer-1.0-android-universal-1.18.6/x86_64
     } else {
         message(Unknown ANDROID_TARGET_ARCH $$ANDROID_TARGET_ARCH)
-        GST_ROOT = /home/russi/Downloads/gstreamer-1.0-android-universal-1.18.6/x86
+        GST_ROOT = $$PWD/gstreamer-1.0-android-universal-1.18.6/x86
     }
     exists($$GST_ROOT) {
         QMAKE_CXXFLAGS  += -pthread
