@@ -1,3 +1,4 @@
+
 # QGroundControl Ground Control Station
 
 [![Releases](https://img.shields.io/github/release/mavlink/QGroundControl.svg)](https://github.com/mavlink/QGroundControl/releases)
@@ -23,3 +24,8 @@ Key Links:
 * [Discussion/Support](https://docs.qgroundcontrol.com/en/Support/Support.html)
 * [Contributing](https://dev.qgroundcontrol.com/en/contribute/)
 * [License](https://github.com/mavlink/qgroundcontrol/blob/master/COPYING.md)
+
+## Ativando Video Stream com GStreamer para android
+Para ativar o GStreamer em build android é necessário ter o [pacote gstreamer](https://gstreamer.freedesktop.org/data/pkg/android/1.18.6/gstreamer-1.0-android-universal-1.18.6.tar.xz) baixado e indicar PATH no arquivo [Videoreceiver.pri](https://github.com/GlobalDrones/GDQGroundControl/blob/main/src/VideoReceiver/VideoReceiver.pri#L79)
+
+
