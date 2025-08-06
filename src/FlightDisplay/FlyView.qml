@@ -38,7 +38,7 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: true
+    property bool _GD60: false
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
@@ -595,7 +595,7 @@ Item {
 
                         Text {
                             id: textBoxBatteryInfo_1PCT
-                            Layout.alignment:       Qt.AlignHCenter
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _pct_bateria_1 > 9? _pct_bateria_1+"%": "0"+_pct_bateria_1+"%"
@@ -605,7 +605,7 @@ Item {
                         }
                         Text {
                             id: textBoxBatteryInfo_1TENSION
-                            Layout.alignment:       Qt.AlignHCenter
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _tensao_bateria_1 + " V"
@@ -615,7 +615,7 @@ Item {
                         }
                         Text {
                             id: textBoxBatteryInfo_1CURRENT
-                            Layout.alignment:       Qt.AlignHCenter
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _current_bateria_1 + " A"
@@ -704,7 +704,7 @@ Item {
 
                         Text {
                             id: textBoxBatteryInfo_2PCT
-                            Layout.alignment:       Qt.AlignHCenter
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _pct_bateria_2 > 9? _pct_bateria_2+"%": "0"+_pct_bateria_2+"%"
@@ -714,7 +714,7 @@ Item {
                         }
                         Text {
                             id: textBoxBatteryInfo_2TENSION
-                            Layout.alignment:       Qt.AlignHCenter
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _tensao_bateria_2 + " V"
@@ -724,7 +724,7 @@ Item {
                         }
                         Text {
                             id: textBoxBatteryInfo_2CURRENT
-                            Layout.alignment:       Qt.AlignHCenter
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _current_bateria_2 + " A"
@@ -744,10 +744,11 @@ Item {
                     anchors.rightMargin: _toolsMargin
                     anchors.leftMargin: _toolsMargin*2
                     anchors.topMargin: _toolsMargin
-                    width: gasolineIconLoader.item ? gasolineIconLoader.item.height : 0
+                    asynchronous: false
+                    width: height
                     height: parent.height * 2 / 3
                     active: false  // set true when you want to load it
-                    visible: gasolineIconLoader.item ? gasolineIconLoader.item.visible : false
+                    visible: true
 
                     sourceComponent: Component {
                         QGCColoredImage {
@@ -764,7 +765,7 @@ Item {
 
                 DropShadow {
                     anchors.fill: gasolineIconLoader
-                    source: gasolineIconLoader
+                    source: gasolineIconLoader.item
                     color: "#80000000" // Semi-transparent black shadow
                     radius: 8
                     samples:17
@@ -892,7 +893,7 @@ Item {
 
 
                     Text {
-                        Layout.alignment:       Qt.AlignHCenter
+                        Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   _current_generator + "A"
@@ -961,7 +962,7 @@ Item {
 
 
                     Text {
-                        Layout.alignment:       Qt.AlignHCenter
+                        Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   "Count: " + _satCount
@@ -969,7 +970,7 @@ Item {
                         font.pixelSize:         _androidBuild ?  13 : 24
                     }
                     Text {
-                        Layout.alignment:       Qt.AlignHCenter
+                        Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   "PDOP: "+ _satPDOP
@@ -1026,7 +1027,7 @@ Item {
                     visible: textBoxRCInfo.visible
 
                     Text {
-                        Layout.alignment:       Qt.AlignHCenter
+                        Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   _rcQuality_mean.toString()+"%" /*_activeVehicle.rcRSSI.toString() +"%"*/ /*_rcQuality + "%"*/
@@ -1057,7 +1058,7 @@ Item {
                     height:             parent.height*2/3
                     source:             "/qmlimages/MotorTermometer.png"
                     fillMode:           Image.PreserveAspectFit
-                    color:              "yellow"
+                    color:              _motor_temp>110? (_motor_temp>150? (_motor_temp>=200? "red" : "orange"): "yellow") : "white"
                 }
 
                 Rectangle{
@@ -1089,7 +1090,7 @@ Item {
 
 
                     Text {
-                        Layout.alignment:       Qt.AlignHCenter
+                        Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   _motor_temp.toString()+"°C"
@@ -1097,7 +1098,7 @@ Item {
                         font.pixelSize:         (_GD60? 15:20)
                     }
                     Text {
-                        Layout.alignment:       Qt.AlignHCenter
+                        Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   "RPM: "
@@ -1105,7 +1106,7 @@ Item {
                         font.pixelSize:         (_GD60? 15:20)
                     }
                     Text {
-                        Layout.alignment:       Qt.AlignHCenter
+                        Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   _motor_rpm.toFixed(0)
@@ -1113,7 +1114,7 @@ Item {
                         font.pixelSize:         (_GD60? 15:20)
                     }
                     Text {
-                        Layout.alignment:       Qt.AlignHCenter
+                        Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   _motor_temp.toString()+"°C"
@@ -1123,7 +1124,7 @@ Item {
                     }
 
                     Text {
-                        Layout.alignment:       Qt.AlignHCenter
+                        Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   "RPM: "+_motor_rpm.toFixed(0)
@@ -1448,7 +1449,7 @@ Item {
             Item {
                 id: lateralDataArea
                 anchors.fill: parent
-
+                property real sectionHeight: (parent.height - bottomDataLoader.height) / 6
                 Rectangle {
                     anchors.fill: parent
                     color:qgcPal.toolbarBackground
@@ -1458,16 +1459,19 @@ Item {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    height: (parent.height -bottomDataLoader.height)/6
+                    height: sectionHeight
+
                     ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
                         spacing:                0
-                        height: (parent.height -bottomDataLoader.height)/6
+                        height: sectionHeight
+
 
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Est. Time"
@@ -1475,7 +1479,8 @@ Item {
                             font.bold: true
                         }
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   horas_restantes_string+":"+minutos_restantes_string+":"+segundos_restantes_string
@@ -1489,16 +1494,19 @@ Item {
                     anchors.top: flightTimeArea.bottom
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    height: (parent.height -bottomDataLoader.height)/6
+                    height: sectionHeight
+
                     ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
                         spacing:                0
-                        height: (parent.height -bottomDataLoader.height)/6
+                        height: sectionHeight
+
 
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Dist. Home"
@@ -1506,7 +1514,8 @@ Item {
                             font.bold: true
                         }
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _activeVehicle.distanceToHome.value === "NaN"? 0 : _activeVehicle.distanceToHome.value.toFixed(2)+"m"
@@ -1521,16 +1530,19 @@ Item {
                     anchors.top: dist2HomeArea.bottom
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    height: (parent.height -bottomDataLoader.height)/6
+                    height: sectionHeight
+
                     ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
                         spacing:                0
-                        height: (parent.height -bottomDataLoader.height)/6
+                        height: sectionHeight
+
 
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Dist. WP"
@@ -1538,7 +1550,8 @@ Item {
                             font.bold: true
                         }
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _activeVehicle.distanceToNextWP.value == "NaN"? 0 : _activeVehicle.distanceToNextWP.value+"m"
@@ -1552,16 +1565,20 @@ Item {
                     anchors.top: dist2WaypointArea.bottom
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    height: (parent.height -bottomDataLoader.height)/6
+                    height: sectionHeight
+
                     ColumnLayout {
+
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
                         spacing:                0
-                        height: (parent.height -bottomDataLoader.height)/6
+                        height: sectionHeight
+
 
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Alt. LIDAR"
@@ -1569,7 +1586,8 @@ Item {
                             font.bold: true
                         }
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _activeVehicle.rangeFinderDist.value.toFixed(2) + "m" //altitudeRelative.value*10)/10 + "m"
@@ -1583,16 +1601,19 @@ Item {
                     anchors.top: altitudeRelativeArea.bottom
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    height: (parent.height -bottomDataLoader.height)/6
+                    height: sectionHeight
+
                     ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
                         spacing:                0
-                        height: (parent.height -bottomDataLoader.height)/6
+                        height: sectionHeight
+
 
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Alt. AMSL"
@@ -1600,7 +1621,8 @@ Item {
                             font.bold: true
                         }
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   Math.round(_activeVehicle.altitudeAMSL.value*10)/10 + "m"
@@ -1614,16 +1636,19 @@ Item {
                     anchors.top: altitudeBarometricArea.bottom
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    height: (parent.height -bottomDataLoader.height)/6
+                    height: sectionHeight
+
                     ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
                         spacing:                0
-                        height: (parent.height -bottomDataLoader.height)/6
+                        height: sectionHeight
+
 
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Hor. speed"
@@ -1631,7 +1656,8 @@ Item {
                             font.bold: true
                         }
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  Math.round(_activeVehicle.airSpeed.value*10)/10 < 17? "White" : "Red"
                             text:                   Math.round(_activeVehicle.airSpeed.value*10)/10 +"m/s"
@@ -1645,16 +1671,19 @@ Item {
                     anchors.top: horSpeedArea.bottom
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    height: (parent.height -bottomDataLoader.height)/6
+                    height: sectionHeight
+
                     ColumnLayout {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.right: parent.right
                         spacing:                0
-                        height: (parent.height -bottomDataLoader.height)/6
+                        height: sectionHeight
+
 
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Vert. speed"
@@ -1662,7 +1691,8 @@ Item {
                             font.bold: true
                         }
                         Text {
-                            Layout.alignment:       Qt.AlignHCenter
+
+                            Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   Math.round(_activeVehicle.climbRate.value*10)/10+"m/s"
