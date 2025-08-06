@@ -1040,25 +1040,27 @@ Item {
                 //Temperatura Gerador
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon
-                    anchors.top:        parent.top
-                    anchors.left:       rcInfoColumn.right
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/MotorTemp.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              "white"
+                    anchors.top: parent.top
+                    anchors.left: rcInformationIcon.right
+                    anchors.leftMargin: _toolsMargin * 2   // Adjust this for desired spacing
+                    anchors.topMargin: _toolsMargin * 2
+                    width: height
+                    height: parent.height * 2/3
+                    source: "/qmlimages/MotorTemp.svg"
+                    fillMode: Image.PreserveAspectFit
+                    color: "white"
                 }
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon2
-                    anchors.top:        parent.top
-                    anchors.left:       rcInfoColumn.right
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/MotorTermometer.png"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              _motor_temp>110? (_motor_temp>150? (_motor_temp>=200? "red" : "orange"): "yellow") : "white"
+                    anchors.top: parent.top
+                    anchors.left: rcInformationIcon.right
+                    anchors.leftMargin: _toolsMargin * 2  // Slight spacing between both temp icons
+                    anchors.topMargin: _toolsMargin * 2
+                    width: height
+                    height: parent.height * 2/3
+                    source: "/qmlimages/MotorTermometer.png"
+                    fillMode: Image.PreserveAspectFit
+                    color: _motor_temp > 110 ? (_motor_temp > 150 ? (_motor_temp >= 200 ? "red" : "orange") : "yellow") : "white"
                 }
 
                 Rectangle{
