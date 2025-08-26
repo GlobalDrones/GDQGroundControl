@@ -94,6 +94,7 @@ Item {
     property var _rcQuality: 0
     property var _rcQuality_ARRAY: []
     property var _rcQuality_mean: 0
+    property real rollingRCQualitySum: 0
     property var _current_battery_ARRAY: []
     property var _current_generator_ARRAY: []
     property var _returnFunctionArray: []
@@ -103,20 +104,6 @@ Item {
     property var  _distanceToHome:     _activeVehicle.distanceToHome.rawValue.toFixed(2)
     property var  _distanceToWP: _activeVehicle.distanceToNextWP.rawValue.toFixed(2)
     property var _mavlinkLossPercent: _activeVehicle.mavlinkLossPercent.rawValue
-
-
-    property real _tensao_cell_1: 50 //PLACEHOLDER
-    property real _tensao_cell_2: 45 //PLACEHOLDER
-    property real _tensao_cell_3: 70 //PLACEHOLDER
-    property real _tensao_cell_4: 20 //PLACEHOLDER
-    property real _tensao_cell_5: 80 //PLACEHOLDER
-    property real _tensao_cell_6: 50 //PLACEHOLDER
-    property real _tensao_cell_7: 60 //PLACEHOLDER
-    property real _tensao_cell_8: 28 //PLACEHOLDER
-    property real _tensao_cell_9: 80 //PLACEHOLDER
-    property real _tensao_cell_10: 50 //PLACEHOLDER
-    property real _tensao_cell_11: 40 //PLACEHOLDER
-    property real _tensao_cell_12: 90 //PLACEHOLDER
 
     property real _aceleracao_rotor_1: 0    //PLACEHOLDER
     property var  aceleracao_rotor_1_ARRAY: []
@@ -130,6 +117,7 @@ Item {
     property var  aceleracao_rotor_5_ARRAY: []
     property real _aceleracao_rotor_6: 0 //PLACEHOLDER
     property var  aceleracao_rotor_6_ARRAY: []
+
 
     property real medAceleracaoRotor1: 1500
     property real medAceleracaoRotor2: 1500
@@ -363,15 +351,10 @@ Item {
 
             _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
             _rcQuality_ARRAY.push(_rcQuality)
+            rollingRCQualitySum += _rcQuality
             if(_rcQuality_ARRAY.length === 10){
-                var qual_temp1 = 0;
-                for(var i =0; i<10; i++){
-                    qual_temp1 = _rcQuality_ARRAY[i] + qual_temp1
-                }
-                qual_temp1 = qual_temp1/10
-                _rcQuality_mean = qual_temp1
-                _rcQuality_mean = _rcQuality_mean.toFixed(0)
-                _rcQuality_ARRAY.shift();
+                _rcQuality_mean = (rollingRCQualitySum / 10).toFixed(0)
+                rollingRCQualitySum -= _rcQuality_ARRAY.shift()
             }
 
             horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
@@ -426,25 +409,19 @@ Item {
                 aceleracao_rotor_5_ARRAY.push(_aceleracao_rotor_5)
                 aceleracao_rotor_6_ARRAY.push(_aceleracao_rotor_6)
             }
-            _current_generator_ARRAY.push(_current_generator)
 
-            // console.log("maxvel: ",_maxVel)
-            //var params = _activeVehicle.parameterNames(1); // Chama a função C++
-            //console.log("Parameters:", params); // Imprime no console do QML
-            //params.forEach(param => console.log(param.toString())); //TODO: typeError. QStringList e QString não são reconhecidos pelo QML padrão. Resolver isso depois
+            _current_generator_ARRAY.push(_current_generator)
             _current_generator = _activeVehicle.batteries.get(_generatorIndex).current.rawValue.toFixed(2)
             _current_bateria_1 = _activeVehicle.batteries.get(_battery1Index).current.rawValue.toFixed(2)
 
 
 
-            if(_current_generator_ARRAY.length === 20){ //sabendo que recebemos um dado novo a cada 0.1 segundos, (ver c/ Erich)
+            if(_current_generator_ARRAY.length === 20){ //sabendo que recebemos um dado novo a cada 0.1 segundos
                 _returnFunctionArray = generatorAlert(_current_battery_ARRAY, _current_generator_ARRAY, oldGeneratorMediamValue);//executa função
                 flagAlertaGerador = _returnFunctionArray[0]; //atualiza flag geral com valor booleano retornado da função
                 oldGeneratorMediamValue = _returnFunctionArray[1]; //atualiza valor de média
-                _current_battery_ARRAY.shift(); //apaga primeiro elemento (ver c/Erich se é pra apagar o primeiro elemento ou todos)
+                _current_battery_ARRAY.shift();
                 _current_generator_ARRAY.shift();
-                //console.log(_current_battery_ARRAY);
-                //console.log(_current_generator_ARRAY);
             }
             if(aceleracao_rotor_1_ARRAY.length ===20){
                 var temp1 = 0;
@@ -526,11 +503,11 @@ Item {
                     height:             parent.height*2/3
                     source:             "/qmlimages/Battery.svg"
                     fillMode:           Image.PreserveAspectFit
-                    color:              "white"
+                    color:              (_pct_bateria_1) > 50 ? "green" : ((_pct_bateria_1) > 30 ? "orange" : "red")
                     visible: true
                 }
 
-                Rectangle{
+               /* Rectangle{
                     id: batteryPercentageBar_1
                     anchors.top: batteryPercentageIcon_1.top
                     anchors.left: batteryPercentageIcon_1.left
@@ -569,7 +546,7 @@ Item {
                         hoverEnabled : true
 
                     }
-                }
+                }*/
                 Rectangle{
                     id: textBoxBatteryInfo_1
                     anchors.verticalCenter: batteryPercentageIcon_1 .verticalCenter

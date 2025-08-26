@@ -71,8 +71,8 @@ GstVideoReceiver::start(const QString& uri, unsigned timeout, int buffer)
 {
     if (_needDispatch()) {
         QString cachedUri = uri;
-        _slotHandler.dispatch([this, cachedUri, timeout, buffer]() {
-            start(cachedUri, timeout, buffer);
+        _slotHandler.dispatch([this, cachedUri, timeout]() {
+            start(cachedUri, timeout, 200);
         });
         return;
     }
