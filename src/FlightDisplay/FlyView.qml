@@ -38,7 +38,7 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: false
+    property bool _GD60: true
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
@@ -547,6 +547,7 @@ Item {
 
                     }
                 }*/
+
                 Rectangle{
                     id: textBoxBatteryInfo_1
                     anchors.verticalCenter: batteryPercentageIcon_1 .verticalCenter
@@ -613,11 +614,11 @@ Item {
                     height:             parent.height*2/3
                     source:             "/qmlimages/Battery.svg"
                     fillMode:           Image.PreserveAspectFit
-                    color:              "white"
+                    color:              (_pct_bateria_2) > 50 ? "green" : ((_pct_bateria_2) > 30 ? "orange" : "red")
                     visible: _GD60//true
                 }
 
-                Rectangle{
+              /*  Rectangle{
                     id: batteryPercentageBar_2
                     anchors.top: batteryPercentageIcon_2.top
                     anchors.left: batteryPercentageIcon_2.left
@@ -656,7 +657,7 @@ Item {
                         hoverEnabled : true
 
                     }
-                }
+                }*/
                 Rectangle{
                     id: textBoxBatteryInfo_2
                     anchors.verticalCenter: batteryPercentageIcon_2 .verticalCenter
@@ -963,7 +964,7 @@ Item {
                     id: rcInformationIcon
                     anchors.top:        parent.top
                     anchors.left:       textBoxSatteliteInfo.right
-                    anchors.leftMargin: _toolsMargin
+                    anchors.leftMargin: _toolsMargin*3
                     anchors.topMargin:  _toolsMargin*2
                     width:              height
                     height:             parent.height*2/3
