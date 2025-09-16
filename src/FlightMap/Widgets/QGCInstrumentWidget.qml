@@ -32,7 +32,7 @@ ColumnLayout {
     Rectangle {
         id:                 visualInstrument
         height:             _outerRadius * 2
-        Layout.fillWidth:   true
+        //Layout.fillWidth:   true
         radius:             _outerRadius
         color:              qgcPal.window
 
@@ -57,7 +57,7 @@ ColumnLayout {
         }
     }
 
-    TerrainProgress {
+    /*TerrainProgress {
         Layout.fillWidth: true
-    }
+    }*/
 }

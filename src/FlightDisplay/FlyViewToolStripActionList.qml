@@ -23,11 +23,11 @@ ToolStripActionList {
             iconSource:     "/qmlimages/Plan.svg"
             onTriggered:    mainWindow.showPlanView()
         },
-        PreFlightCheckListShowAction { onTriggered: displayPreFlightChecklist() },
-        GuidedActionTakeoff { },
-        GuidedActionLand { },
-        GuidedActionRTL { },
-        GuidedActionPause { },
-        GuidedActionActionList { }
+        PreFlightCheckListShowAction { onTriggered: displayPreFlightChecklist() }
+        //GuidedActionTakeoff { },
+        //GuidedActionLand { },
+        //GuidedActionRTL { },
+        //GuidedActionPause { },
+        //GuidedActionActionList { }
     ]
 }

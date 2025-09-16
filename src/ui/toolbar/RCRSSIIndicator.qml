@@ -85,11 +85,18 @@ Item {
             color:              qgcPal.buttonText
         }
 
-        SignalStrength {
+        QGCLabel {
+            font.bold:true
+            anchors.verticalCenter: parent.verticalCenter
+            text: _activeVehicle ? (_activeVehicle.rcRSSI + "%") : 0
+        }
+
+
+        /*SignalStrength {
             anchors.verticalCenter: parent.verticalCenter
             size:                   parent.height * 0.5
             percent:                _rcRSSIAvailable ? _activeVehicle.rcRSSI : 0
-        }
+        }*/
     }
 
     MouseArea {

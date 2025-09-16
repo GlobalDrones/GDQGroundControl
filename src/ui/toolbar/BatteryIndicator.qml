@@ -24,6 +24,7 @@ Item {
     anchors.top:    parent.top
     anchors.bottom: parent.bottom
     width:          batteryIndicatorRow.width
+    visible: false
 
     property bool showIndicator: true
 

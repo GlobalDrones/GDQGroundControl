@@ -38,7 +38,7 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: true
+    property bool _GD60: false
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
@@ -104,6 +104,7 @@ Item {
     property var  _distanceToHome:     _activeVehicle.distanceToHome.rawValue.toFixed(2)
     property var  _distanceToWP: _activeVehicle.distanceToNextWP.rawValue.toFixed(2)
     property var _mavlinkLossPercent: _activeVehicle.mavlinkLossPercent.rawValue
+    property real _groundSpeed: 0
 
     property real _aceleracao_rotor_1: 0    //PLACEHOLDER
     property var  aceleracao_rotor_1_ARRAY: []
@@ -360,6 +361,8 @@ Item {
             horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
             minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
             segundos_restantes = (7200 * (_gasolina/100))%60
+
+            _groundSpeed = _activeVehicle.groundSpeed.value.toFixed(1)
 
 
 
@@ -885,7 +888,7 @@ Item {
 
                 //satelite https://forest-gis.com/2018/01/acuracia-gps-o-que-sao-pdop-hdop-gdop-multi-caminho-e-outros.html/?srsltid=AfmBOorX7DD9JggA1vLTP2DuhOK44T28jHasCbLA0nv5nSnLX7irYLlW
                 //activeVehicle.gps.count.rawValue (NUM SATELITES); _activeVehicle.gps.hdop.rawValue (HDOP); globals.activeVehicle.gps.lock.rawValue (PDOP)
-                QGCColoredImage {
+                /*QGCColoredImage {
                     id: satteliteInformationIcon
                     anchors.top:        parent.top
                     anchors.left:       _GD60? generatorFunctionalityIcon.right :generatorCurrentBar.right
@@ -1009,17 +1012,17 @@ Item {
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   _rcQuality_mean.toString()+"%" /*_activeVehicle.rcRSSI.toString() +"%"*/ /*_rcQuality + "%"*/
-                        font.bold: true
+                /*        font.bold: true
                         //font.pointSize:         ScreenTools.mediumFontPixelHeight
                     }
-                }
+                }*/
 
 
                 //Temperatura Gerador
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon
                     anchors.top: parent.top
-                    anchors.left: rcInformationIcon.right
+                    anchors.left: generatorCurrentBar.right
                     anchors.leftMargin: _toolsMargin * 2   // Adjust this for desired spacing
                     anchors.topMargin: _toolsMargin * 2
                     width: height
@@ -1031,7 +1034,7 @@ Item {
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon2
                     anchors.top: parent.top
-                    anchors.left: rcInformationIcon.right
+                    anchors.left: generatorCurrentBar.right
                     anchors.leftMargin: _toolsMargin * 2  // Slight spacing between both temp icons
                     anchors.topMargin: _toolsMargin * 2
                     width: height
@@ -1116,7 +1119,7 @@ Item {
 
 
 
-                //Temperatura Rotores
+                /*//Temperatura Rotores
                 QGCColoredImage {
                     id: rotorAccelerationInformationIcon
                     anchors.top:        parent.top
@@ -1130,14 +1133,14 @@ Item {
                     color:              "white"
                     visible: !_GD60? true:false
 
-                }
+                }*/
                 Rectangle {
                     id: rotorsTempArea
                     anchors.top: parent.top
-                    anchors.left: _GD60? motorTempInfoColumn.right : rotorAccelerationInformationIcon.right
+                    anchors.left: _GD60? motorTempInfoColumn.right : motorTempInfoColumn.right
                     anchors.margins: _toolsMargin * 1.5
                     width: height * 2
-                    height: rotorAccelerationInformationIcon.height
+                    height: parent.height*2/3
                     color: "black" // Background color
 
                     // Borda com aparência de aço
@@ -1277,6 +1280,137 @@ Item {
 
                 }
 
+                Item {
+                    id: _dataBox
+                    height: parent.height * 2/3
+                    width: parent.width/3
+                    anchors.top: parent.top
+                    anchors.left: rotorsTempArea.right
+                    anchors.margins: _toolsMargin * 1.5
+                    property int _borderWidth: 2
+
+                    // JavaScript function to format numbers with leading zeros
+                    // (You can place this function elsewhere, like in a separate .js file, for reusability)
+                    function formatNumber(value, desiredLength) {
+                        return value.toString().padStart(desiredLength, '0');
+                    }
+
+                    Column {
+                        width: parent.width
+                        height: parent.height
+
+                        Row {
+                            width: parent.width
+                            height: parent.height / 2
+
+                            // First row of rectangles
+                            Rectangle {
+                                width: parent.width/3
+                                height: parent.height
+                                color: "transparent"
+                                border.width: _borderWidth
+                                border.color:"white"
+                                Text {
+                                    id: text1
+                                    anchors.centerIn: parent
+                                    // Assuming data is 1234, and you want 5 total digits (one leading zero)
+                                    text: "Battery Voltage: " + _dataBox.formatNumber(_tensao_bateria_1, 2)+"V"
+                                    font.bold: true
+                                    color: "white"
+                                }
+                            }
+                            Rectangle {
+                                width: parent.width/3
+                                height: parent.height
+                                color: "transparent"
+                                border.width: _borderWidth
+                                border.color:"white"
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "Generator Current " + _dataBox.formatNumber(_current_generator, 2)+"A"
+                                    font.bold: true
+                                    color: "white"
+                                }
+                            }
+                            Rectangle {
+                                width: parent.width/3
+                                height: parent.height
+                                color: "transparent"
+                                border.width: _borderWidth
+                                border.color:"white"
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "Flightime: " + _dataBox.formatNumber(789, 5)
+                                    font.bold: true
+                                    color: "white"
+                                }
+                            }
+                        }
+
+                        Row {
+                            width: parent.width
+                            height: parent.height / 2
+
+                            // Second row of rectangles
+                            Rectangle {
+                                width: parent.width/3
+                                height: parent.height
+                                color: "transparent"
+                                border.width: _borderWidth
+                                border.color:"white"
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "Battery Current " + _dataBox.formatNumber(_current_bateria_1, 2)
+                                    font.bold: true
+                                    color: "white"
+                                }
+                            }
+                            Rectangle {
+                                width: parent.width/3
+                                height: parent.height
+                                color: "transparent"
+                                border.width: _borderWidth
+                                border.color:"white"
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "Ground Speed: " + _dataBox.formatNumber(_groundSpeed, 2)+"m/s"
+                                    font.bold: true
+                                    color: "white"
+                                }
+                            }
+                            Rectangle {
+                                width: parent.width/3
+                                height: parent.height
+                                color: "transparent"
+                                border.width: _borderWidth
+                                border.color:"white"
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "Gasoline level: " + _dataBox.formatNumber(_gasolina, 2)+"%"
+                                    font.bold: true
+                                    color: "white"
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Item{
+                    width: parent.width/4
+                    //height: parent.height *2/3
+                    anchors.top: parent.top
+                    //anchors.bottom: parent.bottom
+                    anchors.left: _dataBox.right
+
+
+                    Loader {
+                        width:  parent.width/2
+                        source: "qrc:/qml/QGCInstrumentWidget.qml"
+
+                    }
+                }
+
+                //ESSES PRÓXIMOS 2 ITENS SÃO DO GD60. PARA COMPILAR PARA O GD60, PEGUE A VERSÃO MAIN DA BRANCH E COLOQUE _GD60: TRUE NO COMEÇO DO ARQUIVO
                 // Dial Accelerometer
                 Item{
                     id: centralRotor_1_Accell
