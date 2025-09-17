@@ -259,7 +259,7 @@ Item {
         anchors.margins: _toolsMargin
         anchors.bottom:parent.bottom
         anchors.right:instrumentPanel.left
-        visible: !SiYi.hideWidgets
+        visible: false//!SiYi.hideWidgets
 
 
         /*// States for custom layout support

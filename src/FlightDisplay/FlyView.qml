@@ -105,6 +105,8 @@ Item {
     property var  _distanceToWP: _activeVehicle.distanceToNextWP.rawValue.toFixed(2)
     property var _mavlinkLossPercent: _activeVehicle.mavlinkLossPercent.rawValue
     property real _groundSpeed: 0
+    property real _altitudeAMSL: 0
+    property int _flightTime:0
 
     property real _aceleracao_rotor_1: 0    //PLACEHOLDER
     property var  aceleracao_rotor_1_ARRAY: []
@@ -363,6 +365,8 @@ Item {
             segundos_restantes = (7200 * (_gasolina/100))%60
 
             _groundSpeed = _activeVehicle.groundSpeed.value.toFixed(1)
+            _altitudeAMSL = _activeVehicle.altitudeAMSL.value
+            _flightTime = (_activeVehicle.flightTimeCustom.value).toFixed(0)
 
 
 
@@ -497,7 +501,7 @@ Item {
                     }
                 }
 
-                QGCColoredImage {
+               /* QGCColoredImage {
                     id: batteryPercentageIcon_1
                     anchors.top:        parent.top
                     anchors.left:       parent.left
@@ -508,7 +512,7 @@ Item {
                     fillMode:           Image.PreserveAspectFit
                     color:              (_pct_bateria_1) > 50 ? "green" : ((_pct_bateria_1) > 30 ? "orange" : "red")
                     visible: true
-                }
+                }*/
 
                /* Rectangle{
                     id: batteryPercentageBar_1
@@ -551,7 +555,7 @@ Item {
                     }
                 }*/
 
-                Rectangle{
+                /*Rectangle{
                     id: textBoxBatteryInfo_1
                     anchors.verticalCenter: batteryPercentageIcon_1 .verticalCenter
                     //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
@@ -607,7 +611,7 @@ Item {
 
                     }
                 }
-
+*/
                 QGCColoredImage {
                     id: batteryPercentageIcon_2
                     anchors.top:        parent.top
@@ -721,7 +725,7 @@ Item {
                 Loader {
                     id: gasolineIconLoader
                     anchors.top: parent.top
-                    anchors.left: _GD60 ? textBoxBatteryInfo_2.right :textBoxBatteryInfo_1.right
+                    anchors.left: _GD60 ? textBoxBatteryInfo_2.right :parent.left
                     anchors.rightMargin: _toolsMargin
                     anchors.leftMargin: _toolsMargin*2
                     anchors.topMargin: _toolsMargin
@@ -781,7 +785,7 @@ Item {
 
 
                 //operação do gerador (pode ser pop-up por que é fudido de importante?) incluir pop-up/cor dinamica/etc
-                QGCColoredImage {
+               /* QGCColoredImage {
                     id: generatorFunctionalityIcon
                     anchors.top:        parent.top
                     anchors.left:       gasolineIconLoader.right
@@ -882,7 +886,7 @@ Item {
                         //font.pointSize:         ScreenTools.mediumFontPixelHeight
                     }
 
-                }
+                }*/
 
 
 
@@ -1022,7 +1026,7 @@ Item {
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon
                     anchors.top: parent.top
-                    anchors.left: generatorCurrentBar.right
+                    anchors.left: textBoxGasolinePercentage.right
                     anchors.leftMargin: _toolsMargin * 2   // Adjust this for desired spacing
                     anchors.topMargin: _toolsMargin * 2
                     width: height
@@ -1034,7 +1038,7 @@ Item {
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon2
                     anchors.top: parent.top
-                    anchors.left: generatorCurrentBar.right
+                    anchors.left: textBoxGasolinePercentage.right
                     anchors.leftMargin: _toolsMargin * 2  // Slight spacing between both temp icons
                     anchors.topMargin: _toolsMargin * 2
                     width: height
@@ -1283,11 +1287,12 @@ Item {
                 Item {
                     id: _dataBox
                     height: parent.height * 2/3
-                    width: parent.width/3
+                    width: parent.width*0.45
                     anchors.top: parent.top
                     anchors.left: rotorsTempArea.right
                     anchors.margins: _toolsMargin * 1.5
                     property int _borderWidth: 2
+                    property int _fontSize: _androidBuild ?  15 : 20
 
                     // JavaScript function to format numbers with leading zeros
                     // (You can place this function elsewhere, like in a separate .js file, for reusability)
@@ -1316,6 +1321,7 @@ Item {
                                     // Assuming data is 1234, and you want 5 total digits (one leading zero)
                                     text: "Battery Voltage: " + _dataBox.formatNumber(_tensao_bateria_1, 2)+"V"
                                     font.bold: true
+                                    font.pixelSize: _dataBox._fontSize
                                     color: "white"
                                 }
                             }
@@ -1329,6 +1335,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: "Generator Current " + _dataBox.formatNumber(_current_generator, 2)+"A"
                                     font.bold: true
+                                    font.pixelSize: _dataBox._fontSize
                                     color: "white"
                                 }
                             }
@@ -1340,8 +1347,13 @@ Item {
                                 border.color:"white"
                                 Text {
                                     anchors.centerIn: parent
-                                    text: "Flightime: " + _dataBox.formatNumber(789, 5)
+                                    // Converter _flightTime (segundos) para milissegundos
+                                    property var date: new Date(0, 0, 1, 0, 0, _flightTime)
+                                    // Formatar e exibir o texto
+                                    text: "Flightime: " + Qt.formatTime(date, "hh:mm:ss")
+                                    //text: "Flightime: " + _flightTime
                                     font.bold: true
+                                    font.pixelSize: _dataBox._fontSize
                                     color: "white"
                                 }
                             }
@@ -1362,6 +1374,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: "Battery Current " + _dataBox.formatNumber(_current_bateria_1, 2)
                                     font.bold: true
+                                    font.pixelSize: _dataBox._fontSize
                                     color: "white"
                                 }
                             }
@@ -1375,6 +1388,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: "Ground Speed: " + _dataBox.formatNumber(_groundSpeed, 2)+"m/s"
                                     font.bold: true
+                                    font.pixelSize: _dataBox._fontSize
                                     color: "white"
                                 }
                             }
@@ -1386,8 +1400,9 @@ Item {
                                 border.color:"white"
                                 Text {
                                     anchors.centerIn: parent
-                                    text: "Gasoline level: " + _dataBox.formatNumber(_gasolina, 2)+"%"
+                                    text: "Altitude AMSL: " + _dataBox.formatNumber(_altitudeAMSL, 2)+"m"
                                     font.bold: true
+                                    font.pixelSize: _dataBox._fontSize
                                     color: "white"
                                 }
                             }
@@ -1396,7 +1411,7 @@ Item {
                 }
 
                 Item{
-                    width: parent.width/4
+                    width: parent.width*0.3
                     //height: parent.height *2/3
                     anchors.top: parent.top
                     //anchors.bottom: parent.bottom
@@ -1710,44 +1725,10 @@ Item {
                         }
                     }
                 }
-                Item{
-                    id: altitudeBarometricArea
-                    anchors.top: altitudeRelativeArea.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: sectionHeight
 
-                    ColumnLayout {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        spacing:                0
-                        height: sectionHeight
-
-
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "Alt. AMSL"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   Math.round(_activeVehicle.altitudeAMSL.value*10)/10 + "m"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                    }
-                }
                 Item{
                     id: horSpeedArea
-                    anchors.top: altitudeBarometricArea.bottom
+                    anchors.top: altitudeRelativeArea.bottom
                     anchors.left: parent.left
                     anchors.right: parent.right
                     height: sectionHeight

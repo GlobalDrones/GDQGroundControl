@@ -304,6 +304,7 @@ public:
     Q_PROPERTY(Fact* hobbs              READ hobbs              CONSTANT)
     Q_PROPERTY(Fact* throttlePct        READ throttlePct        CONSTANT)
     Q_PROPERTY(Fact* rangeFinderDist    READ rangeFinderDist    CONSTANT)
+    Q_PROPERTY(Fact* flightTimeCustom   READ flightTimeCustom          CONSTANT)
 
     Q_PROPERTY(FactGroup*           gps             READ gpsFactGroup               CONSTANT)
     Q_PROPERTY(FactGroup*           gps2            READ gps2FactGroup              CONSTANT)
@@ -651,6 +652,7 @@ public:
     Fact* hobbs                             () { return &_hobbsFact; }
     Fact* throttlePct                       () { return &_throttlePctFact; }
     Fact* rangeFinderDist                   () { return &_rangeFinderDistFact; }
+    Fact* flightTimeCustom                  () { return &_flightTimeFact;}
 
     FactGroup* gpsFactGroup                 () { return &_gpsFactGroup; }
     FactGroup* gps2FactGroup                () { return &_gps2FactGroup; }
