@@ -170,9 +170,9 @@ Item {
     Timer {
         id: breachCooldownTimer
         interval: 10000 // cooldown de 10 segundos
-        running: false
-        repeat: false
-        onTriggered: canShowBreachAlert = true
+        running: true
+        repeat: true
+        onTriggered: generatorAlertPopup.open();
     }
 
     function _calcCenterViewPort() {
@@ -397,6 +397,7 @@ Item {
                 }
 
                 // breachAlertPopup.open()
+                generatorAlertPopup.open()
                 canShowBreachAlert = false
                 breachCooldownTimer.start()
             }
@@ -1331,6 +1332,7 @@ Item {
                                 color: "transparent"
                                 border.width: _borderWidth
                                 border.color:"white"
+
                                 Text {
                                     anchors.centerIn: parent
                                     text: "Generator Current " + _dataBox.formatNumber(_current_generator, 2)+"A"
@@ -1338,6 +1340,7 @@ Item {
                                     font.pixelSize: _dataBox._fontSize
                                     color: "white"
                                 }
+
                             }
                             Rectangle {
                                 width: parent.width/3
@@ -2100,6 +2103,36 @@ Item {
                     font.bold: true
                     visible: false
                     // font.pixelSize: _androidBuild? 8 : 14
+                }
+            }
+        }
+
+        Popup {
+            id: generatorAlertPopup
+            x: (parent.width - width) / 2
+            y: 10  // optional: vertical position
+            width: parent.width/4
+            height: 100
+            modal: false
+            focus: false
+            background: null
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+            visible: _current_generator==0 && _activeVehicle.flying
+
+            Rectangle {
+                anchors.fill: parent
+                color: "red"
+                border.color: "black"
+                visible: _current_generator==0 && _activeVehicle.flying
+
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "ALERTA: POSSÍVEL PROBLEMA NO GERADOR"
+                    font.bold: false
+                    visible: _current_generator==0 && _activeVehicle.flying
+
+                     font.pixelSize: _androidBuild? 8 : 14
                 }
             }
         }
