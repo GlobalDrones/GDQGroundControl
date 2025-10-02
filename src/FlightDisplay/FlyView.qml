@@ -613,7 +613,7 @@ Item {
                     }
                 }
 */
-                QGCColoredImage {
+                /*QGCColoredImage {
                     id: batteryPercentageIcon_2
                     anchors.top:        parent.top
                     anchors.left:       textBoxBatteryInfo_1.right
@@ -674,7 +674,7 @@ Item {
                     anchors.rightMargin: _toolsMargin
                     height: batteryPercentageIcon_2.height*0.7
                     width: batteryPercentageIcon_2.width*0.7
-                    visible: _GD60//true//batMouseArea_1.containsMouse? true: false
+                    visible: false//true//batMouseArea_1.containsMouse? true: false
                     color: "transparent"// desktop version "black"
                     border.width: 0
                     border.color: "transparent"// desktop version "lightgray"
@@ -726,7 +726,7 @@ Item {
                 Loader {
                     id: gasolineIconLoader
                     anchors.top: parent.top
-                    anchors.left: _GD60 ? textBoxBatteryInfo_2.right :parent.left
+                    anchors.left:parent.left
                     anchors.rightMargin: _toolsMargin
                     anchors.leftMargin: _toolsMargin*2
                     anchors.topMargin: _toolsMargin
@@ -783,246 +783,6 @@ Item {
                 }
 
 
-
-
-                //operação do gerador (pode ser pop-up por que é fudido de importante?) incluir pop-up/cor dinamica/etc
-               /* QGCColoredImage {
-                    id: generatorFunctionalityIcon
-                    anchors.top:        parent.top
-                    anchors.left:       gasolineIconLoader.right
-                    anchors.leftMargin: _toolsMargin*2
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/Generator.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              !flagAlertaGerador ? "white" : "orange" //vai receber o retorno da função. Ou vai estar verde ou vai estar vermelho/laranja. Sem rolo
-
-                }
-                DropShadow {
-                    anchors.fill: generatorFunctionalityIcon
-                    source: generatorFunctionalityIcon
-                    color: "#80000000" // Semi-transparent black shadow
-                    radius: 8
-                    samples:17
-                    spread: 0
-                    verticalOffset: 5
-                    horizontalOffset: 5
-                }
-
-                OpacityMask{
-                    anchors.fill: generatorFunctionalityIcon
-                    source: generatorFunctionalityIcon
-                    maskSource: generatorFunctionalityIcon
-                    MouseArea{
-                        id: generatorMouseArea
-                        anchors.fill: parent
-                        hoverEnabled : true
-
-                    }
-                }
-
-
-
-                Rectangle{
-                    //anchors.fill:parent
-                    id: generatorCurrentBar
-                    anchors.left: generatorFunctionalityIcon.right
-                    anchors.top: parent.top
-                    anchors.leftMargin: _toolsMargin*2
-                    anchors.topMargin:  _toolsMargin*2
-                    width:height/3
-                    height: parent.height*2/3
-                    color:"green"
-                    visible: _GD60? false:true
-                    //z:1000000
-                    Rectangle{
-                        anchors.top:generatorCurrentBar.top
-                        anchors.left:generatorCurrentBar.left
-                        width:generatorCurrentBar.width
-                        height: _current_generator >= 0 ?  generatorCurrentBar.height * (1-(_current_generator/maxGeneratorCurrent)): generatorCurrentBar.height
-                        color:"black"
-                    }
-                    Rectangle{
-                        anchors.fill:parent
-                        border.width:2
-                        border.color: "lightgray"
-                        color:"transparent"
-                    }
-                    Rectangle{
-                        anchors.horizontalCenter: generatorCurrentBar.horizontalCenter
-                        width: generatorCurrentBar.width + _toolsMargin
-                        height: generatorCurrentBar.height/20
-                        y: generatorCurrentBar.height*(oldGeneratorMediamValue/20)/maxGeneratorCurrent
-                        color: "white"
-                        border.width:1
-                        border.color:"black"
-                    }
-                }
-
-                Rectangle{
-                    id: textBoxGeneratorInfo
-                    anchors.verticalCenter: generatorFunctionalityIcon.verticalCenter
-                    anchors.horizontalCenter: generatorFunctionalityIcon.horizontalCenter
-                    height: generatorFunctionalityIcon.height/2
-                    width: generatorFunctionalityIcon.width
-                    visible: true//generatorMouseArea.containsMouse? true: false
-                    color: "black"
-                    border.width: 1
-                    border.color: "lightgray"
-                }
-                ColumnLayout {
-                    id:                     generatorInfoColumn
-                    anchors.fill: textBoxGeneratorInfo
-                    spacing:                0
-                    visible: textBoxGeneratorInfo.visible
-
-
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _current_generator + "A"
-                        font.bold: true
-                        //font.pointSize:         ScreenTools.mediumFontPixelHeight
-                    }
-
-                }*/
-
-
-
-                //satelite https://forest-gis.com/2018/01/acuracia-gps-o-que-sao-pdop-hdop-gdop-multi-caminho-e-outros.html/?srsltid=AfmBOorX7DD9JggA1vLTP2DuhOK44T28jHasCbLA0nv5nSnLX7irYLlW
-                //activeVehicle.gps.count.rawValue (NUM SATELITES); _activeVehicle.gps.hdop.rawValue (HDOP); globals.activeVehicle.gps.lock.rawValue (PDOP)
-                /*QGCColoredImage {
-                    id: satteliteInformationIcon
-                    anchors.top:        parent.top
-                    anchors.left:       _GD60? generatorFunctionalityIcon.right :generatorCurrentBar.right
-                    anchors.leftMargin: _toolsMargin
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/Gps.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              _satPDOP >= 2 && _satCount >=6 ? "green": "orange"
-                }
-                DropShadow {
-                    anchors.fill: satteliteInformationIcon
-                    source: satteliteInformationIcon
-                    color: "#80000000" // Semi-transparent black shadow
-                    radius: 8
-                    samples:17
-                    spread: 0
-                    verticalOffset: 5
-                    horizontalOffset: 5
-                }
-                OpacityMask{
-                    anchors.fill: satteliteInformationIcon
-                    source: satteliteInformationIcon
-                    maskSource: satteliteInformationIcon
-                    MouseArea{
-                        id: satMouseArea
-                        anchors.fill: parent
-                        hoverEnabled : true
-
-                    }
-                }
-                Rectangle{
-                    id: textBoxSatteliteInfo
-                    anchors.verticalCenter: satteliteInformationIcon.verticalCenter
-                    //anchors.horizontalCenter: satteliteInformationIcon.horizontalCenter
-                    anchors.left: satteliteInformationIcon.right
-                    anchors.leftMargin: _toolsMargin
-                    anchors.rightMargin: _toolsMargin
-                    height: satteliteInformationIcon.height*0.7
-                    width: satteliteInformationIcon.width
-                    visible: true//satMouseArea.containsMouse? true: false
-                    color: "transparent" // desktop "black"
-                    border.width: 0// 1
-                    border.color: "transparent"// desktop "lightgray"
-                }
-                ColumnLayout {
-                    id:                     satteliteInfoColumn
-                    anchors.fill: textBoxSatteliteInfo
-                    spacing:                0
-                    visible: textBoxSatteliteInfo.visible
-
-
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   "Count: " + _satCount
-                        font.bold: true
-                        font.pixelSize:         _androidBuild ?  13 : 24
-                    }
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   "PDOP: "+ _satPDOP
-                        font.bold: true
-                        font.pixelSize:         _androidBuild ?  13 : 24
-                        //font.pointSize:         ScreenTools.mediumFontPixelHeight
-                    }
-
-                }
-
-                //enlace
-                QGCColoredImage {
-                    id: rcInformationIcon
-                    anchors.top:        parent.top
-                    anchors.left:       textBoxSatteliteInfo.right
-                    anchors.leftMargin: _toolsMargin*3
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/RC.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:           _rcQuality_mean >= 60 ? "green" : (_rcQuality_mean>=30? "yellow": (_rcQuality_mean >= 20 ? "orange":"red"))
-                    visible: true
-
-                    MouseArea{
-                        id: rcMouseArea
-                        anchors.fill: parent
-                        hoverEnabled : true
-                        onClicked: {
-                            if (_androidBuild) {
-                                textBoxRCInfo.visible = !textBoxRCInfo.visible;
-                            }
-                        }
-                    }
-                }
-
-
-                Rectangle{
-                    id: textBoxRCInfo
-                    anchors.verticalCenter: rcInformationIcon.verticalCenter
-                    anchors.horizontalCenter: rcInformationIcon.horizontalCenter
-                    height: satteliteInformationIcon.height*0.7
-                    width: satteliteInformationIcon.width*0.8
-                    visible: _androidBuild ? false : rcMouseArea.containsMouse
-                    color: "black"
-                    border.width: 1
-                    border.color: "lightgray"
-                }
-                ColumnLayout {
-                    id:                     rcInfoColumn
-                    anchors.fill: textBoxRCInfo
-                    //anchors.rightMargin: _toolsMargin*2
-                    spacing:                0
-                    visible: textBoxRCInfo.visible
-
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _rcQuality_mean.toString()+"%" /*_activeVehicle.rcRSSI.toString() +"%"*/ /*_rcQuality + "%"*/
-                /*        font.bold: true
-                        //font.pointSize:         ScreenTools.mediumFontPixelHeight
-                    }
-                }*/
-
-
                 //Temperatura Gerador
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon
@@ -1035,6 +795,7 @@ Item {
                     source: "/qmlimages/MotorTemp.svg"
                     fillMode: Image.PreserveAspectFit
                     color: "white"
+                    visible: _GD60? false:true
                 }
                 QGCColoredImage {
                     id: motorTemperatureInformationIcon2
@@ -1047,6 +808,7 @@ Item {
                     source: "/qmlimages/MotorTermometer.png"
                     fillMode: Image.PreserveAspectFit
                     color: _motor_temp > 110 ? (_motor_temp > 150 ? (_motor_temp >= 200 ? "red" : "orange") : "yellow") : "white"
+                    visible: motorTemperatureInformationIcon.visible
                 }
 
                 Rectangle{
@@ -1055,7 +817,7 @@ Item {
                     anchors.horizontalCenter: motorTemperatureInformationIcon.horizontalCenter
                     height: motorTemperatureInformationIcon.height*1.2
                     width: motorTemperatureInformationIcon.width
-                    visible:  _androidBuild ? false : motorTempMouseArea.containsMouse//motorTempMouseArea.containsMouse? true: false
+                    visible:  _androidBuild || motorTemperatureInformationIcon.visible ? false : motorTempMouseArea.containsMouse//motorTempMouseArea.containsMouse? true: false
                     color: "black"
                     border.width: 1
                     border.color: "lightgray"
@@ -1063,7 +825,7 @@ Item {
                 MouseArea{
                     id:motorTempMouseArea
                     anchors.fill: motorTemperatureInformationIcon
-                    hoverEnabled: true
+                    hoverEnabled: !_GD60
                     onClicked: {
                         if (_androidBuild) {
                             textBoxMotorTempInfo.visible = !textBoxMotorTempInfo.visible;
@@ -1142,7 +904,7 @@ Item {
                 Rectangle {
                     id: rotorsTempArea
                     anchors.top: parent.top
-                    anchors.left: _GD60? motorTempInfoColumn.right : motorTempInfoColumn.right
+                    anchors.left: _GD60? textBoxGasolinePercentage.right : motorTempInfoColumn.right
                     anchors.margins: _toolsMargin * 1.5
                     width: height * 2
                     height: parent.height*2/3
@@ -1285,12 +1047,135 @@ Item {
 
                 }
 
+                Item{
+                    id: centralRotor_1_Accell
+                    anchors.left: rotorsTempArea.right
+                    anchors.top: parent.top
+                    anchors.margins:    _toolsMargin*2
+                    height: parent.height*2/3
+                    width: height
+                    visible: _GD60? true:false
+                    Canvas { //border of
+                        anchors.fill: parent
+                        id: rotor1Arc
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.clearRect(0, 0, width, height)
+                            ctx.strokeStyle = "gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            var radius = Math.min(width, height) / 2.5
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
+                            ctx.stroke()
+                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal1/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
+                            ctx.stroke()
+                        }
+                    }
+                    /*MouseArea { // Torna o  interativa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            console.log("Click Test");
+                        }
+                        onContainsMouseChanged: {
+                            _selected_rotor_1 = !_selected_rotor_1
+                        }
+                    }*/
+                    DropShadow {
+                        anchors.fill: parent
+                        source: rotor1Arc
+                        color: "yellow" // Semi-transparent black shadow
+                        radius: 8
+                        samples:17
+                        spread: 0.4
+                        verticalOffset: 0
+                        horizontalOffset: 0
+                        visible: _selected_rotor_1
+                    }
+                    //Component.onCompleted: requestPaint()
+                    Text{
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: _rpm_horizontal1
+                        color:"green"
+                        font.bold: true
+                    }
+                }
+
+                Item{
+                    id: centralRotor_2_Accell
+                    anchors.left: centralRotor_1_Accell.right
+                    anchors.top: parent.top
+                    anchors.margins:    _toolsMargin*2
+                    height: parent.height*2/3
+                    width: height
+                    visible: _GD60? true:false
+                    Canvas { //border of
+                        anchors.fill: parent
+                        id: rotor2Arc
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.clearRect(0, 0, width, height)
+                            ctx.strokeStyle = "gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            var radius = Math.min(width, height) / 2.5
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
+                            ctx.stroke()
+                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal2/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
+                            ctx.stroke()
+                        }
+                    }
+                    /*MouseArea { // Torna o  interativa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            console.log("Click Test");
+                        }
+                        onContainsMouseChanged: {
+                            _selected_rotor_1 = !_selected_rotor_1
+                        }
+                    }*/
+                    DropShadow {
+                        anchors.fill: parent
+                        source: rotor2Arc
+                        color: "yellow" // Semi-transparent black shadow
+                        radius: 8
+                        samples:17
+                        spread: 0.4
+                        verticalOffset: 0
+                        horizontalOffset: 0
+                        visible: _selected_rotor_1
+                    }
+                    //Component.onCompleted: requestPaint()
+                    Text{
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: _rpm_horizontal2
+                        color:"green"
+                        font.bold: true
+                    }
+                }
+
+
+
+
                 Item {
                     id: _dataBox
                     height: parent.height * 2/3
                     width: parent.width*0.45
                     anchors.top: parent.top
-                    anchors.left: rotorsTempArea.right
+                    anchors.left: _GD60? centralRotor_2_Accell.right : rotorsTempArea.right
                     anchors.margins: _toolsMargin * 1.5
                     property int _borderWidth: 2
                     property int _fontSize: _androidBuild ?  15 : 20
@@ -1430,127 +1315,6 @@ Item {
 
                 //ESSES PRÓXIMOS 2 ITENS SÃO DO GD60. PARA COMPILAR PARA O GD60, PEGUE A VERSÃO MAIN DA BRANCH E COLOQUE _GD60: TRUE NO COMEÇO DO ARQUIVO
                 // Dial Accelerometer
-                Item{
-                    id: centralRotor_1_Accell
-                    anchors.left: rotorsTempArea.right
-                    anchors.top: parent.top
-                    anchors.margins:    _toolsMargin*2
-                    height: parent.height*2/3
-                    width: height
-                    visible: _GD60? true:false
-                    Canvas { //border of
-                        anchors.fill: parent
-                        id: rotor1Arc
-                        onPaint: {
-                            var ctx = getContext("2d")
-                            ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal1/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                        }
-                    }
-                    /*MouseArea { // Torna o  interativa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            console.log("Click Test");
-                        }
-                        onContainsMouseChanged: {
-                            _selected_rotor_1 = !_selected_rotor_1
-                        }
-                    }*/
-                    DropShadow {
-                        anchors.fill: parent
-                        source: rotor1Arc
-                        color: "yellow" // Semi-transparent black shadow
-                        radius: 8
-                        samples:17
-                        spread: 0.4
-                        verticalOffset: 0
-                        horizontalOffset: 0
-                        visible: _selected_rotor_1
-                    }
-                    //Component.onCompleted: requestPaint()
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _rpm_horizontal1
-                        color:"green"
-                        font.bold: true
-                    }
-                }
-
-                Item{
-                    id: centralRotor_2_Accell
-                    anchors.left: centralRotor_1_Accell.right
-                    anchors.top: parent.top
-                    anchors.margins:    _toolsMargin*2
-                    height: parent.height*2/3
-                    width: height
-                    visible: _GD60? true:false
-                    Canvas { //border of
-                        anchors.fill: parent
-                        id: rotor2Arc
-                        onPaint: {
-                            var ctx = getContext("2d")
-                            ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal2/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                        }
-                    }
-                    /*MouseArea { // Torna o  interativa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            console.log("Click Test");
-                        }
-                        onContainsMouseChanged: {
-                            _selected_rotor_1 = !_selected_rotor_1
-                        }
-                    }*/
-                    DropShadow {
-                        anchors.fill: parent
-                        source: rotor2Arc
-                        color: "yellow" // Semi-transparent black shadow
-                        radius: 8
-                        samples:17
-                        spread: 0.4
-                        verticalOffset: 0
-                        horizontalOffset: 0
-                        visible: _selected_rotor_1
-                    }
-                    //Component.onCompleted: requestPaint()
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _rpm_horizontal2
-                        color:"green"
-                        font.bold: true
-                    }
-                }
-
-
 
             }
 
@@ -2132,7 +1896,7 @@ Item {
                     font.bold: false
                     visible: _current_generator==0 && _activeVehicle.flying
 
-                     font.pixelSize: _androidBuild? 8 : 14
+                     font.pixelSize: _androidBuild? 12 : 14
                 }
             }
         }
