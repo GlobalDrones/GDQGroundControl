@@ -81,6 +81,7 @@ Item {
     property var _current_bateria_2:  0
 
     property var _current_generator: 0
+    property var _temperature_generator: 0
     property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage (P/ GD25)
 
     property int _battery1Index: _GD60? 0:0
@@ -167,12 +168,41 @@ Item {
 
     property bool canShowBreachAlert: true
 
+    property string requestedAlerts
+    property int alertCounts: 0;
+
+    function makeAlerts() {
+        var alertas = ""
+        var count = 0
+        if (_activeVehicle && _activeVehicle.flying) {
+            if (Math.abs(_current_generator) <= 5){
+                alertas += "POSSÍVEL PROBLEMA NO GERADOR\n"
+                count++
+            }
+            if (_motor_temp >= 110){
+                alertas += "POSSÍVEL SOBREAQUECIMENTO NO GERADOR\n"
+                count++
+            }
+        }
+        console.log(alertas)
+        return [count,alertas]
+    }
+
+
+
     Timer {
         id: breachCooldownTimer
         interval: 10000 // cooldown de 10 segundos
         running: true
         repeat: true
-        onTriggered: generatorAlertPopup.open();
+        onTriggered: {
+            console.log("Temperatura: ", _motor_temp.toString())
+            console.log("Gasolina: ",_gasolina)
+            var result = makeAlerts();
+            alertCounts = result[0];
+            requestedAlerts = result[1];
+            if(alertCounts > 0) generatorAlertPopup.open();
+        }
     }
 
     function _calcCenterViewPort() {
@@ -348,6 +378,7 @@ Item {
             _satPDOP = _activeVehicle.gps.lock.rawValue
 
 
+
             // console.log(_activeVehicle.rcRSSI.valueOf())
             _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue//_activeVehicle.batteries.index(0,1).voltage.rawValue
 
@@ -403,6 +434,7 @@ Item {
             }
 
 
+            _motor_temp = _motor_temp
             if(_GD60){
                 _aceleracao_rotor_1 = _aceleracao_rotor_1
                 _aceleracao_rotor_2 = _aceleracao_rotor_2
@@ -422,6 +454,8 @@ Item {
             _current_generator = _activeVehicle.batteries.get(_generatorIndex).current.rawValue.toFixed(2)
             _current_bateria_1 = _activeVehicle.batteries.get(_battery1Index).current.rawValue.toFixed(2)
 
+
+            _temperature_generator = _activeVehicle.batteries.get(_generatorIndex).temperature.rawValue.toFixed(2)
 
 
             if(_current_generator_ARRAY.length === 20){ //sabendo que recebemos um dado novo a cada 0.1 segundos
@@ -1872,6 +1906,9 @@ Item {
         }
 
         Popup {
+
+
+
             id: generatorAlertPopup
             x: (parent.width - width) / 2
             y: 10  // optional: vertical position
@@ -1881,25 +1918,24 @@ Item {
             focus: false
             background: null
             closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-            visible: _current_generator==0 && _activeVehicle.flying
+            visible: alertCounts>0
 
             Rectangle {
                 anchors.fill: parent
                 color: "red"
                 border.color: "black"
-                visible: _current_generator==0 && _activeVehicle.flying
-
-
+                visible: true
                 Text {
                     anchors.centerIn: parent
-                    text: "ALERTA: POSSÍVEL PROBLEMA NO GERADOR"
+                    text: requestedAlerts
                     font.bold: false
-                    visible: _current_generator==0 && _activeVehicle.flying
+                    visible: true
 
                      font.pixelSize: _androidBuild? 12 : 14
                 }
             }
         }
+
 
         Item {
             id: cameraControlOverlay
