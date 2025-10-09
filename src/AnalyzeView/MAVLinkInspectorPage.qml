@@ -99,7 +99,7 @@ AnalyzePage {
                         _RPM_R6 = controller.activeSystem.messages.get(i).fields.get(5).value*/
                     }
 
-                    if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){
+                    /*if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){
                         curSystem.selected = i
                         //console.log(controller.activeSystem.messages.get(i).fields.get(1).name, controller.activeSystem.messages.get(i).fields.get(2).value)
                        // console.log(controller.activeSystem.messages.get(i).fields.get(1).value)
@@ -109,12 +109,20 @@ AnalyzePage {
                         else{
                             _TEMP_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
                         }
+                    }*/
+                    if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){
+                        curSystem.selected = i;
+                        _TEMP_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
+
+
+
+                        }
                     }
 
                 }
 
             }
-        }
+
 
     Component {
         id:  headerComponent
