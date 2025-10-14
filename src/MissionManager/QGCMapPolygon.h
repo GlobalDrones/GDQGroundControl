@@ -69,6 +69,10 @@ public:
     /// @return true: success
     Q_INVOKABLE bool loadKMLOrSHPFile(const QString& file);
 
+    /// Loads a polygon from a KML file and generates outer
+    /// @return true: success
+    Q_INVOKABLE bool loadKMLwithSpacing(const QString& file, int intra_spacing);
+
     /// Returns the path in a list of QGeoCoordinate's format
     QList<QGeoCoordinate> coordinateList(void) const;
 

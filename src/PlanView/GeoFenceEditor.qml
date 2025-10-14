@@ -128,6 +128,7 @@ QGCFlickable {
                         }
                     }
 
+
                     QGCButton {
                         Layout.fillWidth:   true
                         text:               qsTr("Circular Fence")

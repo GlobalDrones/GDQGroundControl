@@ -493,6 +493,41 @@ bool QGCMapPolygon::loadKMLOrSHPFile(const QString& file)
     _beginResetIfNotActive();
     clear();
     appendVertices(rgCoords);
+    //Aqui é como se acessa rgCoords)
+    //for(auto i: rgCoords)qWarning()<<(i.toString());
+    _endResetIfNotActive();
+
+    return true;
+}
+
+bool QGCMapPolygon::loadKMLwithSpacing(const QString& file, int intra_spacing)
+{
+    QString errorString;
+    QList<QGeoCoordinate> rgCoords;
+    if (!ShapeFileHelper::loadPolygonFromFile(file, rgCoords, errorString)) {
+        qgcApp()->showAppMessage(errorString);
+        return false;
+    }
+
+    _beginResetIfNotActive();
+    clear();
+    //appendVertices(rgCoords);
+    //Aqui é como se acessa rgCoords)
+    const int desiredPrecision = 9; // Set your desired precision here
+    for(auto& i: rgCoords) {
+        // Use QString::number() to format the raw double values
+        QString latStr = QString::number(i.latitude(), 'f', desiredPrecision);
+        QString lonStr = QString::number(i.longitude(), 'f', desiredPrecision);
+
+        // Combine into a readable string
+        QString highPrecisionCoord = QString("Lat: %1, Lon: %2").arg(latStr).arg(lonStr);
+
+        i.setAltitude(i.latitude()+intra_spacing);
+        i.setLongitude(i.longitude()+intra_spacing);
+
+        qWarning() << highPrecisionCoord;
+    }
+    appendVertices(rgCoords);
     _endResetIfNotActive();
 
     return true;

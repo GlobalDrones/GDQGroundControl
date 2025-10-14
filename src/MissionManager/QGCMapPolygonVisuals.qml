@@ -227,6 +227,18 @@ Item {
         }
     }
 
+    KMLOrSHPFileDialog {
+        id:             kmlOrSHPLoadDialog_custom
+        title:          qsTr("Select Polygon File")
+        selectExisting: true
+
+        onAcceptedForLoad: {
+            mapPolygon.loadKMLwithSpacing(file,5)
+            mapFitFunctions.fitMapViewportToMissionItems()
+            close()
+        }
+    }
+
     QGCMenu {
         id: menu
 
@@ -559,6 +571,12 @@ Item {
                 _horizontalPadding: 0
                 text:               qsTr("Load KML/SHP...")
                 onClicked:          kmlOrSHPLoadDialog.openForLoad()
+                visible:            !mapPolygon.traceMode
+            }
+            QGCButton {
+                _horizontalPadding: 0
+                text:               qsTr("Load Flight Zones")
+                onClicked:          kmlOrSHPLoadDialog_custom.openForLoad()
                 visible:            !mapPolygon.traceMode
             }
         }
