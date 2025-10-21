@@ -35,6 +35,7 @@ import QtGraphicalEffects 1.0
 import SiYi.Object 1.0
 import "qrc:/qml/QGroundControl/Controls"
 import "qrc:/qml/QGroundControl/FlightDisplay"
+
 Item {
     id: _root
 
@@ -401,6 +402,8 @@ Item {
 
 
 
+
+
             if(horas_restantes<10) {horas_restantes_string = "0"+horas_restantes.toString()}
             else {horas_restantes_string = horas_restantes.toString()}
             if(minutos_restantes < 10){ minutos_restantes_string = "0" +minutos_restantes.toString()}
@@ -494,6 +497,7 @@ Item {
                 aceleracao_rotor_4_ARRAY.shift();
                 aceleracao_rotor_5_ARRAY.shift();
                 aceleracao_rotor_6_ARRAY.shift();
+
             }
         }
     }

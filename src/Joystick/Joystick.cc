@@ -442,6 +442,7 @@ float Joystick::_adjustRange(int value, Calibration_t calibration, bool withDead
             axisPercent = (valueNormalized + calibration.deadband) / (axisLength - calibration.deadband);
         } else {
             axisPercent = 0.f;
+
         }
     }
     else {
@@ -453,8 +454,9 @@ float Joystick::_adjustRange(int value, Calibration_t calibration, bool withDead
     if (calibration.reversed) {
         correctedValue *= -1.0f;
     }
+    qWarning()<<"AXIS PERCENT: "<<axisPercent;
 
-#if 0
+
     qCDebug(JoystickLog) << "_adjustRange corrected:value:min:max:center:reversed:deadband:basis:normalized:length"
                             << correctedValue
                             << value
@@ -466,7 +468,7 @@ float Joystick::_adjustRange(int value, Calibration_t calibration, bool withDead
                             << axisBasis
                             << valueNormalized
                             << axisLength;
-#endif
+
 
     return std::max(-1.0f, std::min(correctedValue, 1.0f));
 }
@@ -477,6 +479,7 @@ void Joystick::run()
     //-- Joystick thread
     _open();
     //-- Reset timers
+
     _axisTime.start();
     for (int buttonIndex = 0; buttonIndex < _totalButtonCount; buttonIndex++) {
         if(_buttonActionArray[buttonIndex]) {
@@ -618,6 +621,7 @@ void Joystick::_handleAxis()
             float   gimbalPitch = 0.0f;
             float   gimbalYaw   = 0.0f;
 
+
             if(_axisCount > 4) {
                 axis = _rgFunctionAxis[gimbalPitchFunction];
                 gimbalPitch = _adjustRange(_rgAxisValues[axis], _rgCalibration[axis],_deadband);
@@ -646,6 +650,7 @@ void Joystick::_handleAxis()
                 pitch =     std::max(-1.0f, std::min(tanf(asinf(pitch_limited)),    1.0f));
                 yaw =       std::max(-1.0f, std::min(tanf(asinf(yaw_limited)),      1.0f));
                 throttle =  std::max(-1.0f, std::min(tanf(asinf(throttle_limited)), 1.0f));
+
             }
 
             if ( _exponential < -0.01f) {

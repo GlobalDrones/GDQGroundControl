@@ -282,61 +282,61 @@ Vehicle::Vehicle(LinkInterface*             link,
 }
 
 // Disconnected Vehicle for offline editing
-Vehicle::Vehicle(MAV_AUTOPILOT              firmwareType,
-                 MAV_TYPE                   vehicleType,
-                 FirmwarePluginManager*     firmwarePluginManager,
-                 QObject*                   parent)
-    : FactGroup                         (_vehicleUIUpdateRateMSecs, ":/json/Vehicle/VehicleFact.json", parent)
-    , _id                               (0)
-    , _defaultComponentId               (MAV_COMP_ID_ALL)
-    , _offlineEditingVehicle            (true)
-    , _firmwareType                     (firmwareType)
-    , _vehicleType                      (vehicleType)
-    , _toolbox                          (qgcApp()->toolbox())
-    , _settingsManager                  (_toolbox->settingsManager())
-    , _defaultCruiseSpeed               (_settingsManager->appSettings()->offlineEditingCruiseSpeed()->rawValue().toDouble())
-    , _defaultHoverSpeed                (_settingsManager->appSettings()->offlineEditingHoverSpeed()->rawValue().toDouble())
-    , _mavlinkProtocolRequestComplete   (true)
-    , _maxProtoVersion                  (200)
-    , _capabilityBitsKnown              (true)
-    , _capabilityBits                   (MAV_PROTOCOL_CAPABILITY_MISSION_FENCE | MAV_PROTOCOL_CAPABILITY_MISSION_RALLY)
-    , _firmwarePluginManager            (firmwarePluginManager)
-    , _trajectoryPoints                 (new TrajectoryPoints(this, this))
-    , _mavlinkStreamConfig              (std::bind(&Vehicle::_setMessageInterval, this, std::placeholders::_1, std::placeholders::_2))
-    , _rollFact                         (0, _rollFactName,              FactMetaData::valueTypeDouble)
-    , _pitchFact                        (0, _pitchFactName,             FactMetaData::valueTypeDouble)
-    , _headingFact                      (0, _headingFactName,           FactMetaData::valueTypeDouble)
-    , _rollRateFact                     (0, _rollRateFactName,          FactMetaData::valueTypeDouble)
-    , _pitchRateFact                    (0, _pitchRateFactName,         FactMetaData::valueTypeDouble)
-    , _yawRateFact                      (0, _yawRateFactName,           FactMetaData::valueTypeDouble)
-    , _groundSpeedFact                  (0, _groundSpeedFactName,       FactMetaData::valueTypeDouble)
-    , _airSpeedFact                     (0, _airSpeedFactName,          FactMetaData::valueTypeDouble)
-    , _airSpeedSetpointFact             (0, _airSpeedSetpointFactName,  FactMetaData::valueTypeDouble)
-    , _climbRateFact                    (0, _climbRateFactName,         FactMetaData::valueTypeDouble)
-    , _altitudeRelativeFact             (0, _altitudeRelativeFactName,  FactMetaData::valueTypeDouble)
-    , _altitudeAMSLFact                 (0, _altitudeAMSLFactName,      FactMetaData::valueTypeDouble)
-    , _altitudeTuningFact               (0, _altitudeTuningFactName,    FactMetaData::valueTypeDouble)
-    , _altitudeTuningSetpointFact       (0, _altitudeTuningSetpointFactName, FactMetaData::valueTypeDouble)
-    , _xTrackErrorFact                  (0, _xTrackErrorFactName,       FactMetaData::valueTypeDouble)
-    , _flightDistanceFact               (0, _flightDistanceFactName,    FactMetaData::valueTypeDouble)
-    , _flightTimeFact                   (0, _flightTimeFactName,        FactMetaData::valueTypeElapsedTimeInSeconds)
-    , _distanceToHomeFact               (0, _distanceToHomeFactName,    FactMetaData::valueTypeDouble)
-    , _missionItemIndexFact             (0, _missionItemIndexFactName,  FactMetaData::valueTypeUint16)
-    , _headingToNextWPFact              (0, _headingToNextWPFactName,   FactMetaData::valueTypeDouble)
-    , _distanceToNextWPFact             (0, _distanceToNextWPFactName,  FactMetaData::valueTypeDouble)
-    , _headingToHomeFact                (0, _headingToHomeFactName,     FactMetaData::valueTypeDouble)
-    , _distanceToGCSFact                (0, _distanceToGCSFactName,     FactMetaData::valueTypeDouble)
-    , _hobbsFact                        (0, _hobbsFactName,             FactMetaData::valueTypeString)
-    , _throttlePctFact                  (0, _throttlePctFactName,       FactMetaData::valueTypeUint16)
-    , _rangeFinderDistFact              (0, _rangeFinderDistFactName,   FactMetaData::valueTypeFloat)
-    , _gpsFactGroup                     (this)
-    , _gps2FactGroup                    (this)
-    , _windFactGroup                    (this)
-    , _vibrationFactGroup               (this)
-    , _clockFactGroup                   (this)
-    , _distanceSensorFactGroup          (this)
-    , _localPositionFactGroup           (this)
-    , _localPositionSetpointFactGroup   (this)
+Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
+                 MAV_TYPE                    vehicleType,
+                 FirmwarePluginManager* firmwarePluginManager,
+                 QObject* parent)
+    : FactGroup                              (_vehicleUIUpdateRateMSecs, ":/json/Vehicle/VehicleFact.json", parent)
+    , _id                                    (0)
+    , _defaultComponentId                    (MAV_COMP_ID_ALL)
+    , _offlineEditingVehicle                 (true)
+    , _firmwareType                          (firmwareType)
+    , _vehicleType                           (vehicleType)
+    , _toolbox                               (qgcApp()->toolbox())
+    , _settingsManager                       (_toolbox->settingsManager())
+    , _defaultCruiseSpeed                    (_settingsManager->appSettings()->offlineEditingCruiseSpeed()->rawValue().toDouble())
+    , _defaultHoverSpeed                     (_settingsManager->appSettings()->offlineEditingHoverSpeed()->rawValue().toDouble())
+    , _mavlinkProtocolRequestComplete        (true)
+    , _maxProtoVersion                       (200)
+    , _capabilityBitsKnown                   (true)
+    , _capabilityBits                        (MAV_PROTOCOL_CAPABILITY_MISSION_FENCE | MAV_PROTOCOL_CAPABILITY_MISSION_RALLY)
+    , _firmwarePluginManager                 (firmwarePluginManager)
+    , _trajectoryPoints                      (new TrajectoryPoints(this, this))
+    , _mavlinkStreamConfig                   (std::bind(&Vehicle::_setMessageInterval, this, std::placeholders::_1, std::placeholders::_2))
+    , _rollFact                              (0, _rollFactName,              FactMetaData::valueTypeDouble)
+    , _pitchFact                             (0, _pitchFactName,             FactMetaData::valueTypeDouble)
+    , _headingFact                           (0, _headingFactName,           FactMetaData::valueTypeDouble)
+    , _rollRateFact                          (0, _rollRateFactName,          FactMetaData::valueTypeDouble)
+    , _pitchRateFact                         (0, _pitchRateFactName,         FactMetaData::valueTypeDouble)
+    , _yawRateFact                           (0, _yawRateFactName,           FactMetaData::valueTypeDouble)
+    , _groundSpeedFact                       (0, _groundSpeedFactName,       FactMetaData::valueTypeDouble)
+    , _airSpeedFact                          (0, _airSpeedFactName,          FactMetaData::valueTypeDouble)
+    , _airSpeedSetpointFact                  (0, _airSpeedSetpointFactName,  FactMetaData::valueTypeDouble)
+    , _climbRateFact                         (0, _climbRateFactName,         FactMetaData::valueTypeDouble)
+    , _altitudeRelativeFact                  (0, _altitudeRelativeFactName,  FactMetaData::valueTypeDouble)
+    , _altitudeAMSLFact                      (0, _altitudeAMSLFactName,      FactMetaData::valueTypeDouble)
+    , _altitudeTuningFact                    (0, _altitudeTuningFactName,    FactMetaData::valueTypeDouble)
+    , _altitudeTuningSetpointFact            (0, _altitudeTuningSetpointFactName, FactMetaData::valueTypeDouble)
+    , _xTrackErrorFact                       (0, _xTrackErrorFactName,       FactMetaData::valueTypeDouble)
+    , _flightDistanceFact                    (0, _flightDistanceFactName,    FactMetaData::valueTypeDouble)
+    , _flightTimeFact                        (0, _flightTimeFactName,        FactMetaData::valueTypeElapsedTimeInSeconds)
+    , _distanceToHomeFact                    (0, _distanceToHomeFactName,    FactMetaData::valueTypeDouble)
+    , _missionItemIndexFact                  (0, _missionItemIndexFactName,  FactMetaData::valueTypeUint16)
+    , _headingToNextWPFact                   (0, _headingToNextWPFactName,   FactMetaData::valueTypeDouble)
+    , _distanceToNextWPFact                  (0, _distanceToNextWPFactName,  FactMetaData::valueTypeDouble)
+    , _headingToHomeFact                     (0, _headingToHomeFactName,     FactMetaData::valueTypeDouble)
+    , _distanceToGCSFact                     (0, _distanceToGCSFactName,     FactMetaData::valueTypeDouble)
+    , _hobbsFact                             (0, _hobbsFactName,             FactMetaData::valueTypeString)
+    , _throttlePctFact                       (0, _throttlePctFactName,       FactMetaData::valueTypeUint16)
+    , _rangeFinderDistFact                   (0, _rangeFinderDistFactName,   FactMetaData::valueTypeFloat)
+    , _gpsFactGroup                          (this)
+    , _gps2FactGroup                         (this)
+    , _windFactGroup                         (this)
+    , _vibrationFactGroup                    (this)
+    , _clockFactGroup                        (this)
+    , _distanceSensorFactGroup               (this)
+    , _localPositionFactGroup                (this)
+    , _localPositionSetpointFactGroup        (this)
 {
     _linkManager = _toolbox->linkManager();
 
@@ -347,15 +347,21 @@ Vehicle::Vehicle(MAV_AUTOPILOT              firmwareType,
 
     _commonInit();
 
-    connect(_settingsManager->appSettings()->offlineEditingCruiseSpeed(),   &Fact::rawValueChanged, this, &Vehicle::_offlineCruiseSpeedSettingChanged);
-    connect(_settingsManager->appSettings()->offlineEditingHoverSpeed(),    &Fact::rawValueChanged, this, &Vehicle::_offlineHoverSpeedSettingChanged);
+    connect(_settingsManager->appSettings()->offlineEditingCruiseSpeed(),     &Fact::rawValueChanged, this, &Vehicle::_offlineCruiseSpeedSettingChanged);
+    connect(_settingsManager->appSettings()->offlineEditingHoverSpeed(),      &Fact::rawValueChanged, this, &Vehicle::_offlineHoverSpeedSettingChanged);
 
     _offlineFirmwareTypeSettingChanged(_firmwareType);  // This adds correct terrain capability bit
     _firmwarePlugin->initializeVehicle(this);
-    QtConcurrent::run([=]() {
-        const char* dev = "/dev/ttyHS3"; // 1. MUDANÇA: Porta de ttyHS1 para ttyHS3
 
-        // 2. MUDANÇA: Abrir para leitura E ESCRITA (O_RDWR)
+    // =========================================================================
+    // MODIFICAÇÃO: INÍCIO DA THREAD DE LEITURA SERIAL E ENVIO MAVLINK
+    // =========================================================================
+    QtConcurrent::run([=]() {
+
+
+        const char* dev = "/dev/ttyHS3"; // Porta de comunicação
+
+        // Abrir para leitura E ESCRITA (O_RDWR)
         int fd = open(dev, O_RDWR | O_NOCTTY);
 
         if (fd < 0) {
@@ -370,15 +376,16 @@ Vehicle::Vehicle(MAV_AUTOPILOT              firmwareType,
             return;
         }
 
-        // A configuração da porta (baud rate, raw, etc.) permanece a mesma
+        // Configuração da porta: 115200 baud, Raw, 8N1
         cfmakeraw(&tty);
         cfsetispeed(&tty, B115200);
         cfsetospeed(&tty, B115200);
-        tty.c_cflag |= CREAD;
-        tty.c_cflag &= ~CSTOPB;
-        tty.c_cflag &= ~CRTSCTS;
-        tty.c_cflag |= CS8;
-        tty.c_cflag |= CLOCAL;
+        tty.c_cflag |= (CREAD | CLOCAL | CS8); // CREAD, CLOCAL, CS8
+        tty.c_cflag &= ~(CSTOPB | CRTSCTS);   // ~CSTOPB, ~CRTSCTS
+
+        // Configurações de tempo limite (VMIN=0, VTIME=0 para leitura não bloqueante)
+        tty.c_cc[VMIN] = 0;
+        tty.c_cc[VTIME] = 0;
 
         if (tcsetattr(fd, TCSANOW, &tty) != 0) {
             qWarning() << "Erro tcsetattr:" << strerror(errno);
@@ -388,56 +395,147 @@ Vehicle::Vehicle(MAV_AUTOPILOT              firmwareType,
 
         qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud.";
 
-        // =========================================================================
-        // 3. MUDANÇA: CÓDIGO DE ENVIO DA SEQUÊNCIA HEXADECIMAL
-        // Sequência: 55 66 01 01 00 00 00 42 02 B5 C0 (11 bytes)
-        // =========================================================================
-        unsigned char link_cmd[] = {0x55, 0x66, 0x01, 0x01, 0x00, 0x00, 0x00, 0x42, 0x02, 0xB5, 0xC0};
-        size_t cmd_len = sizeof(link_cmd);
-        int write_count = 0;
+        // --- CONFIGURAÇÃO MAVLINK ---
 
-        qWarning() << "Tentando enviar comando de link (3 vezes)...";
 
-        for (int i = 0; i < 3; ++i) {
-            // Envia o comando
-            int w_n = write(fd, link_cmd, cmd_len);
-
-            if (w_n != (int)cmd_len) {
-                qWarning() << "ERRO: Falha ao enviar a sequência. Enviado:" << w_n << "bytes. Erro:" << strerror(errno);
-                // Decide se deve continuar ou parar após o erro de escrita
-            } else {
-                write_count++;
-                qWarning() << "Sucesso no envio #" << write_count;
-            }
-            // É comum inserir um pequeno atraso entre os envios (opcional)
-            // QThread::msleep(10);
-        }
-
-        qWarning() << "Comando de link enviado 3 vezes. Iniciando loop de leitura...";
-        // =========================================================================
-        // FIM DO CÓDIGO DE ENVIO
-        // =========================================================================
-
+        mavlink_message_t msg;
+        mavlink_rc_channels_override_t channels_override;
+        uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
 
         unsigned char buf[256];
+        int write_count = 0;
+
+        // Inicializa todos os canais para IGNORAR (UINT16_MAX = 65535)
+        channels_override.chan1_raw  = 65535; channels_override.chan2_raw  = 65535;
+        channels_override.chan3_raw  = 65535; channels_override.chan4_raw  = 65535;
+        channels_override.chan5_raw  = 65535; channels_override.chan6_raw  = 65535;
+        channels_override.chan7_raw  = 65535; channels_override.chan8_raw  = 65535;
+        channels_override.chan9_raw  = 65535; channels_override.chan10_raw = 65535;
+        channels_override.chan11_raw = 65535; channels_override.chan12_raw = 65535;
+        channels_override.chan13_raw = 65535; channels_override.chan14_raw = 65535;
+        channels_override.chan15_raw = 65535; channels_override.chan16_raw = 65535;
+        channels_override.chan17_raw = 65535; channels_override.chan18_raw = 65535;
+
+        qWarning() << "Iniciando loop de leitura serial e envio MAVLink RC_CHANNELS_OVERRIDE...";
+
+        // NOTA: O código de envio da sequência hexadecimal inicial (0x55 0x66...) foi removido,
+        // e o loop de leitura agora inclui a lógica de envio MAVLink.
+
         while (true) {
-            // Agora, o loop continua apenas para ler
+
+
+            // LER DADOS DA SERIAL
             int n = read(fd, buf, sizeof(buf));
 
             if (n < 0) {
                 qWarning() << "Erro na leitura:" << strerror(errno);
                 break;
-            } else if (n == 0) {
-                QThread::msleep(10);
-                continue;
             }
 
-            QString hexLine;
-            for (int i = 0; i < n; ++i)
-                hexLine += QString("%1 ").arg(buf[i], 2, 16, QLatin1Char('0')).toUpper();
+            // LÓGICA DE EXTRAÇÃO E ENVIO MAVLINK
+            if (n > 30 && buf[7] == 0x42) {
 
-            qWarning() << "[UART /dev/ttyHS3] RECEBIDO:" << hexLine.trimmed();
+                // --- 1. EXTRAIR VALORES BRUTOS little-endian (sem escalonamento) ---
+
+                // Mapeamento baseado nos seus comentários (byte_baixo | (byte_alto << 8)):
+
+                // Canal 1
+                uint16_t raw_ch1 = (uint16_t)buf[8] | ((uint16_t)buf[9] << 8);
+
+                // Canal 2
+                uint16_t raw_ch2 = (uint16_t)buf[10] | ((uint16_t)buf[11] << 8);
+
+                // Canal 3
+                uint16_t raw_ch3 = (uint16_t)buf[12] | ((uint16_t)buf[13] << 8);
+
+                // Canal 4
+                uint16_t raw_ch4 = (uint16_t)buf[14] | ((uint16_t)buf[15] << 8);
+
+                // Canal 5
+                uint16_t raw_ch5 = (uint16_t)buf[28] | ((uint16_t)buf[29] << 8);
+
+                // Canal 6
+                uint16_t raw_ch6 = (uint16_t)buf[30] | ((uint16_t)buf[31] << 8);
+
+                // Canal 7
+                uint16_t raw_ch7 = (uint16_t)buf[18] | ((uint16_t)buf[19] << 8);
+
+                //Canal 8
+                uint16_t raw_ch8 = (uint16_t)buf[20] | ((uint16_t)buf[21] << 8);
+
+                uint16_t raw_ch9 = (uint16_t)buf[22] | ((uint16_t)buf[23] << 8);
+
+                // Se precisar de mais canais (baseado nos seus comentários):
+                // Canal 8: Aux 4 (M_BUTTON) - Byte 16, 17
+                // uint16_t raw_ch8 = (uint16_t)buf[16] | ((uint16_t)buf[17] << 8);
+                // channels_override.chan8_raw = raw_ch8;
+
+                // --- 2. PREENCHER RC_CHANNELS_OVERRIDE COM VALORES RAW ---
+
+
+                channels_override.target_system    = id();                    // ID do veículo (ex: 1)
+                channels_override.target_component = MAV_COMP_ID_AUTOPILOT1;  // 1 (autopilot principal)
+
+
+                channels_override.chan1_raw = raw_ch1;
+                channels_override.chan2_raw = raw_ch2;
+                channels_override.chan3_raw = raw_ch3;
+                channels_override.chan4_raw = raw_ch4;
+                channels_override.chan5_raw = raw_ch5;
+                channels_override.chan6_raw = raw_ch6;
+                channels_override.chan7_raw = raw_ch7;
+                channels_override.chan8_raw = raw_ch8;
+                channels_override.chan9_raw = raw_ch9;
+
+                qWarning() << "[MAVLink RC OUT] Ch1/Ch2/Ch3/Ch4:" << channels_override.chan1_raw << "/" << channels_override.chan2_raw << "/" << channels_override.chan3_raw << "/" << channels_override.chan4_raw;
+                qWarning() << "[MAVLink RC OUT] Ch5/Ch6/Ch7/Ch8/Ch9:" << channels_override.chan5_raw << "/" << channels_override.chan6_raw << "/" << channels_override.chan7_raw << "/" << channels_override.chan8_raw << "/" << channels_override.chan9_raw;
+                // --- 3. EMPACOTAR E ENVIAR MAVLINK ---
+                while (!_mavlink) { //PROBLEMA TA AQUI, RESOLVER COMO GARANTIR QUE O CONTROLE TA CONECTADO
+                    qWarning() << "Aguardando veículo conectar...";
+                    QThread::sleep(1);
+
+                }
+
+                    qWarning()<<"ENVIANDOOOO";
+                    mavlink_msg_rc_channels_override_encode(
+                        _mavlink->getSystemId(),     // ID do GCS, geralmente 255
+                        _mavlink->getComponentId(),  // componente do GCS, geralmente 0
+                        &msg,
+                        &channels_override
+                    );
+
+qWarning() << "GCS sysid=" << _mavlink->getSystemId()
+           << "compid=" << _mavlink->getComponentId()
+           << "target_sys=" << channels_override.target_system
+           << "target_comp=" << channels_override.target_component;
+
+                    SharedLinkInterfacePtr sharedLink = vehicleLinkManager()->primaryLink().lock();
+                    if (!sharedLink.get()) {
+                        qWarning() << "Sem link ativo — RC override não será enviado!";
+                        continue;
+                    }
+
+
+                uint16_t len = mavlink_msg_to_send_buffer(buffer, &msg);
+                int w_n = write(fd, buffer, len);
+
+                if (w_n != (int)len) {
+                    qWarning() << "ERRO DE ESCRITA MAVLINK. Enviado:" << w_n << "bytes. Erro:" << strerror(errno);
+                } else {
+                    write_count++;
+                    // Log da linha hexadecimal recebida
+                    QString hexLine;
+                    for (int i = 0; i < n; ++i)
+                        hexLine += QString("%1 ").arg(buf[i], 2, 16, QLatin1Char('0')).toUpper();
+                    qWarning() << "[UART /dev/ttyHS3] RECEBIDO e Enviado MAVLink:" << hexLine.trimmed();
+                }
+
+            // O comando RC Override deve ser enviado em alta frequência (ex: 50Hz = 20ms)
+            QThread::msleep(20);
         }
+        }
+
+
 
         close(fd);
     });
@@ -2543,6 +2641,7 @@ void Vehicle::virtualTabletJoystickValue(double roll, double pitch, double yaw, 
 {
     // The following if statement prevents the virtualTabletJoystick from sending values if the standard joystick is enabled
     if (!_joystickEnabled) {
+       // qWarning()<<"TESTE VIRTUALjOYSTICK "<<roll<<pitch<<yaw<<thrust;
         sendJoystickDataThreadSafe(
                     static_cast<float>(roll),
                     static_cast<float>(pitch),
