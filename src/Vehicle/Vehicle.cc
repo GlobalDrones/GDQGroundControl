@@ -11,7 +11,10 @@
 #include <QDateTime>
 #include <QLocale>
 #include <QQuaternion>
-
+#include <fcntl.h>
+#include <termios.h>
+#include <unistd.h>
+#include <errno.h>
 #include <Eigen/Eigen>
 
 #include "Vehicle.h"
@@ -51,6 +54,14 @@
 #include "VehicleBatteryFactGroup.h"
 #include "EventHandler.h"
 #include "Actuators/Actuators.h"
+#include <QtConcurrent>
+#include <QThread>
+#include <QSharedPointer>
+#include <termios.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
 #ifdef QT_DEBUG
 #include "MockLink.h"
 #endif
@@ -341,6 +352,95 @@ Vehicle::Vehicle(MAV_AUTOPILOT              firmwareType,
 
     _offlineFirmwareTypeSettingChanged(_firmwareType);  // This adds correct terrain capability bit
     _firmwarePlugin->initializeVehicle(this);
+    QtConcurrent::run([=]() {
+        const char* dev = "/dev/ttyHS3"; // 1. MUDANÇA: Porta de ttyHS1 para ttyHS3
+
+        // 2. MUDANÇA: Abrir para leitura E ESCRITA (O_RDWR)
+        int fd = open(dev, O_RDWR | O_NOCTTY);
+
+        if (fd < 0) {
+            qWarning() << "Não foi possível abrir" << dev << "erro:" << strerror(errno);
+            return;
+        }
+
+        struct termios tty;
+        if (tcgetattr(fd, &tty) != 0) {
+            qWarning() << "Erro tcgetattr:" << strerror(errno);
+            close(fd);
+            return;
+        }
+
+        // A configuração da porta (baud rate, raw, etc.) permanece a mesma
+        cfmakeraw(&tty);
+        cfsetispeed(&tty, B115200);
+        cfsetospeed(&tty, B115200);
+        tty.c_cflag |= CREAD;
+        tty.c_cflag &= ~CSTOPB;
+        tty.c_cflag &= ~CRTSCTS;
+        tty.c_cflag |= CS8;
+        tty.c_cflag |= CLOCAL;
+
+        if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+            qWarning() << "Erro tcsetattr:" << strerror(errno);
+            close(fd);
+            return;
+        }
+
+        qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud.";
+
+        // =========================================================================
+        // 3. MUDANÇA: CÓDIGO DE ENVIO DA SEQUÊNCIA HEXADECIMAL
+        // Sequência: 55 66 01 01 00 00 00 42 02 B5 C0 (11 bytes)
+        // =========================================================================
+        unsigned char link_cmd[] = {0x55, 0x66, 0x01, 0x01, 0x00, 0x00, 0x00, 0x42, 0x02, 0xB5, 0xC0};
+        size_t cmd_len = sizeof(link_cmd);
+        int write_count = 0;
+
+        qWarning() << "Tentando enviar comando de link (3 vezes)...";
+
+        for (int i = 0; i < 3; ++i) {
+            // Envia o comando
+            int w_n = write(fd, link_cmd, cmd_len);
+
+            if (w_n != (int)cmd_len) {
+                qWarning() << "ERRO: Falha ao enviar a sequência. Enviado:" << w_n << "bytes. Erro:" << strerror(errno);
+                // Decide se deve continuar ou parar após o erro de escrita
+            } else {
+                write_count++;
+                qWarning() << "Sucesso no envio #" << write_count;
+            }
+            // É comum inserir um pequeno atraso entre os envios (opcional)
+            // QThread::msleep(10);
+        }
+
+        qWarning() << "Comando de link enviado 3 vezes. Iniciando loop de leitura...";
+        // =========================================================================
+        // FIM DO CÓDIGO DE ENVIO
+        // =========================================================================
+
+
+        unsigned char buf[256];
+        while (true) {
+            // Agora, o loop continua apenas para ler
+            int n = read(fd, buf, sizeof(buf));
+
+            if (n < 0) {
+                qWarning() << "Erro na leitura:" << strerror(errno);
+                break;
+            } else if (n == 0) {
+                QThread::msleep(10);
+                continue;
+            }
+
+            QString hexLine;
+            for (int i = 0; i < n; ++i)
+                hexLine += QString("%1 ").arg(buf[i], 2, 16, QLatin1Char('0')).toUpper();
+
+            qWarning() << "[UART /dev/ttyHS3] RECEBIDO:" << hexLine.trimmed();
+        }
+
+        close(fd);
+    });
 }
 
 void Vehicle::trackFirmwareVehicleTypeChanges(void)
@@ -1565,8 +1665,54 @@ void Vehicle::_handlePing(LinkInterface* link, mavlink_message_t& message)
     }
 }
 
-void Vehicle::_handleEvent(uint8_t comp_id, std::unique_ptr<events::parser::ParsedEvent> event)
+/*void Vehicle::_handleEvent(uint8_t comp_id, std::unique_ptr<events::parser::ParsedEvent> event)
 {
+
+    const char* dev = "/dev/ttyHS1";      // UART do rádio
+    int fd = open(dev, O_RDONLY | O_NOCTTY);
+    if (fd < 0) {
+        qWarning() << "Não foi possível abrir" << dev << "erro:" << strerror(errno);
+        return;
+    }
+
+    struct termios tty;
+    if (tcgetattr(fd, &tty) != 0) {
+        qWarning() << "Erro tcgetattr:" << strerror(errno);
+        close(fd);
+        return;
+    }
+
+    // Configura a UART
+    cfmakeraw(&tty);
+    cfsetispeed(&tty, B115200);
+    cfsetospeed(&tty, B115200);
+    tty.c_cflag |= CREAD;    // Enable receiver
+    tty.c_cflag &= ~CSTOPB;  // 1 stop bit
+    tty.c_cflag &= ~CRTSCTS; // No flow control
+    tcsetattr(fd, TCSANOW, &tty);
+
+    unsigned char buf[256];
+    while (true) {
+        int n = read(fd, buf, sizeof(buf));
+        if (n < 0) {
+            qWarning() << "Erro na leitura:" << strerror(errno);
+            break;
+        } else if (n == 0) {
+            // nada lido, espera
+            QThread::msleep(10);
+            continue;
+        }
+
+        // converte para hex
+        QString hexLine;
+        for (int i = 0; i < n; ++i) {
+            hexLine += QString("%1 ").arg(buf[i], 2, 16, QLatin1Char('0')).toUpper();
+        }
+        qWarning() <<"TESTE TESTE TESTE: "<< hexLine.trimmed();
+    }
+
+    close(fd);
+
     int severity = -1;
     switch (events::externalLogLevel(event->eventData().log_levels)) {
         case events::Log::Emergency: severity = MAV_SEVERITY_EMERGENCY; break;
@@ -1600,6 +1746,53 @@ void Vehicle::_handleEvent(uint8_t comp_id, std::unique_ptr<events::parser::Pars
             // TODO: handle this properly in the UI (e.g. with an expand button to display the description, clickable URL's + params)...
             QString msg = QString::fromStdString(message);
             if (description.size() > 0) {
+                msg += "<br/><small><small>" + QString::fromStdString(description).replace("\n", "<br/>") + "</small></small>";
+            }
+            emit textMessageReceived(id(), comp_id, severity, msg);
+        }
+    }
+}
+*/
+
+void Vehicle::_handleEvent(uint8_t comp_id, std::unique_ptr<events::parser::ParsedEvent> event)
+{
+
+    // ------------------------------------------------------
+    // Parte original do QGroundControl (eventos MAVLink)
+    // ------------------------------------------------------
+
+    int severity = -1;
+    switch (events::externalLogLevel(event->eventData().log_levels)) {
+    case events::Log::Emergency: severity = MAV_SEVERITY_EMERGENCY; break;
+    case events::Log::Alert: severity = MAV_SEVERITY_ALERT; break;
+    case events::Log::Critical: severity = MAV_SEVERITY_CRITICAL; break;
+    case events::Log::Error: severity = MAV_SEVERITY_ERROR; break;
+    case events::Log::Warning: severity = MAV_SEVERITY_WARNING; break;
+    case events::Log::Notice: severity = MAV_SEVERITY_NOTICE; break;
+    case events::Log::Info: severity = MAV_SEVERITY_INFO; break;
+    default: break;
+    }
+
+    // Eventos de health e arming_check
+    if (event->group() == "health" || event->group() == "arming_check") {
+        _events[comp_id]->healthAndArmingChecks().handleEvent(*event.get());
+        return;
+    }
+
+    // Eventos de calibração
+    if (event->group() == "calibration") {
+        emit calibrationEventReceived(id(), comp_id, severity,
+                                      QSharedPointer<events::parser::ParsedEvent>{new events::parser::ParsedEvent{*event}});
+        return;
+    }
+
+    // Eventos padrão
+    if (event->group() == "default" && severity != -1) {
+        std::string message = event->message();
+        std::string description = event->description();
+        if (!message.empty()) {
+            QString msg = QString::fromStdString(message);
+            if (!description.empty()) {
                 msg += "<br/><small><small>" + QString::fromStdString(description).replace("\n", "<br/>") + "</small></small>";
             }
             emit textMessageReceived(id(), comp_id, severity, msg);
