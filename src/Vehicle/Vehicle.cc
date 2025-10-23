@@ -543,7 +543,7 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     });
 }*/
 
-void Vehicle::overwriteRC(){
+void Vehicle::overwriteRC(){ //override
     // =========================================================================
     // MODIFICAÇÃO: INÍCIO DA THREAD DE LEITURA SERIAL E ENVIO MAVLINK
     // =========================================================================
@@ -639,7 +639,17 @@ void Vehicle::overwriteRC(){
         channels_override.chan15_raw = 65535; channels_override.chan16_raw = 65535;
         channels_override.chan17_raw = 65535; channels_override.chan18_raw = 65535;
 
+        sendMavCommand(
+            MAV_COMP_ID_AUTOPILOT1,
+            MAV_CMD_SET_MESSAGE_INTERVAL,
+            true, // show errors
+            35.0, // param1: MAVLink message ID (RC_CHANNELS)
+            20000.0, // param2: Intervalo desejado em microssegundos (20ms)
+            0.0, 0.0, 0.0, 0.0, 0.0
+            );
+
         qWarning() << "Iniciando loop de leitura serial e envio MAVLink RC_CHANNELS_OVERRIDE...";
+
 
 
         while (true) {
@@ -730,7 +740,7 @@ void Vehicle::overwriteRC(){
                 qWarning() << "[MAVLink RC OUT] Ch1/Ch2/Ch3/Ch4:" << channels_override.chan1_raw << "/" << channels_override.chan2_raw << "/" << channels_override.chan3_raw << "/" << channels_override.chan4_raw;
 
                 // O comando RC Override deve ser enviado em alta frequência (ex: 50Hz = 20ms)
-                QThread::msleep(5);
+                QThread::msleep(20);
             }
         }
 
@@ -1165,6 +1175,54 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     case MAVLINK_MSG_ID_RESPONSE_EVENT_ERROR:
         _eventHandler(message.compid).handleEvents(message);
         break;
+    case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE: {
+        mavlink_rc_channels_override_t rc;
+
+        mavlink_msg_rc_channels_override_decode(&message, &rc);
+
+        // --- 1. LÓGICA DE ATUALIZAÇÃO DO ESTADO INTERNO ATIVO ---
+
+        // NOTA: O Autopilot real teria lógica aqui para verificar se
+        // está armado, no modo correto, etc., antes de aceitar o override.
+
+
+        // ... e assim por diante para todos os canais que você precisa testar (até o 9º)
+
+
+        // --- 2. GERAÇÃO DA MENSAGEM DE ECHO (REPORTANDO O ESTADO ATIVO) ---
+
+        // A mensagem RC_CHANNELS deve reportar o que está ATIVAMENTE em uso.
+        mavlink_rc_channels_t echo_msg;
+        memset(&echo_msg, 0, sizeof(echo_msg));
+
+        echo_msg.time_boot_ms = QDateTime::currentMSecsSinceEpoch() % 1000000000;
+        echo_msg.chancount    = 9;
+
+        // Copia os valores do ESTADO ATIVO do MockLink para a mensagem de echo
+        echo_msg.chan1_raw    = rc.chan1_raw;
+        echo_msg.chan2_raw    = rc.chan2_raw;
+        echo_msg.chan3_raw    = rc.chan3_raw;
+        echo_msg.chan4_raw    = rc.chan4_raw;
+        // ... complete até o chan9_raw usando o array m_active_rc_channels
+
+        echo_msg.rssi         = 255;
+
+        mavlink_message_t msg_out;
+        mavlink_msg_rc_channels_encode(rc.target_system, rc.target_component, &msg_out, &echo_msg);
+
+        sendMessageMultiple(msg_out);
+
+
+        // --- 3. LOG DO ESTADO ATIVO INTERNO ---
+        qDebug() << "[VEICULO] RC ATIVO USADO (Estado Interno):"
+                 << "Ch1:" << rc.chan1_raw
+                 << "Ch2:" << rc.chan2_raw
+                 << "target_system:" << rc.target_system
+                 << "target_component:" << rc.target_component;
+        // ... adicione mais canais conforme necessário
+
+        break;
+    }
 
     case MAVLINK_MSG_ID_SERIAL_CONTROL:
     {
