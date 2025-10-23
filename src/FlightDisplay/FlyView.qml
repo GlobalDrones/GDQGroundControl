@@ -2019,6 +2019,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
+                            _activeVehicle.overwriteRC();
                             if (QGroundControl.videoManager.streams.length > 0) {
                                 cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % QGroundControl.videoManager.streams.length
 

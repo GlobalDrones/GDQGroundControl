@@ -529,6 +529,9 @@ public:
     ///     @param sendMultiple Send multiple time to guarantee Vehicle reception
     void requestDataStream(MAV_DATA_STREAM stream, uint16_t rate, bool sendMultiple = true);
 
+    /// Start the Overwritting thread for RC channels with controller serial input
+    Q_INVOKABLE void overwriteRC(void);
+
     // The follow method are used to turn on/off the tracking of settings updates for firmware/vehicle type on offline vehicles.
     void trackFirmwareVehicleTypeChanges(void);
     void stopTrackingFirmwareVehicleTypeChanges(void);
