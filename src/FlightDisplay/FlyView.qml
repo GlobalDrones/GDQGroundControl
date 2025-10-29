@@ -2125,6 +2125,21 @@ Item {
 
     }
 
+    function mapValueToRadians(value, minInput, maxInput, startAngleRad, endAngleRad) {
+        // 1. Garante que o valor esteja dentro dos limites da entrada
+        var clampedValue = Math.min(Math.max(value, minInput), maxInput);
+
+        // 2. Calcula a Proporção (0 a 1) do valor na escala de entrada
+        var inputRange = maxInput - minInput;
+        var ratio = (clampedValue - minInput) / inputRange;
+
+        // 3. Mapeia a proporção para o intervalo de Radianos
+        var arcRange = endAngleRad - startAngleRad;
+        var mappedRad = startAngleRad + (ratio * arcRange);
+
+        return mappedRad;
+    }
+
     Timer{
         id: propertyValuesUpdater
         interval: 100
@@ -2308,21 +2323,31 @@ Item {
                     anchors.fill: parent
                     color:qgcPal.toolbarBackground
                 }
-
+                Text{
+                    id: text_rpm1
+                    width: 1
+                    height: 1
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: _toolsMargin*5
+                    text: _aceleracao_rotor_1
+                    color:"green"
+                    font.bold: true
+                }
                 //RPM1
                 Item{
                     id: dialRPM1
-                    anchors.left: parent.left
-                    anchors.top: parent.top
+                    anchors.left: text_rpm1.right
+                    anchors.top: text_rpm1.bottom
                     anchors.margins:    _toolsMargin*2
-                    height: parent.height/8
+                    height: parent.height/6
                     width: height
                     Canvas {
                         anchors.fill: parent
                         id: rotor1Arc
                         renderTarget: Canvas.Image
                         renderStrategy: Canvas.Cooperative
-                        property real angleRPM1: accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100
+                        property real angleRPM1: 0//accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100
                         Behavior on angleRPM1 {
                                 NumberAnimation { duration: 100; easing.type: Easing.OutQuad } // suavizador de animação
                             }
@@ -2330,47 +2355,74 @@ Item {
                             var ctx = getContext("2d")
                             ctx.reset()
                             ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
                             var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            var startAngle = Math.PI; // 180 graus
+                            var endAngle = Math.PI*1.5;          // 270 graus
 
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            // Arco de Fundo (cinza)
+                            ctx.strokeStyle = "gray" // Cor do arco de fundo
                             ctx.lineWidth = 8
                             ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + angleRPM1) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-
+                            // ctx.arc(centro_x, centro_y, raio, ângulo_inicial, ângulo_final, sentido_antihorario)
+                            ctx.arc(width / 2, height / 2, radius, startAngle, endAngle, false)
                             ctx.stroke()
 
+                            // Arco de Preenchimento (verde), usando a variável de ângulo 'angleRPM1'
+                            ctx.strokeStyle = "green"
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius, startAngle, angleRPM1 , false)
+                            ctx.stroke()
+
+                            // Define o ponto central (origem da linha)
+                            var centerX = width / 2;
+                            var centerY = height / 2;
+
+                            // Calcula as coordenadas X e Y da ponta do ponteiro usando o ângulo atual (angleRPM1)
+                            // Nota: O raio do ponteiro será o mesmo do arco (radius)
+                            var pointerX = centerX + radius * Math.cos(angleRPM1);
+                            var pointerY = centerY + radius * Math.sin(angleRPM1);
+
+                            ctx.strokeStyle = "red" // Cor do ponteiro
+                            ctx.lineWidth = 2       // Espessura do ponteiro
+
+                            ctx.beginPath()
+                            ctx.moveTo(centerX, centerY) // Inicia no centro
+                            ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
+                            ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM1= accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM1= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*1.5);console.log(parent.angleRPM1)}}
 
                     }
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _aceleracao_rotor_1
-                        color:"green"
-                        font.bold: true
-                    }
+
                 }//fim RPM1
 
                 //RPM2
-                Item{
-                    id: dialRPM2
+                Text{
+                    id: text_rpm2
+                    width: 1
+                    height: 1
                     anchors.right: parent.right
                     anchors.top: parent.top
+                    anchors.rightMargin: _toolsMargin*8
+                    text: _aceleracao_rotor_2
+                    color:"green"
+                    font.bold: true
+                }
+
+                Item{
+                    id: dialRPM2
+                    anchors.right: text_rpm2.left
+                    anchors.top: text_rpm2.bottom
                     anchors.margins:    _toolsMargin*2
-                    height: parent.height/8
+                    height: parent.height/6
                     width: height
                     Canvas {
                         anchors.fill: parent
                         id: rotor2Arc
                         renderTarget: Canvas.Image
                         renderStrategy: Canvas.Cooperative
-                        property real angleRPM2: accelerationPercentageToRadius(_aceleracao_rotor_2/5000)*100
+                        property real angleRPM2: 0//accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100
                         Behavior on angleRPM2 {
                                 NumberAnimation { duration: 100; easing.type: Easing.OutQuad } // suavizador de animação
                             }
@@ -2378,95 +2430,149 @@ Item {
                             var ctx = getContext("2d")
                             ctx.reset()
                             ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
                             var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            var startAngle = Math.PI*2; // 270 graus
+                            var endAngle = Math.PI*1.5;          // 360 graus
 
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            // Arco de Fundo (cinza)
+                            ctx.strokeStyle = "gray" // Cor do arco de fundo
                             ctx.lineWidth = 8
                             ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + angleRPM2) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-
+                            // ctx.arc(centro_x, centro_y, raio, ângulo_inicial, ângulo_final, sentido_antihorario)
+                            ctx.arc(width / 2, height / 2, radius, startAngle, endAngle, true)
                             ctx.stroke()
 
+                            // Arco de Preenchimento (verde), usando a variável de ângulo 'angleRPM2'
+                            ctx.strokeStyle = "green"
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius, startAngle, angleRPM2 , true)
+                            ctx.stroke()
+
+                            // Define o ponto central (origem da linha)
+                            var centerX = width / 2;
+                            var centerY = height / 2;
+
+                            // Calcula as coordenadas X e Y da ponta do ponteiro usando o ângulo atual (angleRPM2)
+                            // Nota: O raio do ponteiro será o mesmo do arco (radius)
+                            var pointerX = centerX + radius * Math.cos(angleRPM2);
+                            var pointerY = centerY + radius * Math.sin(angleRPM2);
+
+                            ctx.strokeStyle = "red" // Cor do ponteiro
+                            ctx.lineWidth = 2       // Espessura do ponteiro
+
+                            ctx.beginPath()
+                            ctx.moveTo(centerX, centerY) // Inicia no centro
+                            ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
+                            ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM2= accelerationPercentageToRadius(_aceleracao_rotor_2/5000)*100}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM2= mapValueToRadians(_aceleracao_rotor_2, 0, 5000, Math.PI*2, Math.PI*1.5)}}
 
                     }
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _aceleracao_rotor_2
-                        color:"green"
-                        font.bold: true
-                    }
+
                 }//fim RPM2
 
+                Text{
+                    id: text_rpm3
+                    width: 1
+                    height: 1
+                    anchors.left: parent.left
+                    anchors.bottom: dialRPM3.bottom
+                    anchors.leftMargin: _toolsMargin*5
+                    text: _aceleracao_rotor_3
+                    color:"green"
+                    font.bold: true
+                }
                 //RPM3
                 Item{
                     id: dialRPM3
-                    anchors.left: parent.left
+                    anchors.left: dialRPM1.left
                     anchors.top: dialRPM1.bottom
-                    anchors.margins:    _toolsMargin*2
-                    height: parent.height/8
+                    //anchors.leftMargin:    _toolsMargin*7
+                    anchors.topMargin: -_toolsMargin*25
+                    height: parent.height/6
                     width: height
                     Canvas {
                         anchors.fill: parent
                         id: rotor3Arc
                         renderTarget: Canvas.Image
                         renderStrategy: Canvas.Cooperative
-                        property real angleRPM3: accelerationPercentageToRadius(_aceleracao_rotor_3/5000)*100
+                        property real angleRPM3: 0//accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100
                         Behavior on angleRPM3 {
-                                NumberAnimation { duration: 250; easing.type: Easing.OutQuad } // suavizador de animação
+                                NumberAnimation { duration: 100; easing.type: Easing.OutQuad } // suavizador de animação
                             }
                         onPaint: {
                             var ctx = getContext("2d")
                             ctx.reset()
                             ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
                             var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            var startAngle = Math.PI; // 180 graus
+                            var endAngle = Math.PI*0.5;          // 90 graus
 
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            // Arco de Fundo (cinza)
+                            ctx.strokeStyle = "gray" // Cor do arco de fundo
                             ctx.lineWidth = 8
                             ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + angleRPM3) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-
+                            // ctx.arc(centro_x, centro_y, raio, ângulo_inicial, ângulo_final, sentido_antihorario)
+                            ctx.arc(width / 2, height / 2, radius, startAngle, endAngle, true)
                             ctx.stroke()
 
+                            // Arco de Preenchimento (verde), usando a variável de ângulo 'angleRPM3'
+                            ctx.strokeStyle = "green"
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius, startAngle, angleRPM3 , true)
+                            ctx.stroke()
+
+                            // Define o ponto central (origem da linha)
+                            var centerX = width / 2;
+                            var centerY = height / 2;
+
+                            // Calcula as coordenadas X e Y da ponta do ponteiro usando o ângulo atual (angleRPM3)
+                            // Nota: O raio do ponteiro será o mesmo do arco (radius)
+                            var pointerX = centerX + radius * Math.cos(angleRPM3);
+                            var pointerY = centerY + radius * Math.sin(angleRPM3);
+
+                            ctx.strokeStyle = "red" // Cor do ponteiro
+                            ctx.lineWidth = 2       // Espessura do ponteiro
+
+                            ctx.beginPath()
+                            ctx.moveTo(centerX, centerY) // Inicia no centro
+                            ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
+                            ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM3= accelerationPercentageToRadius(_aceleracao_rotor_3/5000)*100}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM3= mapValueToRadians(_aceleracao_rotor_3, 0, 5000, Math.PI, Math.PI*0.5);console.log(parent.angleRPM1)}}
 
                     }
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _aceleracao_rotor_3
-                        color:"green"
-                        font.bold: true
-                    }
+
                 }//fim RPM3
 
-                //RPM4
+                Text{
+                    id: text_rpm4
+                    width: 1
+                    height: 1
+                    anchors.right: parent.right
+                    anchors.bottom: dialRPM4.bottom
+                    anchors.rightMargin: _toolsMargin*8
+                    text: _aceleracao_rotor_4
+                    color:"green"
+                    font.bold: true
+                }
+                //RPM3
                 Item{
                     id: dialRPM4
-                    anchors.right: parent.right
+                    anchors.left: dialRPM2.left
                     anchors.top: dialRPM2.bottom
-                    anchors.margins:    _toolsMargin*2
-                    height: parent.height/8
+                    //anchors.leftMargin:    _toolsMargin*7
+                    anchors.topMargin: -_toolsMargin*25
+                    height: parent.height/6
                     width: height
                     Canvas {
                         anchors.fill: parent
                         id: rotor4Arc
                         renderTarget: Canvas.Image
                         renderStrategy: Canvas.Cooperative
-                        property real angleRPM4: accelerationPercentageToRadius(_aceleracao_rotor_4/5000)*100
+                        property real angleRPM4: 0//accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100
                         Behavior on angleRPM4 {
                                 NumberAnimation { duration: 100; easing.type: Easing.OutQuad } // suavizador de animação
                             }
@@ -2474,32 +2580,49 @@ Item {
                             var ctx = getContext("2d")
                             ctx.reset()
                             ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
                             var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+                            var startAngle = 0; // 360 graus
+                            var endAngle = Math.PI*0.5;          // 90 graus
 
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            // Arco de Fundo (cinza)
+                            ctx.strokeStyle = "gray" // Cor do arco de fundo
                             ctx.lineWidth = 8
                             ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + angleRPM4) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-
+                            // ctx.arc(centro_x, centro_y, raio, ângulo_inicial, ângulo_final, sentido_antihorario)
+                            ctx.arc(width / 2, height / 2, radius, startAngle, endAngle, false)
                             ctx.stroke()
 
+                            // Arco de Preenchimento (verde), usando a variável de ângulo 'angleRPM4'
+                            ctx.strokeStyle = "green"
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius, startAngle, angleRPM4 , false)
+                            ctx.stroke()
+
+                            // Define o ponto central (origem da linha)
+                            var centerX = width / 2;
+                            var centerY = height / 2;
+
+                            // Calcula as coordenadas X e Y da ponta do ponteiro usando o ângulo atual (angleRPM3)
+                            // Nota: O raio do ponteiro será o mesmo do arco (radius)
+                            var pointerX = centerX + radius * Math.cos(angleRPM4);
+                            var pointerY = centerY + radius * Math.sin(angleRPM4);
+
+                            ctx.strokeStyle = "red" // Cor do ponteiro
+                            ctx.lineWidth = 2       // Espessura do ponteiro
+
+                            ctx.beginPath()
+                            ctx.moveTo(centerX, centerY) // Inicia no centro
+                            ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
+                            ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM2= accelerationPercentageToRadius(_aceleracao_rotor_4/5000)*100}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM4= mapValueToRadians(_aceleracao_rotor_4, 0, 5000, 0, Math.PI*0.5);console.log(parent.angleRPM1)}}
 
                     }
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _aceleracao_rotor_4
-                        color:"green"
-                        font.bold: true
-                    }
+
                 }//fim RPM4
+
+
 
 
 
