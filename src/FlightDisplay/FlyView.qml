@@ -36,6 +36,8 @@ import SiYi.Object 1.0
 import "qrc:/qml/QGroundControl/Controls"
 import "qrc:/qml/QGroundControl/FlightDisplay"
 
+
+//GD25/60
 Item {
     id: _root
 
@@ -348,12 +350,7 @@ Item {
         repeat: true
 
         onTriggered:{
-            /*console.log("TESTING BATTERY ACCESS")
-            console.log(_activeVehicle.batteries.count)
-            console.log(_activeVehicle.batteries.get(0).voltage.rawValue)
-            console.log(_activeVehicle.batteries.columnCount())
-            console.log(_activeVehicle.batteries.get(1).voltage.rawValue)*/
-            //console.log(_activeVehicle.batteries.index(1,0).voltage.rawValue)
+
 
             if(_GD60){
 
@@ -411,11 +408,6 @@ Item {
             if(segundos_restantes <10) {segundos_restantes_string = "0" + segundos_restantes.toString()}
             else {segundos_restantes_string = segundos_restantes.toString()}
 
-            /*console.log("poly count: ",_geoFenceController.polygons.count.toString())
-            console.log("  poly 0 -> ",_geoFenceController.polygons.get(0).path)
-            console.log("  poly first NS coord -> ",_geoFenceController.polygons.get(0).path[0])
-            console.log("  poly first WE coord -> ",_geoFenceController.polygons.get(0).path[1])
-            console.log("  vehicle pos -> ", _activeVehicle.coordinate.toString())*/
 
             var breach_val = breachDetection()
             if (breach_val.level > -1 && canShowBreachAlert) {
@@ -503,9 +495,9 @@ Item {
     }
 
 
-    //**************************************************************************************************//
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //                          BOTTOM VIEW AREA                                                        //
-    //**************************************************************************************************//
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     Loader{
         id: bottomDataLoader
         anchors.bottom: parent.bottom
@@ -540,170 +532,7 @@ Item {
                     }
                 }
 
-               /* QGCColoredImage {
-                    id: batteryPercentageIcon_1
-                    anchors.top:        parent.top
-                    anchors.left:       parent.left
-                    anchors.margins:    _toolsMargin
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/Battery.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              (_pct_bateria_1) > 50 ? "green" : ((_pct_bateria_1) > 30 ? "orange" : "red")
-                    visible: true
-                }*/
 
-               /* Rectangle{
-                    id: batteryPercentageBar_1
-                    anchors.top: batteryPercentageIcon_1.top
-                    anchors.left: batteryPercentageIcon_1.left
-                    //anchors.margins: _toolsMargin
-                    width: batteryPercentageIcon_1.width
-                    height: batteryPercentageIcon_1.height
-                    color: "transparent"//batMouseArea.containsMouse? "green": "red"
-                    visible: false
-                    Rectangle{
-                        y: parent.height*0.1
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*0.85 //fixo pra não ultrapassar o desenho
-                        color: (_pct_bateria_1) > 50 ? "green" : ((_pct_bateria_1) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria_1
-                    }
-                    Rectangle{ //BARRA DE ALTURA DINAMICA PRA INDICAR O NÍVEL DE bateria -> HEIGHT = 1-bateria%
-
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*(0.15 + 0.85*(1-_pct_bateria_1/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
-                        color: qgcPal.toolbarBackground
-                    }
-
-                }
-
-                OpacityMask{
-                    anchors.fill: batteryPercentageBar_1
-                    source: batteryPercentageBar_1
-                    maskSource: batteryPercentageIcon_1
-                    invert: true
-                    MouseArea{
-                        id: batMouseArea_1
-                        anchors.fill: parent
-                        hoverEnabled : true
-
-                    }
-                }*/
-
-                /*Rectangle{
-                    id: textBoxBatteryInfo_1
-                    anchors.verticalCenter: batteryPercentageIcon_1 .verticalCenter
-                    //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
-                    anchors.left: batteryPercentageIcon_1.right
-                    anchors.rightMargin: _toolsMargin
-                    height: batteryPercentageIcon_1.height*0.7
-                    width: batteryPercentageIcon_1.width*0.7
-                    visible: true//batMouseArea_1.containsMouse? true: false
-                    color: "transparent"// desktop version "black"
-                    border.width: 0
-                    border.color: "transparent"// desktop version "lightgray"
-                    Component.onCompleted: gasolineIconLoader.active = true
-
-
-                    ColumnLayout {
-                        id:                     batteryInfoColumn_1
-                        //anchors.top: textBoxBatteryInfo_1.top
-                        //anchors.horizontalCenter: textBoxBatteryInfo_1.horizontalCenter
-                        anchors.fill:parent
-                        spacing:                0
-                        visible: true//textBoxBatteryInfo_1.visible
-
-                        Text {
-                            id: textBoxBatteryInfo_1PCT
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _pct_bateria_1 > 9? _pct_bateria_1+"%": "0"+_pct_bateria_1+"%"
-                            font.pixelSize:       _androidBuild ?  13 : 21//ScreenTools.smallFontPixelHeight
-                            visible: textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-                        Text {
-                            id: textBoxBatteryInfo_1TENSION
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _tensao_bateria_1 + " V"
-                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
-                            visible: textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-                        Text {
-                            id: textBoxBatteryInfo_1CURRENT
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _current_bateria_1 + " A"
-                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
-                            visible: textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-
-                    }
-                }
-*/
-                /*QGCColoredImage {
-                    id: batteryPercentageIcon_2
-                    anchors.top:        parent.top
-                    anchors.left:       textBoxBatteryInfo_1.right
-                    anchors.margins:    _toolsMargin
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/Battery.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              (_pct_bateria_2) > 50 ? "green" : ((_pct_bateria_2) > 30 ? "orange" : "red")
-                    visible: _GD60//true
-                }
-
-              /*  Rectangle{
-                    id: batteryPercentageBar_2
-                    anchors.top: batteryPercentageIcon_2.top
-                    anchors.left: batteryPercentageIcon_2.left
-                    //anchors.margins: _toolsMargin
-                    width: batteryPercentageIcon_2.width
-                    height: batteryPercentageIcon_2.height
-                    color: "transparent"//batMouseArea.containsMouse? "green": "red"
-                    visible: false
-                    Rectangle{
-                        y: parent.height*0.1
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*0.85 //fixo pra não ultrapassar o desenho
-                        color: (_pct_bateria_2) > 50 ? "green" : ((_pct_bateria_2) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria_1
-                    }
-                    Rectangle{ //BARRA DE ALTURA DINAMICA PRA INDICAR O NÍVEL DE bateria -> HEIGHT = 1-bateria%
-
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*(0.15 + 0.85*(1-_pct_bateria_2/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
-                        color: qgcPal.toolbarBackground
-                    }
-
-                }
-
-                OpacityMask{
-                    anchors.fill: batteryPercentageBar_2
-                    source: batteryPercentageBar_2
-                    maskSource: batteryPercentageIcon_2
-                    invert: true
-                    MouseArea{
-                        id: batMouseArea_2
-                        anchors.fill: parent
-                        hoverEnabled : true
-
-                    }
-                }*/
                 Rectangle{
                     id: textBoxBatteryInfo_2
                     anchors.verticalCenter: batteryPercentageIcon_2 .verticalCenter
@@ -924,21 +753,6 @@ Item {
 
 
 
-                /*//Temperatura Rotores
-                QGCColoredImage {
-                    id: rotorAccelerationInformationIcon
-                    anchors.top:        parent.top
-                    anchors.left:       motorTemperatureInformationIcon.right
-                    anchors.leftMargin: _toolsMargin
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/rotorsAccell.png"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              "white"
-                    visible: !_GD60? true:false
-
-                }*/
                 Rectangle {
                     id: rotorsTempArea
                     anchors.top: parent.top
@@ -1114,16 +928,7 @@ Item {
                             ctx.stroke()
                         }
                     }
-                    /*MouseArea { // Torna o  interativa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            console.log("Click Test");
-                        }
-                        onContainsMouseChanged: {
-                            _selected_rotor_1 = !_selected_rotor_1
-                        }
-                    }*/
+
                     DropShadow {
                         anchors.fill: parent
                         source: rotor1Arc
@@ -1174,16 +979,7 @@ Item {
                             ctx.stroke()
                         }
                     }
-                    /*MouseArea { // Torna o  interativa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            console.log("Click Test");
-                        }
-                        onContainsMouseChanged: {
-                            _selected_rotor_1 = !_selected_rotor_1
-                        }
-                    }*/
+
                     DropShadow {
                         anchors.fill: parent
                         source: rotor2Arc
@@ -1360,9 +1156,9 @@ Item {
     }
 
 
-    //**************************************************************************************************//
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //                          LATERAL VIEW AREA                                                       //
-    //**************************************************************************************************//
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     Loader{
         id: lateralDataLoader
         anchors.right : parent.right
@@ -1771,9 +1567,9 @@ Item {
         }
     }
 
-    //**************************************************************************************************//
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //                          MAIN VIEW AREA                                                          //
-    //**************************************************************************************************//
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     Item {
         id: mainViewArea
         anchors.top: parent.top
@@ -1820,15 +1616,7 @@ Item {
         }
 
 
-        /*GuidedActionConfirm {
-                id:                         guidedActionConfirm
-                anchors.margins:            _margins
-                anchors.bottom:             parent.bottom
-                anchors.horizontalCenter:   parent.horizontalCenter
-                z:                          QGroundControl.zOrderTopMost
-                guidedController:           _guidedController
-                altitudeSlider:             _guidedAltSlider
-            }*/
+
         GuidedActionList {
             id: guidedActionList
             anchors.margins: _margins
@@ -1946,12 +1734,6 @@ Item {
             z: QGroundControl.zOrderTopMost
             visible: QGroundControl.videoManager.hasVideo
 
-            // Lista com pares: texto + URL correspondente
-            /*property var cameraList: [
-                { name: "Video 1", url: "rtsp://192.168.144.25:8554/video1" },
-                { name: "Video 2", url: "rtsp://192.168.144.25:8554/video2" },
-                { name: "FPV",     url: "rtsp://192.168.144.26:554/main.264" }
-            ]*/
             property int cameraIndex: 0
 
             states: [
@@ -2035,3 +1817,5 @@ Item {
         }
     }
 }
+
+
