@@ -38,7 +38,7 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 
 
 //GD25/60
-Item {
+/*Item {
     id: _root
 
     property bool _GD60: true
@@ -1576,6 +1576,948 @@ Item {
         anchors.left: parent.left
         anchors.right: lateralDataLoader.left
         anchors.bottom: bottomDataLoader.top
+
+        Component.onCompleted:{
+            let now = new Date();
+            console.log("mainViewArea LOADED at " + now.toLocaleTimeString());lateralDataLoader.active = true; bottomDataLoader.active = true;}
+
+        QGCToolInsets {
+            id: _toolInsets
+            leftEdgeBottomInset: _pipOverlay.visible ? _pipOverlay.x + _pipOverlay.width : 0
+            bottomEdgeLeftInset: _pipOverlay.visible ? parent.height - _pipOverlay.y : 0
+        }
+
+        FlyViewWidgetLayer {
+            id: widgetLayer
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: guidedAltSlider.visible ? guidedAltSlider.left : parent.right
+            z: _fullItemZorder + 1
+            parentToolInsets: _toolInsets
+            mapControl: _mapControl
+            visible: !QGroundControl.videoManager.fullScreen
+        }
+
+        FlyViewCustomLayer {
+            id: customOverlay
+            anchors.fill: widgetLayer
+            z: _fullItemZorder + 2
+            parentToolInsets: widgetLayer.totalToolInsets
+            mapControl: _mapControl
+            visible: !QGroundControl.videoManager.fullScreen
+        }
+
+        GuidedActionsController {
+            id: guidedActionsController
+            missionController: _missionController
+            actionList: _guidedActionList
+            altitudeSlider: _guidedAltSlider
+        }
+
+
+
+        GuidedActionList {
+            id: guidedActionList
+            anchors.margins: _margins
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            z: QGroundControl.zOrderTopMost
+            guidedController: _guidedController
+        }
+
+        //-- Altitude slider
+        GuidedAltitudeSlider {
+            id: guidedAltSlider
+            anchors.margins: _toolsMargin
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            z: QGroundControl.zOrderTopMost
+            radius: ScreenTools.defaultFontPixelWidth / 2
+            width: ScreenTools.defaultFontPixelWidth * 10
+            color: qgcPal.window
+            visible: false
+        }
+
+        FlyViewMap {
+            id: mapControl
+            planMasterController: _planController
+            rightPanelWidth: ScreenTools.defaultFontPixelHeight * 9
+            pipMode: !_mainWindowIsMap
+            toolInsets: customOverlay.totalToolInsets
+            mapName: "FlightDisplayView"
+        }
+
+        FlyViewVideo {
+            id: videoControl
+            iconLeftMargin: widgetLayer.iconLeftMargin
+        }
+
+        QGCPipOverlay {
+            id: _pipOverlay
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            anchors.margins: _toolsMargin
+            item1IsFullSettingsKey: "MainFlyWindowIsMap"
+            item1: mapControl
+            item2: QGroundControl.videoManager.hasVideo ? videoControl : null
+            fullZOrder: _fullItemZorder
+            pipZOrder: _pipItemZorder
+            show: !QGroundControl.videoManager.fullScreen
+                  && (videoControl.pipState.state === videoControl.pipState.pipState
+                      || mapControl.pipState.state === mapControl.pipState.pipState)
+        }
+
+        Popup {
+            id: breachAlertPopup
+            x: (parent.width - width) / 2
+            y: 10  // optional: vertical position
+            width: parent.width/4
+            height: 100
+            modal: false
+            focus: false
+            background: null
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+            visible: false
+
+            Rectangle {
+                anchors.fill: parent
+                color: _breachAlertColor
+                border.color: "black"
+                visible: false
+
+                Text {
+                    anchors.centerIn: parent
+                    text: popUp_breachAlert
+                    font.bold: true
+                    visible: false
+                    // font.pixelSize: _androidBuild? 8 : 14
+                }
+            }
+        }
+
+        Popup {
+
+
+
+            id: generatorAlertPopup
+            x: (parent.width - width) / 2
+            y: 10  // optional: vertical position
+            width: parent.width/4
+            height: 100
+            modal: false
+            focus: false
+            background: null
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+            visible: alertCounts>0
+
+            Rectangle {
+                anchors.fill: parent
+                color: "red"
+                border.color: "black"
+                visible: true
+                Text {
+                    anchors.centerIn: parent
+                    text: requestedAlerts
+                    font.bold: false
+                    visible: true
+
+                     font.pixelSize: _androidBuild? 12 : 14
+                }
+            }
+        }
+
+
+        Item {
+            id: cameraControlOverlay
+            z: QGroundControl.zOrderTopMost
+            visible: QGroundControl.videoManager.hasVideo
+
+            property int cameraIndex: 0
+
+            states: [
+                State {
+                    name: "full"
+                    when: !((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
+                    PropertyChanges {
+                        target: cameraControlOverlay
+                        anchors.top: parent.top
+                        anchors.bottom: null
+                        anchors.right: parent.right
+                        anchors.margins: 25
+                    }
+                },
+                State {
+                    name: "hidden"
+                    when: ((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
+                    PropertyChanges {
+                        target: cameraControlOverlay
+                        visible: false
+                    }
+                }
+            ]
+
+            Row {
+                spacing: ScreenTools.defaultFontPixelWidth
+                anchors.right: parent.right
+                anchors.top: parent.top
+
+                Rectangle {
+                    id: cameraTextBackground
+                    color: "#80000000"
+                    radius: 4
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.leftMargin: ScreenTools.defaultFontPixelWidth / 2
+                    anchors.rightMargin: ScreenTools.defaultFontPixelWidth / 2
+                    height: cameraText.implicitHeight + ScreenTools.defaultFontPixelHeight
+                    width: cameraText.implicitWidth + ScreenTools.defaultFontPixelWidth * 2
+
+                    Text {
+                        id: cameraText
+                        anchors.centerIn: parent
+                        text: {
+                            if (QGroundControl.videoManager.streams.length > 0 && cameraControlOverlay.cameraIndex < QGroundControl.videoManager.streams.length) {
+                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
+                                return element.alias ? element.alias : element.url
+                            } else {
+                                return "Sem câmeras"
+                            }
+                        }
+                        color: "white"
+                        font.bold: true
+                    }
+                }
+
+
+                QGCColoredImage {
+                    id: cameraButton
+                    source: "/qmlimages/camera"
+                    width: ScreenTools.defaultFontPixelHeight * 2
+                    height: width
+                    fillMode: Image.PreserveAspectFit
+                    color: "white"
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            _activeVehicle.overwriteRC();
+                            if (QGroundControl.videoManager.streams.length > 0) {
+                                cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % QGroundControl.videoManager.streams.length
+
+                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
+                                if (element.ip) {
+                                    QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = element.ip
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+*/
+
+//
+Item {
+    id: _root
+
+    property bool _GD60: true
+
+    // These should only be used by MainRootWindow
+    property var planController:    _planController
+    property var guidedController:  _guidedController
+
+    // Properties of UTM adapter
+    property bool utmspSendActTrigger: false
+
+    PlanMasterController {
+        id:                     _planController
+        flyView:                true
+        Component.onCompleted:  start()
+    }
+
+    property bool   _mainWindowIsMap:       mapControl.pipState.state === mapControl.pipState.fullState
+    property bool   _isFullWindowItemDark:  _mainWindowIsMap ? mapControl.isSatelliteMap : true
+    property var    _activeVehicle:         QGroundControl.multiVehicleManager.activeVehicle
+    property var    _missionController:     _planController.missionController
+    property var    _geoFenceController:    _planController.geoFenceController
+    property var    _rallyPointController:  _planController.rallyPointController
+    property real   _margins:               ScreenTools.defaultFontPixelWidth / 2
+    property var    _guidedController:      guidedActionsController
+    property var    _guidedActionList:      guidedActionList
+    property var    _guidedValueSlider:     guidedValueSlider
+    property var    _widgetLayer:           widgetLayer
+    property real   _toolsMargin:           ScreenTools.defaultFontPixelWidth * 0.75
+    property rect   _centerViewport:        Qt.rect(0, 0, width, height)
+    property real   _rightPanelWidth:       ScreenTools.defaultFontPixelWidth * 30
+    property var    _mapControl:            mapControl
+
+    property real  mainViewHeight: _GD60? parent.height*0.7:parent.height*5/6
+    property real  mainViewWidth : parent.width - (parent.height - mainViewHeight) //garantir simetria
+    property bool _cameraExchangeActive : false
+    property var _pct_bateria_1: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
+    property var _tensao_bateria_1:  0 //modificado em MainWindow
+    property var _current_bateria_1:  0
+
+    property var _pct_bateria_2: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
+    property var _tensao_bateria_2:  0 //modificado em MainWindow
+    property var _current_bateria_2:  0
+
+    property var _current_generator: 0
+    property var _temperature_generator: 0
+    property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage (P/ GD25)
+
+    property int _battery1Index: _GD60? 0:0
+    property int _battery2Index: _GD60? 1:0
+    property int _gasolineIndex: _GD60? 0:1
+    property int _generatorIndex: _GD60? 0:2
+
+
+    property int _satCount: 0
+    property int _satPDOP: 0
+    property var _rcQuality: 0
+    property var _rcQuality_ARRAY: []
+    property var _rcQuality_mean: 0
+    property real rollingRCQualitySum: 0
+    property var _current_battery_ARRAY: []
+    property var _current_generator_ARRAY: []
+    property var _returnFunctionArray: []
+    property bool flagAlertaGerador: false
+    property real oldGeneratorMediamValue: 0
+    property int  maxGeneratorCurrent: 120
+    //property var  _distanceToHome:     _activeVehicle.distanceToHome.rawValue.toFixed(2)
+    //property var  _distanceToWP: _activeVehicle.distanceToNextWP.rawValue.toFixed(2)
+    //property var _mavlinkLossPercent: _activeVehicle.mavlinkLossPercent.rawValue
+    property real _groundSpeed: 0
+    property real _altitudeAMSL: 0
+    property int _flightTime:0
+
+    property real _aceleracao_rotor_1: 0    //PLACEHOLDER
+    property var  aceleracao_rotor_1_ARRAY: []
+    property real _aceleracao_rotor_2: 0 //PLACEHOLDER
+    property var  aceleracao_rotor_2_ARRAY: []
+    property real _aceleracao_rotor_3: 0 //PLACEHOLDER
+    property var  aceleracao_rotor_3_ARRAY: []
+    property real _aceleracao_rotor_4: 0 //PLACEHOLDER
+    property var  aceleracao_rotor_4_ARRAY: []
+    property real _aceleracao_rotor_5: 0 //PLACEHOLDER
+    property var  aceleracao_rotor_5_ARRAY: []
+    property real _aceleracao_rotor_6: 0 //PLACEHOLDER
+    property var  aceleracao_rotor_6_ARRAY: []
+
+
+    property real medAceleracaoRotor1: 1500
+    property real medAceleracaoRotor2: 1500
+    property real medAceleracaoRotor3: 1500
+    property real medAceleracaoRotor4: 1500
+    property real medAceleracaoRotor5: 1500
+    property real medAceleracaoRotor6: 1500
+
+    property bool _selected_rotor_1: false
+    property bool _selected_rotor_2: false
+    property bool _selected_rotor_3: false
+    property bool _selected_rotor_4: false
+    property bool _selected_rotor_5: false
+    property bool _selected_rotor_6: false
+
+    property real _motor_temp: 30
+    property real _motor_rpm: 3000
+
+    property int _rpm_horizontal1: 0
+    property int _rpm_horizontal2: 0
+
+    property int horas_restantes:0
+    property int minutos_restantes:0
+    property int segundos_restantes:0
+
+    property string horas_restantes_string:"00"
+    property string minutos_restantes_string:"00"
+    property string segundos_restantes_string:"00"
+
+    property bool _androidBuild: (Qt.platform.os === "ios" || Qt.platform.os === "android")
+
+    //property real _maxVel: _activeVehicle.parameterManager.
+
+
+    property real   _fullItemZorder:    0
+    property real   _pipItemZorder:     QGroundControl.zOrderWidgets
+
+    property var res_x: parent.width
+    property var res_y: parent.height
+    property real radianPI: Math.PI/180
+
+    property string popUp_breachAlert
+    property string _breachAlertColor
+
+    property bool canShowBreachAlert: true
+
+    property string requestedAlerts
+    property int alertCounts: 0;
+
+    function makeAlerts() {
+        var alertas = ""
+        var count = 0
+        if (_activeVehicle && _activeVehicle.flying) {
+            if (Math.abs(_current_generator) <= 5){
+                alertas += "POSSÍVEL PROBLEMA NO GERADOR\n"
+                count++
+            }
+            if (_motor_temp >= 110){
+                alertas += "POSSÍVEL SOBREAQUECIMENTO NO GERADOR\n"
+                count++
+            }
+        }
+        console.log(alertas)
+        return [count,alertas]
+    }
+
+
+
+    Timer {
+        id: breachCooldownTimer
+        interval: 10000 // cooldown de 10 segundos
+        running: true
+        repeat: true
+        onTriggered: {
+            console.log("Temperatura: ", _motor_temp.toString())
+            console.log("Gasolina: ",_gasolina)
+            var result = makeAlerts();
+            alertCounts = result[0];
+            requestedAlerts = result[1];
+            if(alertCounts > 0) generatorAlertPopup.open();
+        }
+    }
+
+    function _calcCenterViewPort() {
+        var newToolInset = Qt.rect(0, 0, width, height)
+        toolstrip.adjustToolInset(newToolInset)
+    }
+
+    function dropMessageIndicatorTool() {
+        toolbar.dropMessageIndicatorTool();
+    }
+
+    function dmsStringToRadians(input) {
+        //console.log(input);
+        input=input.toString()
+
+        // Step 1: Split by commas (to separate latitude and longitude)
+        const parts = input.split(',');
+        //console.log(parts)
+        if (parts.length < 2) {
+            throw new Error("Invalid DMS input format");
+        }
+
+        // Step 2: Process each part (latitude and longitude)
+        function dmsToDecimal(dmsStr) {
+            // Remove extra spaces and split by the degree symbol '°', then by the minute and second symbols
+            const [degMinSec, direction] = dmsStr.trim().split('  ').filter(part => part !== '');
+
+            // Split the degree, minutes, and seconds
+            const [degrees, minutes, seconds] = degMinSec.split(/°|'|"/).map(Number);
+
+            // Calculate the decimal degrees
+            let decimalDegrees = degrees + minutes / 60 + seconds / 3600;
+
+            // Apply the sign based on direction (N/S/E/W)
+            if (direction === 'S' || direction === 'W') {
+                decimalDegrees *= -1;
+            }
+
+            return decimalDegrees;
+        }
+
+        // Step 3: Convert both latitude and longitude to decimal degrees
+        const latDeg = dmsToDecimal(parts[0]);
+        const lonDeg = dmsToDecimal(parts[1]);
+
+        // Step 4: Convert decimal degrees to radians
+        const toRadians = (deg) => deg * Math.PI / 180;
+
+        return {
+            latRadians: toRadians(latDeg),
+            lonRadians: toRadians(lonDeg)
+        };
+    }
+
+    function radianCoordsToCartesian(lat,lon){
+        const R = 6371; //Raio arredondado da terra
+        const x = R * Math.cos(lat)* Math.cos(lon);
+        const y = R * Math.cos(lat)* Math.sin(lon);
+        const z = R * Math.sin(lat);
+        return {
+            x:x,
+            y:y,
+            z:z
+        };
+    }
+
+    function breachDetection() {
+        const vehicle_lat = _activeVehicle.coordinate.latitude.valueOf()*radianPI;
+        const vehicle_lon = _activeVehicle.coordinate.longitude.valueOf()*radianPI;
+        var coords = radianCoordsToCartesian(vehicle_lat,vehicle_lon);
+
+        const v_x = coords.x;
+        const v_y = coords.y;
+        //até aqui convertemos as coordenadas geograficas do veículo em coordenadas cartesianas
+        var inside = false;
+        var level_breach = -1
+        //para cada poligono
+        for(let i = 0; i<_geoFenceController.polygons.count.valueOf();i++){
+            let polygon = _geoFenceController.polygons.get(i).path;
+            let p1 = dmsStringToRadians(polygon[0]);
+            p1 = radianCoordsToCartesian(p1.latRadians, p1.lonRadians)
+            let p2;
+            //para cada vértice
+            let num_vertices = _geoFenceController.polygons.get(i).path.length;
+            for(let j = 1; j<=num_vertices;j++){
+                p2 = dmsStringToRadians(polygon[j % num_vertices]);
+                p2 = radianCoordsToCartesian(p2.latRadians, p2.lonRadians);
+
+                if(v_y > Math.min(p1.y,p2.y)){
+                    if(v_y <= Math.max(p1.y,p2.y)){
+                        if(v_x <= Math.max(p1.x,p2.x)){
+                            const x_intersection = ((v_y - p1.y) * (p2.x - p1.x)) / (p2.y - p1.y) + p1.x;
+                            if (p1.x === p2.x || v_x <= x_intersection) {
+                                inside = !inside;
+                            }
+                        }
+                    }
+                }
+                p1=p2;
+            }
+            if(!inside){
+                level_breach = i;
+            }
+            else{inside = false;}
+        }
+        return {breach:!inside, level:level_breach};
+    }
+
+    function generatorAlert(batValues, gerValues, oldGerMed){ //TODO: incluir condicional tensão da bateria < 44V
+        var medBat = 0;
+        var medGer = 0;
+        var flagAlert = false;
+        for (var i = 0; i<20; i++){
+            medBat = medBat + batValues[i];
+            medGer = medGer + gerValues[i];
+        }
+        medBat = medBat;
+        medGer = medGer;
+
+        //Se a média da corrente do gerador esta próxima de 0, levanta flag
+        if (Math.abs(medGer)<20){
+            flagAlert = true;
+        }
+        //Se a media da corrente da bateria é maior que do gerador E a média do gerador está caindo, levanta flag
+        else if (medBat > medGer && oldGerMed > medGer) {
+            flagAlert = true;
+            //console.log(medBat,medGer, oldGerMed)
+        }
+
+        return [flagAlert, medGer];
+    }
+
+    function accelerationPercentageToRadius(percentage){
+        return percentage*0.015
+
+    }
+
+    Timer{
+        id: propertyValuesUpdater
+        interval: 100
+        running: true
+        repeat: true
+
+        onTriggered:{
+
+
+            if(_GD60){
+
+                _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 20)/5.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
+                _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
+                _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
+
+                _pct_bateria_2 = ((((_activeVehicle.batteries.get(_battery2Index).voltage.rawValue).toFixed(2) - 47.6)/13.3)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
+                _tensao_bateria_2 = (_activeVehicle.batteries.get(_battery2Index).voltage.rawValue).toFixed(2)
+                _current_bateria_2 = (_activeVehicle.batteries.get(_battery2Index).current.rawValue).toFixed(2)
+
+
+            }
+            else{
+                _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 42)/8.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
+                _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
+                _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
+            }
+
+
+
+            _satCount = _activeVehicle.gps.count.rawValue
+            _satPDOP = _activeVehicle.gps.lock.rawValue
+
+
+
+            // console.log(_activeVehicle.rcRSSI.valueOf())
+            _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue//_activeVehicle.batteries.index(0,1).voltage.rawValue
+
+
+            _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
+            _rcQuality_ARRAY.push(_rcQuality)
+            rollingRCQualitySum += _rcQuality
+            if(_rcQuality_ARRAY.length === 10){
+                _rcQuality_mean = (rollingRCQualitySum / 10).toFixed(0)
+                rollingRCQualitySum -= _rcQuality_ARRAY.shift()
+            }
+
+            horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
+            minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
+            segundos_restantes = (7200 * (_gasolina/100))%60
+
+            _groundSpeed = _activeVehicle.groundSpeed.value.toFixed(1)
+            _altitudeAMSL = _activeVehicle.altitudeAMSL.value
+            _flightTime = (_activeVehicle.flightTimeCustom.value).toFixed(0)
+
+
+
+
+
+            if(horas_restantes<10) {horas_restantes_string = "0"+horas_restantes.toString()}
+            else {horas_restantes_string = horas_restantes.toString()}
+            if(minutos_restantes < 10){ minutos_restantes_string = "0" +minutos_restantes.toString()}
+            else {minutos_restantes_string = minutos_restantes.toString()}
+            if(segundos_restantes <10) {segundos_restantes_string = "0" + segundos_restantes.toString()}
+            else {segundos_restantes_string = segundos_restantes.toString()}
+
+
+            var breach_val = breachDetection()
+            if (breach_val.level > -1 && canShowBreachAlert) {
+                console.log("VIOLACAO DE ESPAÇO AEREO NÍVEL ", breach_val.level + 1)
+
+                if (breach_val.level === 0) {
+                    popUp_breachAlert = "Invasão do Volume de Contingência!"
+                    _breachAlertColor = "Yellow"
+                }
+                if (breach_val.level === 1) {
+                    popUp_breachAlert = "Invasão do Volume de Ground Risk Buffer!"
+                    _breachAlertColor = "Orange"
+                }
+
+                // breachAlertPopup.open()
+                generatorAlertPopup.open()
+                canShowBreachAlert = false
+                breachCooldownTimer.start()
+            }
+
+
+            _motor_temp = _motor_temp
+            if(_GD60){
+                _aceleracao_rotor_1 = _aceleracao_rotor_1
+                _aceleracao_rotor_2 = _aceleracao_rotor_2
+                _aceleracao_rotor_3 = _aceleracao_rotor_3
+                _aceleracao_rotor_4 = _aceleracao_rotor_4
+                console.log(_aceleracao_rotor_1)
+            }
+            else{
+                aceleracao_rotor_1_ARRAY.push(_aceleracao_rotor_1)
+                aceleracao_rotor_2_ARRAY.push(_aceleracao_rotor_2)
+                aceleracao_rotor_3_ARRAY.push(_aceleracao_rotor_3)
+                aceleracao_rotor_4_ARRAY.push(_aceleracao_rotor_4)
+                aceleracao_rotor_5_ARRAY.push(_aceleracao_rotor_5)
+                aceleracao_rotor_6_ARRAY.push(_aceleracao_rotor_6)
+            }
+
+            _current_generator_ARRAY.push(_current_generator)
+            _current_generator = _activeVehicle.batteries.get(_generatorIndex).current.rawValue.toFixed(2)
+            _current_bateria_1 = _activeVehicle.batteries.get(_battery1Index).current.rawValue.toFixed(2)
+
+
+            _temperature_generator = _activeVehicle.batteries.get(_generatorIndex).temperature.rawValue.toFixed(2)
+
+
+            if(_current_generator_ARRAY.length === 20){ //sabendo que recebemos um dado novo a cada 0.1 segundos
+                _returnFunctionArray = generatorAlert(_current_battery_ARRAY, _current_generator_ARRAY, oldGeneratorMediamValue);//executa função
+                flagAlertaGerador = _returnFunctionArray[0]; //atualiza flag geral com valor booleano retornado da função
+                oldGeneratorMediamValue = _returnFunctionArray[1]; //atualiza valor de média
+                _current_battery_ARRAY.shift();
+                _current_generator_ARRAY.shift();
+            }
+            if(aceleracao_rotor_1_ARRAY.length ===20){
+                var temp1 = 0;
+                var temp2 = 0;
+                var temp3 = 0;
+                var temp4 = 0;
+                var temp5 = 0;
+                var temp6 = 0;
+                for (var c = 0; c<20; c++){
+                    temp1 = temp1 + aceleracao_rotor_1_ARRAY[c];
+                    temp2 = temp2 + aceleracao_rotor_2_ARRAY[c];
+                    temp3 = temp3 + aceleracao_rotor_3_ARRAY[c];
+                    temp4 = temp4 + aceleracao_rotor_4_ARRAY[c];
+                    temp5 = temp5 + aceleracao_rotor_5_ARRAY[c];
+                    temp6 = temp6 + aceleracao_rotor_6_ARRAY[c];
+                }
+                medAceleracaoRotor1 = temp1/20
+                medAceleracaoRotor2 = temp2/20
+                medAceleracaoRotor3 = temp3/20
+                medAceleracaoRotor4 = temp4/20
+                medAceleracaoRotor5 = temp5/20
+                medAceleracaoRotor6 = temp6/20
+                //   console.log("medAccell1", medAceleracaoRotor1)
+
+                aceleracao_rotor_1_ARRAY.shift();
+                aceleracao_rotor_2_ARRAY.shift();
+                aceleracao_rotor_3_ARRAY.shift();
+                aceleracao_rotor_4_ARRAY.shift();
+                aceleracao_rotor_5_ARRAY.shift();
+                aceleracao_rotor_6_ARRAY.shift();
+
+            }
+        }
+    }
+
+
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    //                          LATERAL VIEW AREA                                                       //
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    Loader{
+        id: lateralDataLoader
+        anchors.right : parent.right
+        anchors.bottom : parent.bottom
+        anchors.top:parent.top
+        width : parent.width - mainViewWidth
+        height: mainViewHeight
+        active: active  // or false if you want to delay loading
+        asynchronous: true
+        onLoaded:{
+            let now = new Date();
+            console.log("lateralDataArea LOADED at " + now.toLocaleTimeString());
+            //bottomDataLoader.active = true;
+        }
+
+        sourceComponent: Component {
+            id: lateralDataComponent
+            Item {
+                id: lateralDataArea
+                anchors.fill: parent
+                Rectangle {
+                    anchors.fill: parent
+                    color:qgcPal.toolbarBackground
+                }
+
+                //RPM1
+                Item{
+                    id: dialRPM1
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.margins:    _toolsMargin*2
+                    height: parent.height/8
+                    width: height
+                    Canvas {
+                        anchors.fill: parent
+                        id: rotor1Arc
+                        renderTarget: Canvas.Image
+                        renderStrategy: Canvas.Cooperative
+                        property real angleRPM1: accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100
+                        Behavior on angleRPM1 {
+                                NumberAnimation { duration: 100; easing.type: Easing.OutQuad } // suavizador de animação
+                            }
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.reset()
+                            ctx.clearRect(0, 0, width, height)
+                            ctx.strokeStyle = "gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            var radius = Math.min(width, height) / 2.5
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+
+                            ctx.stroke()
+                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + angleRPM1) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+
+                            ctx.stroke()
+
+                        }
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM1= accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100}}
+
+                    }
+                    Text{
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: _aceleracao_rotor_1
+                        color:"green"
+                        font.bold: true
+                    }
+                }//fim RPM1
+
+                //RPM2
+                Item{
+                    id: dialRPM2
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins:    _toolsMargin*2
+                    height: parent.height/8
+                    width: height
+                    Canvas {
+                        anchors.fill: parent
+                        id: rotor2Arc
+                        renderTarget: Canvas.Image
+                        renderStrategy: Canvas.Cooperative
+                        property real angleRPM2: accelerationPercentageToRadius(_aceleracao_rotor_2/5000)*100
+                        Behavior on angleRPM2 {
+                                NumberAnimation { duration: 100; easing.type: Easing.OutQuad } // suavizador de animação
+                            }
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.reset()
+                            ctx.clearRect(0, 0, width, height)
+                            ctx.strokeStyle = "gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            var radius = Math.min(width, height) / 2.5
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+
+                            ctx.stroke()
+                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + angleRPM2) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+
+                            ctx.stroke()
+
+                        }
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM2= accelerationPercentageToRadius(_aceleracao_rotor_2/5000)*100}}
+
+                    }
+                    Text{
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: _aceleracao_rotor_2
+                        color:"green"
+                        font.bold: true
+                    }
+                }//fim RPM2
+
+                //RPM3
+                Item{
+                    id: dialRPM3
+                    anchors.left: parent.left
+                    anchors.top: dialRPM1.bottom
+                    anchors.margins:    _toolsMargin*2
+                    height: parent.height/8
+                    width: height
+                    Canvas {
+                        anchors.fill: parent
+                        id: rotor3Arc
+                        renderTarget: Canvas.Image
+                        renderStrategy: Canvas.Cooperative
+                        property real angleRPM3: accelerationPercentageToRadius(_aceleracao_rotor_3/5000)*100
+                        Behavior on angleRPM3 {
+                                NumberAnimation { duration: 250; easing.type: Easing.OutQuad } // suavizador de animação
+                            }
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.reset()
+                            ctx.clearRect(0, 0, width, height)
+                            ctx.strokeStyle = "gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            var radius = Math.min(width, height) / 2.5
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+
+                            ctx.stroke()
+                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + angleRPM3) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+
+                            ctx.stroke()
+
+                        }
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM3= accelerationPercentageToRadius(_aceleracao_rotor_3/5000)*100}}
+
+                    }
+                    Text{
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: _aceleracao_rotor_3
+                        color:"green"
+                        font.bold: true
+                    }
+                }//fim RPM3
+
+                //RPM4
+                Item{
+                    id: dialRPM4
+                    anchors.right: parent.right
+                    anchors.top: dialRPM2.bottom
+                    anchors.margins:    _toolsMargin*2
+                    height: parent.height/8
+                    width: height
+                    Canvas {
+                        anchors.fill: parent
+                        id: rotor4Arc
+                        renderTarget: Canvas.Image
+                        renderStrategy: Canvas.Cooperative
+                        property real angleRPM4: accelerationPercentageToRadius(_aceleracao_rotor_4/5000)*100
+                        Behavior on angleRPM4 {
+                                NumberAnimation { duration: 100; easing.type: Easing.OutQuad } // suavizador de animação
+                            }
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.reset()
+                            ctx.clearRect(0, 0, width, height)
+                            ctx.strokeStyle = "gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            var radius = Math.min(width, height) / 2.5
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+
+                            ctx.stroke()
+                            ctx.strokeStyle = "green"//"gray" // Arc color
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + angleRPM4) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
+
+                            ctx.stroke()
+
+                        }
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM2= accelerationPercentageToRadius(_aceleracao_rotor_4/5000)*100}}
+
+                    }
+                    Text{
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: _aceleracao_rotor_4
+                        color:"green"
+                        font.bold: true
+                    }
+                }//fim RPM4
+
+
+
+
+            }
+
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //                          MAIN VIEW AREA                                                          //
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    Item {
+        id: mainViewArea
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: lateralDataLoader.left
+        anchors.bottom: parent.bottom
 
         Component.onCompleted:{
             let now = new Date();
