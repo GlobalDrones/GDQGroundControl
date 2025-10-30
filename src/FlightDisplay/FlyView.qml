@@ -2232,7 +2232,6 @@ Item {
                 _aceleracao_rotor_2 = _aceleracao_rotor_2
                 _aceleracao_rotor_3 = _aceleracao_rotor_3
                 _aceleracao_rotor_4 = _aceleracao_rotor_4
-                console.log(_aceleracao_rotor_1)
             }
             else{
                 aceleracao_rotor_1_ARRAY.push(_aceleracao_rotor_1)
@@ -2603,7 +2602,7 @@ Item {
                             var centerX = width / 2;
                             var centerY = height / 2;
 
-                            // Calcula as coordenadas X e Y da ponta do ponteiro usando o ângulo atual (angleRPM3)
+                            // Calcula as coordenadas X e Y da ponta do ponteiro usando o ângulo atual (angleRPM4)
                             // Nota: O raio do ponteiro será o mesmo do arco (radius)
                             var pointerX = centerX + radius * Math.cos(angleRPM4);
                             var pointerY = centerY + radius * Math.sin(angleRPM4);
@@ -2622,8 +2621,83 @@ Item {
 
                 }//fim RPM4
 
+                //RPM GERADOR TODO: RPM DO GERADOR NÃO EXISTE COMO INFO AINDA
+                Item{
+                    id: dialRPMGerador
+                    anchors.left: parent.left
+                    anchors.top: text_rpm3.bottom
+                    anchors.topMargin:    _toolsMargin*2
+                    height: parent.width
+                    width: height
+                    Canvas {
+                        anchors.fill: parent
+                        id: rotorGeradorArc
+                        renderTarget: Canvas.Image
+                        renderStrategy: Canvas.Cooperative
+                        property real angleRPMGerador: 0//accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100
+                        Behavior on angleRPMGerador {
+                                NumberAnimation { duration: 100; easing.type: Easing.OutQuad } // suavizador de animação
+                            }
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.reset()
+                            ctx.clearRect(0, 0, width, height)
+                            var radius = Math.min(width, height) / 2.5
+                            var startAngle = Math.PI; // 180 graus
+                            var endAngle = Math.PI*2;          // 360
+
+                            // Arco de Fundo (cinza)
+                            ctx.strokeStyle = "gray" // Cor do arco de fundo
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            // ctx.arc(centro_x, centro_y, raio, ângulo_inicial, ângulo_final, sentido_antihorario)
+                            ctx.arc(width / 2, height / 2, radius, startAngle, endAngle, false)
+                            ctx.stroke()
+
+                            // Arco de Preenchimento (verde), usando a variável de ângulo 'angleRPMGerador'
+                            ctx.strokeStyle = "green"
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius, startAngle, angleRPMGerador , false)
+                            ctx.stroke()
+
+                            // Define o ponto central (origem da linha)
+                            var centerX = width / 2;
+                            var centerY = height / 2;
+
+                            // Calcula as coordenadas X e Y da ponta do ponteiro usando o ângulo atual (angleRPMGerador)
+                            // Nota: O raio do ponteiro será o mesmo do arco (radius)
+                            var pointerX = centerX + radius * Math.cos(angleRPMGerador);
+                            var pointerY = centerY + radius * Math.sin(angleRPMGerador);
+
+                            ctx.strokeStyle = "red" // Cor do ponteiro
+                            ctx.lineWidth = 2       // Espessura do ponteiro
+
+                            ctx.beginPath()
+                            ctx.moveTo(centerX, centerY) // Inicia no centro
+                            ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
+                            ctx.stroke()
+                        }
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*2);console.log("PITCH:",_activeVehicle.pitch.rawValue.toFixed(2))}}
+
+                    }
 
 
+                }//fim RPM GERADOR
+
+                Text{
+                    id: text_rpmGerador
+                    width: 1
+                    height: 1
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: dialRPMGerador.bottom
+                    anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
+                    font.pixelSize: _androidBuild? 20 : 18
+                    text: _aceleracao_rotor_1 //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
+                    color:"green"
+                    font.bold: true
+                    horizontalAlignment: parent.width
+                }
 
 
 
@@ -2632,9 +2706,9 @@ Item {
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
     //                          MAIN VIEW AREA                                                          //
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
     Item {
         id: mainViewArea
         anchors.top: parent.top
@@ -2734,6 +2808,190 @@ Item {
                       || mapControl.pipState.state === mapControl.pipState.pipState)
         }
 
+        Rectangle{
+            id: borda_video
+            anchors.fill: videoControl
+            color: "transparent"
+            //border.width: _mainWindowIsMap ? 1 : 5
+            //border.color: black
+            z: videoControl.z+5
+        }
+
+        Item{
+            id: pilotHUD
+            anchors.verticalCenter: borda_video.verticalCenter
+            anchors.horizontalCenter: borda_video.horizontalCenter
+            width: borda_video.width*0.65
+            height: borda_video.height*0.95
+            z: videoControl.z
+
+            Rectangle{ //delimitador de área só pra ver os limites. Apagar quando completo
+                anchors.fill: parent
+                color:"red"
+                visible: false
+            }
+
+
+            Item {
+                id: pitchArea
+                width: parent.width / 3
+                height: parent.width / 3
+                anchors.centerIn: parent
+                clip: true
+
+                property real pitch: _activeVehicle.pitch.rawValue.toFixed(2)
+                property real lineSpacing: height / 5
+                readonly property int totalLines: 37 // -90 a 90 a cada 5 graus
+
+                // Calcula o deslocamento vertical para ajustar o movimento conforme pitch
+                property real pitchOffsetY: (pitch+80) / 5 * lineSpacing //+80 pra dar offset inicial, se não o valor 0 do indicador é -80
+
+                Repeater {
+                    model: pitchArea.totalLines
+                    delegate: Item {
+                        width: parent.width
+                        height: pitchArea.lineSpacing
+
+                        property int angle: 90 - index * 5
+
+                        y: index * pitchArea.lineSpacing + pitchArea.pitchOffsetY * -1
+
+                        // Exeste visibilidade para limitar desenho (opcional)
+                        visible: y + height >= 0 && y <= pitchArea.height
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            x: 0
+                            height: 2
+                            width: angle % 10 === 0 ? parent.width * 0.5 : parent.width * 0.25
+                            color: "#00FF00"
+                        }
+
+                        Text {
+                            visible: angle % 10 === 0
+                            text: angle + "°"
+                            color: "#00FF00"
+                            font.pointSize: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.bold: true
+                            anchors.left: parent.left
+                            anchors.leftMargin: width * 0.55
+                            z: parent.z + 5 // esse +5 é porquice, mas deixa assim por enquanto
+                        }
+                    }
+                }
+            }
+
+            QGCColoredImage { //crosshair no centro da camera
+                    id: crosshair_central
+                    width: parent.width/3
+                    height: parent.width/5
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    color: "red"
+                    source: "/qmlimages/crossHair.svg"
+                    //rotation: _activeVehicle.roll.value ROTAÇÃO AGORA VAI SER INDICADA NO DIAL SUPERIOR -> VER IMAGEM DE REFERENCIA
+            }
+
+            Item {
+                id: dialRoll
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 0
+                width: parent.width
+                height: parent.width / 2
+
+                Canvas {
+                    anchors.fill: parent
+                    id: rollArc  // ajustado o id para coerência
+                    renderTarget: Canvas.Image
+                    renderStrategy: Canvas.Cooperative
+                    visible: true
+                    property real angleRoll: 0
+                    Behavior on angleRoll {
+                        NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+                    }
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.reset()
+                        ctx.clearRect(0, 0, width, height)
+                        var centerX = width / 2
+                        var centerY = height / 2
+                        var radius = Math.min(width, height) / 2.5
+
+                        ctx.strokeStyle = "white"
+                        ctx.lineWidth = 5
+                        ctx.beginPath()
+                        ctx.arc(centerX, centerY, radius - 10, Math.PI * 1.08, Math.PI * 1.92, false)
+                        ctx.stroke()
+
+                        // Riscos picotados a cada 15 graus
+                        ctx.strokeStyle = "white"
+                        ctx.lineWidth = 5
+                        for (var deg = 195; deg <= 345; deg += 15) {
+                            var rad = deg * Math.PI / 180
+                            var innerRadius = radius - 10
+                            var outerRadius = radius
+                            if (deg % 5 === 0) {
+                                outerRadius = radius + 10
+                            }
+
+                            var xStart = centerX + innerRadius * Math.cos(rad)
+                            var yStart = centerY + innerRadius * Math.sin(rad)
+
+                            var xEnd = centerX + outerRadius * Math.cos(rad)
+                            var yEnd = centerY + outerRadius * Math.sin(rad)
+
+                            ctx.beginPath()
+                            ctx.moveTo(xStart, yStart)
+                            ctx.lineTo(xEnd, yEnd)
+                            ctx.stroke()
+                        }
+                    }
+                    Timer {
+                        interval: 33; running: true; repeat: true
+                        onTriggered: {
+                            parent.requestPaint()
+                            parent.angleRoll = mapValueToRadians(_activeVehicle.roll.rawValue.toFixed(2), -150, 150, Math.PI * 1.08, Math.PI * 1.92)
+                            console.log("ROLL:", _activeVehicle.roll.rawValue.toFixed(2))
+                        }
+                    }
+                }
+
+                QGCColoredImage {
+                    id: pointerRoll
+                    width: dialRoll.width / 10
+                    height: dialRoll.height / 2
+                    anchors.horizontalCenter: rollArc.horizontalCenter
+                    anchors.verticalCenter: rollArc.verticalCenter
+                    anchors.verticalCenterOffset: -dialRoll.height/4
+                    color: "white"
+                    source: "/qmlimages/rollPointer.svg"
+                    transformOrigin: Item.Bottom
+                    rotation: (rollArc.angleRoll - 1.5 * Math.PI) * (180 / Math.PI)
+                    smooth: true
+                }
+            }
+
+
+
+
+
+
+
+
+
+
+            }
+
+
+
+
+
+
+
+
         Popup {
             id: breachAlertPopup
             x: (parent.width - width) / 2
@@ -2792,6 +3050,8 @@ Item {
                 }
             }
         }
+
+
 
 
         Item {
