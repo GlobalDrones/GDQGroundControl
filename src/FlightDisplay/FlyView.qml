@@ -2831,7 +2831,7 @@ Item {
                 visible: false
             }
 
-
+            /////COMEÇO DO PITCH
             Item {
                 id: pitchArea
                 width: parent.width / 3
@@ -2865,35 +2865,49 @@ Item {
                             x: 0
                             height: 2
                             width: angle % 10 === 0 ? parent.width * 0.5 : parent.width * 0.25
-                            color: "#00FF00"
+                            color: "white"//"#00FF00"
                         }
 
                         Text {
                             visible: angle % 10 === 0
                             text: angle + "°"
-                            color: "#00FF00"
-                            font.pointSize: 12
+                            color: "white"//"#00FF00"
+                            font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
                             anchors.verticalCenter: parent.verticalCenter
                             font.bold: true
                             anchors.left: parent.left
                             anchors.leftMargin: width * 0.55
-                            z: parent.z + 5 // esse +5 é porquice, mas deixa assim por enquanto
+                            z: parent.z + 20 // esse +20 é porquice, mas deixa assim por enquanto
                         }
                     }
                 }
             }
 
-            QGCColoredImage { //crosshair no centro da camera
-                    id: crosshair_central
-                    width: parent.width/3
-                    height: parent.width/5
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    color: "red"
-                    source: "/qmlimages/crossHair.svg"
-                    //rotation: _activeVehicle.roll.value ROTAÇÃO AGORA VAI SER INDICADA NO DIAL SUPERIOR -> VER IMAGEM DE REFERENCIA
-            }
+            QGCColoredImage { // crosshair no centro da camera
+                id: crosshair_central
+                width: parent.width / 3
+                height: parent.width / 5
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.horizontalCenter: parent.horizontalCenter
+                color: "white"
+                source: "/qmlimages/crossHair.svg"
+                layer.enabled: true
+                layer.smooth: true
+                layer.effect: DropShadow {
+                    color: "black"
+                    horizontalOffset: 0
+                    verticalOffset: 0
+                    radius: 2
+                    smooth: true
+                    samples: 32
+                    spread: 0.8 // Ajuste para tornar a borda mais definida (menos difusa)
+                }
 
+            }
+            /////FIM DO PITCH
+
+
+            /////COMEÇO DO ROLL
             Item {
                 id: dialRoll
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -2929,6 +2943,7 @@ Item {
                         // Riscos picotados a cada 15 graus
                         ctx.strokeStyle = "white"
                         ctx.lineWidth = 5
+                        //console.log("Radius: ",radius)
                         for (var deg = 195; deg <= 345; deg += 15) {
                             var rad = deg * Math.PI / 180
                             var innerRadius = radius - 10
@@ -2954,7 +2969,7 @@ Item {
                         onTriggered: {
                             parent.requestPaint()
                             parent.angleRoll = mapValueToRadians(_activeVehicle.roll.rawValue.toFixed(2), -150, 150, Math.PI * 1.08, Math.PI * 1.92)
-                            console.log("ROLL:", _activeVehicle.roll.rawValue.toFixed(2))
+                            console.log("airspeed:", _activeVehicle.airSpeed.rawValue.toFixed(2))
                         }
                     }
                 }
@@ -2973,17 +2988,222 @@ Item {
                     smooth: true
                 }
             }
+            ///// FIM DO ROLL
 
+            /////COMEÇO DO HEADING
+            QGCColoredImage {
+                id: headingIndicator
+                width: parent.width *0.25
+                height: parent.width *0.25
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: pitchArea.bottom
+                anchors.margins: _toolsMargin*0.5
+                source: "/qmlimages/compassInstrumentDial.svg"
+                color: "white"
+                rotation: _activeVehicle.heading.rawValue.toFixed(2)
+            }
+            QGCColoredImage {
+                id: vehicleHeadingIcon
+                width: headingIndicator.width/2
+                height: headingIndicator.height/2
+                anchors.horizontalCenter: headingIndicator.horizontalCenter
+                anchors.verticalCenter: headingIndicator.verticalCenter
+                source: "/qmlimages/GD60_lowres.png"
+                color: "white"
+                rotation: 180
+            }
+            QGCColoredImage {
+                id: pointerHeading
+                width: headingIndicator.width/5
+                height: width
+                anchors.horizontalCenter: headingIndicator.horizontalCenter
+                anchors.bottom: headingIndicator.top
+                anchors.bottomMargin: -_toolsMargin*0.5
+                color: "white"
+                source: "/qmlimages/rollPointer.svg"
+                rotation: 180
+                smooth: true
+            }
+            Item {
+                id: headingTextBox
+                width: ScreenTools.defaultFontPixelWidth * 6 // Mantém a largura original
+                height: ScreenTools.defaultFontPixelHeight
+                anchors.horizontalCenter: pointerHeading.horizontalCenter
+                anchors.verticalCenter:  pointerHeading.verticalCenter
 
+                Rectangle {
+                    id: headingValuetextBox
+                    anchors.fill: parent
+                    color: "black"
+                    border.color: "white"
+                    border.width: 1
+                }
 
+                Text {
+                    text: _activeVehicle.heading.rawValue.toFixed(0).padStart(3, '0') + "°"
+                    color: "white"
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+                    anchors.centerIn: headingValuetextBox // Centraliza horizontal e verticalmente
+                    z: parent.z + 20
+                }
+            }
+            ///// FIM DO HEADING
 
+            ///// COMEÇO BARRA LATERAL / VELOCIDADES HORIZONTAIS
 
+            Item{
+                id: barraLateralEsquerda
+                // ... Propriedades de geometria mantidas
+                width: parent.width/10
+                height: parent.height*2/3
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: crosshair_central.left
+                anchors.rightMargin: _toolsMargin*10
+                clip: true
 
+                // 💨 Airspeed (assumindo que este valor é a "atitude" ou o valor que deve ser centralizado)
+                property real current_value: -_activeVehicle.airSpeed.rawValue.toFixed(2) // Usando o rawValue para cálculo
 
+                // 📏 Definições da Escala
+                property real lineSpacing: height / 6
+                readonly property int totalLines: 40 // De -190 a 200 (se o passo for 10)
 
+                // A escala vai de 190 até -200 (total de 40 marcações * 10 de passo)
+                // O valor central é 0. O valor inicial (index 0) é 190. O valor final é -200.
+                // Ponto zero do modelo: o valor 0 é o 20º índice (index 19) na escala (190 - 19*10 = 0).
 
+                // 📐 Cálculo do Deslocamento para Centralização (pixels/unidade)
+                // 1. Quanto de deslocamento por unidade (ex: por 1 grau/nó)?
+                //    10 (passo) unidades = lineSpacing
+                //    1 unidade = lineSpacing / 10
+                readonly property real unitsPerLineSpacing: 10
+                readonly property real pixelPerUnit: barraLateralEsquerda.lineSpacing / barraLateralEsquerda.unitsPerLineSpacing
+
+                // 2. O valor de deslocamento total (quanto o modelo deve rolar)
+                // O modelo rola para baixo quando o current_value é positivo.
+                property real scrollOffsetY: -1 * barraLateralEsquerda.current_value * barraLateralEsquerda.pixelPerUnit
+
+                Rectangle{
+                    id: rectAirspeed
+                    anchors.fill: parent
+                    color:"transparent"
+                    border.color: "white"
+                    border.width: 2
+                }
+
+                // ⚙️ Repeater para criar a escala
+                Repeater {
+                    model: barraLateralEsquerda.totalLines
+                    delegate: Item {
+                        width: parent.width
+                        height: barraLateralEsquerda.lineSpacing
+
+                        // 🌟 Cálculo do valor exibido: Começa em um valor positivo e decrementa a cada 10 unidades
+                        // Ajustei o início para ter 0 no meio da barra (ex: 190, 180, ..., 10, 0, -10, ... -200)
+                        property int angle: 190 - index * 10
+
+                        // ⬇️ Cálculo da Posição Y da linha
+                        // = Posição Estática da linha + Deslocamento pela "airspeed" + Offset de Centralização
+                        // A linha 0 está no topo (index * lineSpacing).
+                        // O Offset de Centralização garante que a linha '0' (que é index 19) vá para o centro quando scrollOffsetY=0.
+                        readonly property real centerOffset: barraLateralEsquerda.height / 2 - (19 * barraLateralEsquerda.lineSpacing)
+
+                        y: ((index-0.5) * barraLateralEsquerda.lineSpacing) + barraLateralEsquerda.scrollOffsetY + centerOffset
+
+                        // Restrição de visibilidade para limitar desenho
+                        visible: y + height >= 0 && y <= barraLateralEsquerda.height
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            x: 0
+                            height: 2
+                            // Linha longa a cada 10 unidades. Se o passo é 10, todas são longas.
+                            width: angle % 10 === 0 ? parent.width * 0.5 : parent.width * 0.25
+                            color: "white"
+                        }
+
+                        Text {
+                            // Exibe o texto apenas para múltiplos de 10
+                            visible: angle % 10 === 0
+                            // Se angle for 0, toFixed(0) é 0.
+                            text: angle.toFixed(0)
+                            color: "white"
+                            font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.bold: true
+                            anchors.left: parent.left
+                            anchors.leftMargin: parent.width * 0.55 // Ajustado para ficar à direita da linha
+                            z: parent.z + 20
+                        }
+                    }
+                }
+
+                // 🎯 Indicador Fixo (Central)
+                QGCColoredImage {
+                    id: airspeedPointer
+                    width: parent.width * 0.5
+                    height: width
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: "white"
+                    z: 10
+                    source: "/qmlimages/rollPointer.svg"
+                    rotation: 270
+                    smooth: false
+                }
+                Rectangle {
+                    id: airspeedValuetextBox
+                    //anchors.left: airspeedPointer.right
+                    width: ScreenTools.defaultFontPixelWidth * 8 // Mantém a largura original
+                    height: ScreenTools.defaultFontPixelHeight
+                    anchors.left: airspeedPointer.right
+                    anchors.leftMargin: -_toolsMargin*3
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: "black"
+                    border.color: "white"
+                    border.width: 1
+                }
+
+                Text {
+                    text: _activeVehicle.airSpeed.rawValue.toFixed(1).padStart(3, '0')
+                    color: "white"
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+                    anchors.centerIn: airspeedValuetextBox // Centraliza horizontal e verticalmente
+                    z: parent.z + 20
+                }
 
             }
+            Item{
+                id: subbarraLateralEsquerda
+                anchors.top: barraLateralEsquerda.bottom
+                anchors.left: barraLateralEsquerda.left
+                width: barraLateralEsquerda.width
+                height:ScreenTools.defaultFontPixelHeight*1.2
+                clip: true
+
+                Rectangle{
+                    id: groundSpeedValuetextBox
+                    anchors.fill:parent
+                    color:"black"
+                    anchors.topMargin: -2
+                    border.width: 2
+                    border.color: "white"
+                }
+                Text {
+                    text: "TAS: " + _activeVehicle.groundSpeed.rawValue.toFixed(1).padStart(3, '0')
+                    color: "white"
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+                    anchors.centerIn: groundSpeedValuetextBox // Centraliza horizontal e verticalmente
+                    z: parent.z + 20
+                }
+            }
+            ///// FIM BARRA LATERAL / VELOCIDADES HORIZONTAIS
+
+
+
+        }
 
 
 
