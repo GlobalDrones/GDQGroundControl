@@ -2678,8 +2678,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*2);console.log("PITCH:",_activeVehicle.pitch.rawValue.toFixed(2))}}
-
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*2);console.log("altitude relativa:",_activeVehicle.altitudeRelative.rawValue.toFixed(2))}}
                     }
 
 
@@ -3054,34 +3053,17 @@ Item {
 
             Item{
                 id: barraLateralEsquerda
-                // ... Propriedades de geometria mantidas
                 width: parent.width/10
                 height: parent.height*2/3
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.right: crosshair_central.left
                 anchors.rightMargin: _toolsMargin*10
                 clip: true
-
-                // 💨 Airspeed (assumindo que este valor é a "atitude" ou o valor que deve ser centralizado)
                 property real current_value: -_activeVehicle.airSpeed.rawValue.toFixed(2) // Usando o rawValue para cálculo
-
-                // 📏 Definições da Escala
                 property real lineSpacing: height / 6
                 readonly property int totalLines: 40 // De -190 a 200 (se o passo for 10)
-
-                // A escala vai de 190 até -200 (total de 40 marcações * 10 de passo)
-                // O valor central é 0. O valor inicial (index 0) é 190. O valor final é -200.
-                // Ponto zero do modelo: o valor 0 é o 20º índice (index 19) na escala (190 - 19*10 = 0).
-
-                // 📐 Cálculo do Deslocamento para Centralização (pixels/unidade)
-                // 1. Quanto de deslocamento por unidade (ex: por 1 grau/nó)?
-                //    10 (passo) unidades = lineSpacing
-                //    1 unidade = lineSpacing / 10
                 readonly property real unitsPerLineSpacing: 10
                 readonly property real pixelPerUnit: barraLateralEsquerda.lineSpacing / barraLateralEsquerda.unitsPerLineSpacing
-
-                // 2. O valor de deslocamento total (quanto o modelo deve rolar)
-                // O modelo rola para baixo quando o current_value é positivo.
                 property real scrollOffsetY: -1 * barraLateralEsquerda.current_value * barraLateralEsquerda.pixelPerUnit
 
                 Rectangle{
@@ -3098,20 +3080,10 @@ Item {
                     delegate: Item {
                         width: parent.width
                         height: barraLateralEsquerda.lineSpacing
-
-                        // 🌟 Cálculo do valor exibido: Começa em um valor positivo e decrementa a cada 10 unidades
-                        // Ajustei o início para ter 0 no meio da barra (ex: 190, 180, ..., 10, 0, -10, ... -200)
                         property int angle: 190 - index * 10
-
-                        // ⬇️ Cálculo da Posição Y da linha
-                        // = Posição Estática da linha + Deslocamento pela "airspeed" + Offset de Centralização
-                        // A linha 0 está no topo (index * lineSpacing).
-                        // O Offset de Centralização garante que a linha '0' (que é index 19) vá para o centro quando scrollOffsetY=0.
                         readonly property real centerOffset: barraLateralEsquerda.height / 2 - (19 * barraLateralEsquerda.lineSpacing)
-
                         y: ((index-0.5) * barraLateralEsquerda.lineSpacing) + barraLateralEsquerda.scrollOffsetY + centerOffset
 
-                        // Restrição de visibilidade para limitar desenho
                         visible: y + height >= 0 && y <= barraLateralEsquerda.height
 
                         Rectangle {
@@ -3153,7 +3125,6 @@ Item {
                 }
                 Rectangle {
                     id: airspeedValuetextBox
-                    //anchors.left: airspeedPointer.right
                     width: ScreenTools.defaultFontPixelWidth * 8 // Mantém a largura original
                     height: ScreenTools.defaultFontPixelHeight
                     anchors.left: airspeedPointer.right
@@ -3202,8 +3173,275 @@ Item {
             ///// FIM BARRA LATERAL / VELOCIDADES HORIZONTAIS
 
 
+            Item{
+                id: barraLateralDireita
+                width: parent.width/10
+                height: parent.height*2/3
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: crosshair_central.right
+                anchors.leftMargin: _toolsMargin*10
+                clip: true
+
+                // 💨 Valor Atual: Usamos a altitude. Removemos o sinal '-' inicial, pois a rolagem é tratada no scrollOffsetY.
+                property real current_value: -_activeVehicle.altitudeRelative.rawValue.toFixed(1)
+
+                // 📏 Definições da Escala
+                property real lineSpacing: height / 6
+                // Novo total de linhas: (200 - (-200)) / 10 + 1 = 41 linhas (de -200 a 200, incluindo 0)
+                readonly property int totalLines: 41
+
+                // O índice da linha que deve ter o valor 0 (index 20: -200 + 20*10 = 0)
+                readonly property int _ZERO_INDEX: 20
+
+                // 📐 Fatores de Rolagem
+                readonly property real unitsPerLineSpacing: 10
+                readonly property real pixelPerUnit: barraLateralDireita.lineSpacing / barraLateralDireita.unitsPerLineSpacing
+
+                // 2. O valor de deslocamento total (quanto o modelo deve rolar)
+                // O modelo rola para baixo (Y positivo) quando a altitude diminui (valor negativo).
+                // O valor deve ser *positivo* para que a escala mova para baixo quando a altitude aumenta.
+                // Se a altitude aumenta, a escala deve rolar para baixo (para trazer os valores maiores para o centro)
+                property real scrollOffsetY: -1 * barraLateralDireita.current_value * barraLateralDireita.pixelPerUnit
+
+                // 3. Offset de Centralização Fixo (move o _ZERO_INDEX para o centro)
+                readonly property real centerOffset: (barraLateralDireita.height / 2) - (barraLateralDireita._ZERO_INDEX * barraLateralDireita.lineSpacing)
+
+
+                Rectangle{
+                    id: rectAltitude
+                    anchors.fill: parent
+                    color:"transparent"
+                    border.color: "white"
+                    border.width: 2 // Borda padrão
+                    // Se precisar de borda esquerda 0, use: border.widths: [2, 2, 2, 0]
+                }
+
+                // ⚙️ Repeater para criar a escala de Altitude
+                Repeater {
+                    model: barraLateralDireita.totalLines
+                    delegate: Item {
+                        width: parent.width
+                        height: barraLateralDireita.lineSpacing
+
+                        // 🌟 Cálculo do valor exibido: Começa em -200 e incrementa de 10 em 10
+                        property int altitudeScale: 200 - index * 10
+
+                        // ⬇️ Cálculo da Posição Y da linha (Agora Corrigida)
+                        // = Posição Estática (do topo) + Deslocamento Rolante + Offset Fixo para Centralizar o '0'
+                        y: ((index-0.5) * barraLateralDireita.lineSpacing) + barraLateralDireita.scrollOffsetY + barraLateralDireita.centerOffset
+
+                        // Restrição de visibilidade para limitar desenho
+                        visible: y + height >= 0 && y <= barraLateralDireita.height
+
+                        // Linha da escala
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.right: parent.right
+                            x: 0
+                            height: 2
+                            // Linha longa a cada 10 unidades
+                            width: altitudeScale % 10 === 0 ? parent.width * 0.5 : parent.width * 0.25
+                            color: "white"
+                        }
+
+                        // Texto da escala
+                        Text {
+                            visible: altitudeScale % 10 === 0
+                            text: altitudeScale.toFixed(0)
+                            color: "white"
+                            font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.bold: true
+                            // O texto fica à direita do painel da direita (Altitude)
+                            anchors.right: parent.right
+                            anchors.rightMargin: parent.width * 0.55 // Ajustado para ficar à esquerda da linha
+                            z: parent.z + 20
+                        }
+                    }
+                }
+
+                QGCColoredImage {
+                    id: altitudePointer
+                    width: parent.width * 0.5
+                    height: width
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.right: parent.right
+                    color: "white"
+                    z: 10
+                    source: "/qmlimages/rollPointer.svg"
+                    rotation: 90
+                    smooth: false
+                }
+                Rectangle {
+                    id: altitudeValuetextBox
+                    width: ScreenTools.defaultFontPixelWidth * 8 // Mantém a largura original
+                    height: ScreenTools.defaultFontPixelHeight
+                    anchors.right: altitudePointer.left
+                    anchors.rightMargin: -_toolsMargin*3
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: "black"
+                    border.color: "white"
+                    border.width: 1
+                }
+
+                Text {
+                    text: _activeVehicle.altitudeRelative.rawValue.toFixed(1).padStart(3, '0')
+                    color: "white"
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+                    anchors.centerIn: altitudeValuetextBox // Centraliza horizontal e verticalmente
+                    z: parent.z + 20
+                }
+            }
+
+
+            Item{
+                id: subBarraLateralDireita
+                width: barraLateralDireita.width*0.85
+                height: barraLateralDireita.height*0.85
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: barraLateralDireita.right
+                clip: true
+
+                // 💨 Valor Atual: Vertical Speed (m/s)
+                property real current_value: -_activeVehicle.climbRate.rawValue.toFixed(2)
+
+                // 📏 Definições da Escala
+
+                // Novo passo da escala (0.5 m/s)
+                readonly property real speedStep: 0.5
+
+                // lineSpacing: Se 3 unidades (3 m/s) preenchem a altura,
+                // e cada unidade tem 2 linhas de 0.5m/s,
+                // lineSpacing * 6 = height. lineSpacing é a altura de cada passo de 0.5 m/s.
+                property real lineSpacing: height / 6
+
+                // Novo total de linhas: (20 - (-20)) / 0.5 + 1 = 81 linhas
+                readonly property int totalLines: 81
+
+                // O índice da linha que deve ter o valor 0 (index 40: -20 + 40*0.5 = 0)
+                readonly property int _ZERO_INDEX: 40
+
+                // 📐 Fatores de Rolagem
+                // A escala muda de 0.5 em 0.5 unidade de velocidade.
+                readonly property real unitsPerLineSpacing: subBarraLateralDireita.speedStep // 0.5 unidade de velocidade por marcação
+
+                // Pixels por 0.5 unidade: lineSpacing / 0.5. Isso é igual a 2 * lineSpacing.
+                readonly property real pixelPerUnit: subBarraLateralDireita.lineSpacing / subBarraLateralDireita.unitsPerLineSpacing
+
+                // Deslocamento de rolagem: Se a velocidade AUMENTA, a escala rola para CIMA (Y negativo)
+                property real scrollOffsetY: -1 * subBarraLateralDireita.current_value * subBarraLateralDireita.pixelPerUnit
+
+                // Offset de Centralização Fixo (move o ZERO_INDEX para o centro)
+                readonly property real centerOffset: (subBarraLateralDireita.height / 2) - (subBarraLateralDireita._ZERO_INDEX * subBarraLateralDireita.lineSpacing)
+
+
+                Rectangle{
+                    id: rectVertSpeed
+                    anchors.fill: parent
+                    color: "transparent"
+                    border.color: "white"
+
+                    // Borda esquerda zero
+                    border.width: 2
+                    anchors.leftMargin: -2
+                }
+
+                // ⚙️ Repeater para criar a escala de Velocidade Vertical
+                Repeater {
+                    model: subBarraLateralDireita.totalLines
+                    delegate: Item {
+                        width: parent.width
+                        height: subBarraLateralDireita.lineSpacing
+
+                        // 🌟 Cálculo do valor exibido: Começa em -20 e incrementa de 0.5 em 0.5
+                        property real verticalScale: 20 - index * subBarraLateralDireita.speedStep
+
+                        // ⬇️ Cálculo da Posição Y da linha
+                        y: ((index-0.5) * subBarraLateralDireita.lineSpacing) + subBarraLateralDireita.scrollOffsetY + subBarraLateralDireita.centerOffset
+
+                        // Restrição de visibilidade
+                        visible: y + height >= 0 && y <= subBarraLateralDireita.height
+
+                        // Linha da escala (Fixa na esquerda)
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.right: parent.right
+                            height: 2
+
+                            // --- Lógica de Largura das Linhas (0.5, 1, 5) ---
+
+                            // Se for múltiplo de 5 (ex: -5, 0, 5, 10): Linha Longa
+                            property bool isMultipleOfFive: (verticalScale * 10) % 50 === 0
+                            // Se for múltiplo de 1 (ex: -1, 1, 2, 3), mas NÃO múltiplo de 5: Linha Média
+                            property bool isMultipleOfOne: (verticalScale * 10) % 10 === 0 && !isMultipleOfFive
+                            // Se for múltiplo de 0.5 (ex: -0.5, 0.5, 1.5), e NÃO múltiplo de 1: Linha Curta
+
+                            width: isMultipleOfFive ? parent.width * 0.7 :
+                                   isMultipleOfOne ? parent.width * 0.5 :
+                                   parent.width * 0.3
+
+                            color: "white"
+                        }
+
+                        // Texto da escala
+                        Text {
+                            // Exibe o texto apenas para múltiplos de 5 (ex: -10, -5, 0, 5, 10)
+                            visible: verticalScale % 1 === 0
+                            // Formata o texto: 0 casas decimais para inteiros, 1 casa decimal caso contrário (embora só mostre múltiplos de 5)
+                            text: verticalScale.toFixed(0)
+
+                            color: "white"
+                            font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.bold: true
+                            // Alinha o texto na borda direita
+                            anchors.left: parent.left
+                            anchors.leftMargin: _toolsMargin
+                            z: parent.z + 20
+                        }
+                    }
+                }
+
+
+                QGCColoredImage {
+                    id: climbSpeedPointer
+                    width: parent.width * 0.5
+                    height: width
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.right: parent.right
+                    color: "white"
+                    z: 10
+                    source: "/qmlimages/rollPointer.svg"
+                    rotation: 90
+                    smooth: false
+                }
+                Rectangle {
+                    id: climbSpeedValuetextBox
+                    width: ScreenTools.defaultFontPixelWidth * 7 // Mantém a largura original
+                    height: ScreenTools.defaultFontPixelHeight
+                    anchors.right: climbSpeedPointer.left
+                    anchors.rightMargin: -_toolsMargin*3
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: "black"
+                    border.color: "white"
+                    border.width: 1
+                }
+
+                Text {
+                    text: _activeVehicle.climbRate.rawValue.toFixed(1).padStart(3, '0')
+                    color: "white"
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+                    anchors.centerIn: climbSpeedValuetextBox // Centraliza horizontal e verticalmente
+                    z: parent.z + 20
+                }
+            }
+
+
 
         }
+
 
 
 
