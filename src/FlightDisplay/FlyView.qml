@@ -2328,7 +2328,8 @@ Item {
                     height: 1
                     anchors.left: parent.left
                     anchors.top: parent.top
-                    anchors.leftMargin: _toolsMargin*5
+                    anchors.topMargin: _androidBuild ? _toolsMargin: 0
+                    anchors.leftMargin: _androidBuild ? _toolsMargin: _toolsMargin*5
                     text: _aceleracao_rotor_1
                     color:"green"
                     font.bold: true
@@ -2338,7 +2339,9 @@ Item {
                     id: dialRPM1
                     anchors.left: text_rpm1.right
                     anchors.top: text_rpm1.bottom
-                    anchors.margins:    _toolsMargin*2
+                    anchors.topMargin: _androidBuild ? _toolsMargin: _toolsMargin*2
+                    anchors.leftMargin:    _androidBuild ? _toolsMargin*4 : _toolsMargin*2
+                    anchors.bottomMargin: _androidBuild ? 0: _toolsMargin*2
                     height: parent.height/6
                     width: height
                     Canvas {
@@ -2403,6 +2406,7 @@ Item {
                     height: 1
                     anchors.right: parent.right
                     anchors.top: parent.top
+                    anchors.topMargin: _androidBuild ? _toolsMargin: 0
                     anchors.rightMargin: _toolsMargin*8
                     text: _aceleracao_rotor_2
                     color:"green"
@@ -2413,7 +2417,9 @@ Item {
                     id: dialRPM2
                     anchors.right: text_rpm2.left
                     anchors.top: text_rpm2.bottom
-                    anchors.margins:    _toolsMargin*2
+                    anchors.topMargin: _androidBuild ? _toolsMargin: _toolsMargin*2
+                    anchors.rightMargin:    _androidBuild ? -_toolsMargin*2 : _toolsMargin*2
+                    anchors.bottomMargin: _androidBuild ? 0: _toolsMargin*2
                     height: parent.height/6
                     width: height
                     Canvas {
@@ -2477,7 +2483,7 @@ Item {
                     height: 1
                     anchors.left: parent.left
                     anchors.bottom: dialRPM3.bottom
-                    anchors.leftMargin: _toolsMargin*5
+                    anchors.leftMargin: _androidBuild ? _toolsMargin: _toolsMargin*5
                     text: _aceleracao_rotor_3
                     color:"green"
                     font.bold: true
@@ -2488,7 +2494,7 @@ Item {
                     anchors.left: dialRPM1.left
                     anchors.top: dialRPM1.bottom
                     //anchors.leftMargin:    _toolsMargin*7
-                    anchors.topMargin: -_toolsMargin*25
+                    anchors.topMargin: _androidBuild ? -_toolsMargin*14 : -_toolsMargin*25
                     height: parent.height/6
                     width: height
                     Canvas {
@@ -2552,18 +2558,19 @@ Item {
                     height: 1
                     anchors.right: parent.right
                     anchors.bottom: dialRPM4.bottom
-                    anchors.rightMargin: _toolsMargin*8
+                    anchors.rightMargin:  _toolsMargin*8
                     text: _aceleracao_rotor_4
                     color:"green"
                     font.bold: true
                 }
-                //RPM3
+                //RPM4
                 Item{
                     id: dialRPM4
                     anchors.left: dialRPM2.left
                     anchors.top: dialRPM2.bottom
                     //anchors.leftMargin:    _toolsMargin*7
-                    anchors.topMargin: -_toolsMargin*25
+                    anchors.topMargin: _androidBuild ? -_toolsMargin*14 : -_toolsMargin*25
+
                     height: parent.height/6
                     width: height
                     Canvas {
@@ -2823,6 +2830,7 @@ Item {
             width: borda_video.width*0.65
             height: borda_video.height*0.95
             z: videoControl.z
+            visible: !_mainWindowIsMap
 
             Rectangle{ //delimitador de área só pra ver os limites. Apagar quando completo
                 anchors.fill: parent
@@ -3125,7 +3133,7 @@ Item {
                 }
                 Rectangle {
                     id: airspeedValuetextBox
-                    width: ScreenTools.defaultFontPixelWidth * 8 // Mantém a largura original
+                    width: _androidBuild? ScreenTools.defaultFontPixelWidth * 5 : ScreenTools.defaultFontPixelWidth * 8 // Mantém a largura original
                     height: ScreenTools.defaultFontPixelHeight
                     anchors.left: airspeedPointer.right
                     anchors.leftMargin: -_toolsMargin*3
@@ -3138,7 +3146,7 @@ Item {
                 Text {
                     text: _activeVehicle.airSpeed.rawValue.toFixed(1).padStart(3, '0')
                     color: "white"
-                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: airspeedValuetextBox // Centraliza horizontal e verticalmente
                     z: parent.z + 20
@@ -3162,9 +3170,9 @@ Item {
                     border.color: "white"
                 }
                 Text {
-                    text: "TAS: " + _activeVehicle.groundSpeed.rawValue.toFixed(1).padStart(3, '0')
+                    text: "GS: " + _activeVehicle.groundSpeed.rawValue.toFixed(1).padStart(3, '0')
                     color: "white"
-                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: groundSpeedValuetextBox // Centraliza horizontal e verticalmente
                     z: parent.z + 20
@@ -3274,7 +3282,7 @@ Item {
                 }
                 Rectangle {
                     id: altitudeValuetextBox
-                    width: ScreenTools.defaultFontPixelWidth * 8 // Mantém a largura original
+                    width: _androidBuild? ScreenTools.defaultFontPixelWidth * 5 : ScreenTools.defaultFontPixelWidth * 8
                     height: ScreenTools.defaultFontPixelHeight
                     anchors.right: altitudePointer.left
                     anchors.rightMargin: -_toolsMargin*3
@@ -3287,7 +3295,7 @@ Item {
                 Text {
                     text: _activeVehicle.altitudeRelative.rawValue.toFixed(1).padStart(3, '0')
                     color: "white"
-                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: altitudeValuetextBox // Centraliza horizontal e verticalmente
                     z: parent.z + 20
@@ -3418,7 +3426,7 @@ Item {
                 }
                 Rectangle {
                     id: climbSpeedValuetextBox
-                    width: ScreenTools.defaultFontPixelWidth * 7 // Mantém a largura original
+                    width: _androidBuild? ScreenTools.defaultFontPixelWidth * 5 : ScreenTools.defaultFontPixelWidth * 7
                     height: ScreenTools.defaultFontPixelHeight
                     anchors.right: climbSpeedPointer.left
                     anchors.rightMargin: -_toolsMargin*3
@@ -3431,7 +3439,7 @@ Item {
                 Text {
                     text: _activeVehicle.climbRate.rawValue.toFixed(1).padStart(3, '0')
                     color: "white"
-                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: climbSpeedValuetextBox // Centraliza horizontal e verticalmente
                     z: parent.z + 20
