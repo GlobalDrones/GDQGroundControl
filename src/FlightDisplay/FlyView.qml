@@ -2393,7 +2393,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM1= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*1.5);console.log(parent.angleRPM1)}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM1= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*1.5);}}
 
                     }
 
@@ -2546,7 +2546,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM3= mapValueToRadians(_aceleracao_rotor_3, 0, 5000, Math.PI, Math.PI*0.5);console.log(parent.angleRPM1)}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM3= mapValueToRadians(_aceleracao_rotor_3, 0, 5000, Math.PI, Math.PI*0.5);}}
 
                     }
 
@@ -2622,7 +2622,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM4= mapValueToRadians(_aceleracao_rotor_4, 0, 5000, 0, Math.PI*0.5);console.log(parent.angleRPM1)}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM4= mapValueToRadians(_aceleracao_rotor_4, 0, 5000, 0, Math.PI*0.5);}}
 
                     }
 
@@ -2685,7 +2685,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*2);console.log("altitude relativa:",_activeVehicle.altitudeRelative.rawValue.toFixed(2))}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -2976,7 +2976,7 @@ Item {
                         onTriggered: {
                             parent.requestPaint()
                             parent.angleRoll = mapValueToRadians(_activeVehicle.roll.rawValue.toFixed(2), -150, 150, Math.PI * 1.08, Math.PI * 1.92)
-                            console.log("airspeed:", _activeVehicle.airSpeed.rawValue.toFixed(2))
+                            //console.log("airspeed:", _activeVehicle.airSpeed.rawValue.toFixed(2))
                         }
                     }
                 }

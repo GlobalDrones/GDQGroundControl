@@ -551,11 +551,10 @@ void Vehicle::overwriteRC(){ //override
     setJoystickEnabled(false);
     _joystickManager->activeJoystick()->terminate();
 
-    // Cria a mensagem RC_CHANNELS_OVERRIDE
+    // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
     mavlink_rc_channels_override_t rc_reset;
 
     // Define TODOS os 18 canais para 65535 (IGNORAR)
-    // Isso garante que qualquer RC Override anterior MAVLink seja parado.
     rc_reset.chan1_raw  = 65535; rc_reset.chan2_raw  = 65535;
     rc_reset.chan3_raw  = 65535; rc_reset.chan4_raw  = 65535;
     rc_reset.chan5_raw  = 65535; rc_reset.chan6_raw  = 65535;
@@ -566,7 +565,7 @@ void Vehicle::overwriteRC(){ //override
     rc_reset.chan15_raw = 65535; rc_reset.chan16_raw = 65535;
     rc_reset.chan17_raw = 65535; rc_reset.chan18_raw = 65535;
 
-    rc_reset.target_system    = id();
+    rc_reset.target_system      = id();
     rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
 
     mavlink_message_t msg_out;
@@ -606,7 +605,7 @@ void Vehicle::overwriteRC(){ //override
         cfsetispeed(&tty, B115200);
         cfsetospeed(&tty, B115200);
         tty.c_cflag |= (CREAD | CLOCAL | CS8); // CREAD, CLOCAL, CS8
-        tty.c_cflag &= ~(CSTOPB | CRTSCTS);    // ~CSTOPB, ~CRTSCTS
+        tty.c_cflag &= ~(CSTOPB | CRTSCTS);     // ~CSTOPB, ~CRTSCTS
 
         // Configurações de tempo limite (VMIN=0, VTIME=0 para leitura não bloqueante)
         tty.c_cc[VMIN] = 0;
@@ -623,8 +622,6 @@ void Vehicle::overwriteRC(){ //override
         // --- CONFIGURAÇÃO MAVLINK ---
         mavlink_message_t msg;
         mavlink_rc_channels_override_t channels_override;
-        // Não precisamos de 'buffer[MAVLINK_MAX_PACKET_LEN]' ou 'write_count'
-        // se usarmos a infraestrutura de envio MAVLink existente do Vehicle.
 
         unsigned char buf[256];
 
@@ -650,7 +647,21 @@ void Vehicle::overwriteRC(){ //override
 
         qWarning() << "Iniciando loop de leitura serial e envio MAVLink RC_CHANNELS_OVERRIDE...";
 
+        // =================================================================
+        // VARIÁVEIS DE ESTADO (DIRTY FLAG) PARA OTIMIZAÇÃO
+        // =================================================================
+        // Salva o último estado *enviado* para comparação
+        mavlink_rc_channels_override_t previous_channels = channels_override;
 
+        // Mantém o controle do tempo do último envio para o failsafe (em ms)
+        qint64 last_sent_time = QDateTime::currentMSecsSinceEpoch();
+
+        // Intervalo de segurança (Keep-Alive) em ms. Deve ser menor que o tempo de failsafe do AP.
+       // const int SAFETY_SEND_INTERVAL_MS = 100; // 10 Hz (Envio garantido)
+
+        // Taxa de loop (para não saturar a CPU). Deve ser o alvo de envio (50 Hz = 20 ms).
+        const int MIN_LOOP_MS = 500;
+        // =================================================================
 
         while (true) {
             // LER DADOS DA SERIAL
@@ -659,6 +670,30 @@ void Vehicle::overwriteRC(){ //override
             // Pausa mínima para não saturar a CPU em loops de leitura falhados
             if (n <= 0) {
                 QThread::msleep(5);
+
+                // Mesmo sem dados novos, verificamos se o tempo de segurança passou
+               /* qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+                bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
+
+                // Se o tempo passou, enviamos o último comando conhecido (previous_channels)
+                if (safety_interval_passed) {
+                    if (!_mavlink) {
+                        QThread::msleep(MIN_LOOP_MS);
+                        continue;
+                    }
+
+                    // Envia a última mensagem enviada (o estado neutro/anterior)
+                    mavlink_msg_rc_channels_override_encode(
+                        _mavlink->getSystemId(),
+                        _mavlink->getComponentId(),
+                        &msg,
+                        &previous_channels // ENVIAR O ESTADO ANTERIOR!
+                        );
+                    sendMessageMultiple(msg);
+                    last_sent_time = current_time;
+                    qWarning() << "[MAVLink RC OUT] Envio de Segurança (Keep-Alive).";
+                }
+*/
                 continue; // Tenta novamente na próxima iteração
             }
 
@@ -667,8 +702,6 @@ void Vehicle::overwriteRC(){ //override
             if (n > 30 && buf[7] == 0x42) {
 
                 // --- 1. EXTRAIR VALORES BRUTOS ---
-
-                // ... [O código de extração dos raw_chX permanece o mesmo] ...
                 // Canal 1
                 uint16_t raw_ch1 = (uint16_t)buf[8] | ((uint16_t)buf[9] << 8);
                 // Canal 2
@@ -678,21 +711,36 @@ void Vehicle::overwriteRC(){ //override
                 // Canal 4
                 uint16_t raw_ch4 = (uint16_t)buf[14] | ((uint16_t)buf[15] << 8);
                 // Canal 5
-                uint16_t raw_ch5 = (uint16_t)buf[28] | ((uint16_t)buf[29] << 8);
+                uint16_t raw_ch5 = (uint16_t)buf[16] | ((uint16_t)buf[17] << 8);
                 // Canal 6
-                uint16_t raw_ch6 = (uint16_t)buf[30] | ((uint16_t)buf[31] << 8);
+                uint16_t raw_ch6 = (uint16_t)buf[18] | ((uint16_t)buf[19] << 8);
                 // Canal 7
-                uint16_t raw_ch7 = (uint16_t)buf[18] | ((uint16_t)buf[19] << 8);
+                uint16_t raw_ch7 = (uint16_t)buf[20] | ((uint16_t)buf[21] << 8);
                 //Canal 8
-                uint16_t raw_ch8 = (uint16_t)buf[20] | ((uint16_t)buf[21] << 8);
+                uint16_t raw_ch8 = (uint16_t)buf[22] | ((uint16_t)buf[23] << 8);
                 //Canal 9
-                uint16_t raw_ch9 = (uint16_t)buf[22] | ((uint16_t)buf[23] << 8);
+                uint16_t raw_ch9 = (uint16_t)buf[24] | ((uint16_t)buf[25] << 8);
+                // Canal 10
+                uint16_t raw_ch10 = (uint16_t)buf[26] | ((uint16_t)buf[27] << 8);
+                // Canal 11
+                uint16_t raw_ch11 = (uint16_t)buf[28] | ((uint16_t)buf[29] << 8);
+                // Canal 12
+                uint16_t raw_ch12 = (uint16_t)buf[30] | ((uint16_t)buf[31] << 8);
+                // Canal 13
+                uint16_t raw_ch13 = (uint16_t)buf[32] | ((uint16_t)buf[33] << 8);
+                // Canal 14
+                uint16_t raw_ch14 = (uint16_t)buf[34] | ((uint16_t)buf[35] << 8);
+                // Canal 15
+                uint16_t raw_ch15 = (uint16_t)buf[36] | ((uint16_t)buf[37] << 8);
+                //canal 16
+                uint16_t raw_ch16 = (uint16_t)buf[38] | ((uint16_t)buf[39] << 8);
+
                 // -----------------------------------------------------------------
 
 
                 // --- 2. PREENCHER RC_CHANNELS_OVERRIDE COM VALORES RAW ---
-                channels_override.target_system    = id();                     // ID do veículo
-                channels_override.target_component = MAV_COMP_ID_AUTOPILOT1; // 1 (autopilot principal)
+                channels_override.target_system      = id();
+                channels_override.target_component = MAV_COMP_ID_AUTOPILOT1;
                 channels_override.chan1_raw = raw_ch1;
                 channels_override.chan2_raw = raw_ch2;
                 channels_override.chan3_raw = raw_ch3;
@@ -702,46 +750,95 @@ void Vehicle::overwriteRC(){ //override
                 channels_override.chan7_raw = raw_ch7;
                 channels_override.chan8_raw = raw_ch8;
                 channels_override.chan9_raw = raw_ch9;
+                channels_override.chan10_raw = raw_ch10;
+                channels_override.chan11_raw = raw_ch11;
+                channels_override.chan12_raw = raw_ch12;
+                channels_override.chan13_raw = raw_ch13;
+                channels_override.chan14_raw = raw_ch14;
+                channels_override.chan15_raw = raw_ch15;
+                channels_override.chan16_raw = raw_ch16;
 
-                // NOTA: Os canais 10-18 permanecem em 65535 (Ignorar)
 
-                // --- 3. EMPACOTAR E ENVIAR MAVLINK PELA CONEXÃO PRINCIPAL ---
 
-                // 3a. Verificar a conexão MAVLink (Correção 2)
+                // --- 3. LÓGICA DE ENVIO OTIMIZADA (DIRTY FLAG) ---
+
+                // 3a. Verificar a conexão MAVLink
                 if (!_mavlink) {
                     qWarning() << "Aguardando objeto MAVLink/UAS. Pulando envio.";
-                    QThread::msleep(20);
+                    QThread::msleep(MIN_LOOP_MS);
                     continue;
                 }
 
-                // 3b. Codificar a mensagem
-                mavlink_msg_rc_channels_override_encode(
-                    _mavlink->getSystemId(),     // ID do GCS (Remetente)
-                    _mavlink->getComponentId(),  // Componente do GCS (Remetente)
-                    &msg,
-                    &channels_override
-                    );
+                // 3b. Verificar se os valores atuais (channels_override) mudaram em relação ao último envio (previous_channels)
+                bool values_changed =
+                    channels_override.chan1_raw != previous_channels.chan1_raw ||
+                    channels_override.chan2_raw != previous_channels.chan2_raw ||
+                    channels_override.chan3_raw != previous_channels.chan3_raw ||
+                    channels_override.chan4_raw != previous_channels.chan4_raw ||
+                    channels_override.chan5_raw != previous_channels.chan5_raw ||
+                    channels_override.chan6_raw != previous_channels.chan6_raw ||
+                    channels_override.chan7_raw != previous_channels.chan7_raw ||
+                    channels_override.chan8_raw != previous_channels.chan8_raw ||
+                    channels_override.chan9_raw != previous_channels.chan9_raw ||
+                    channels_override.chan10_raw != previous_channels.chan10_raw ||
+                    channels_override.chan11_raw != previous_channels.chan11_raw ||
+                    channels_override.chan12_raw != previous_channels.chan12_raw ||
+                    channels_override.chan13_raw != previous_channels.chan13_raw ||
+                    channels_override.chan14_raw != previous_channels.chan14_raw ||
+                    channels_override.chan15_raw != previous_channels.chan15_raw ||
+                    channels_override.chan16_raw != previous_channels.chan16_raw;
 
-                // 3c. Enviar a mensagem usando a infraestrutura do Vehicle
-                // Usamos a função sendMessageMultiple ou sendMessageOnLinkThreadSafe
-                sendMessageMultiple(msg);
+                qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+               // bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
 
-                // OU, se você não tiver sendMessageMultiple:
-                /*
-                SharedLinkInterfacePtr sharedLink = vehicleLinkManager()->primaryLink().lock();
-                if (sharedLink) {
-                    sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
-                } else {
-                    qWarning() << "Sem link ativo para o Autopilot. RC override não será enviado!";
+                //if (values_changed || safety_interval_passed) { //Aqui é o IF original caso seja necessário um envio periódico mesmo que redundante
+                if (values_changed) { //esse aqui śo leva em conta o envio de mudanças, sem redundancias
+
+                    // 3c. Codificar e Enviar a mensagem
+                    mavlink_msg_rc_channels_override_encode(
+                        _mavlink->getSystemId(),
+                        _mavlink->getComponentId(),
+                        &msg,
+                        &channels_override // ENVIAR O ESTADO ATUAL!
+                        );
+
+                    sendMessageMultiple(msg);
+
+                    // 3d. Atualizar o estado e o tempo SOMENTE se houver envio
+                    previous_channels = channels_override; // O estado atual se torna o estado anterior
+                    last_sent_time = current_time; // Atualiza o tempo do último envio
+
+                    // Log dos dados (opcional, mas útil para debug)
+                    qWarning() << "[MAVLink RC OUT] Ch1/Ch2/Ch3/Ch4:"
+                               << channels_override.chan1_raw << "/"
+                               << channels_override.chan2_raw << "/"
+                               << channels_override.chan3_raw << "/"
+                               << channels_override.chan4_raw << "/"
+                               << channels_override.chan5_raw << "/"
+                               << channels_override.chan6_raw << "/"
+                               << channels_override.chan7_raw << "/"
+                               << channels_override.chan8_raw << "/"
+                               << channels_override.chan9_raw << "/"
+                               << channels_override.chan10_raw << "/"
+                               << channels_override.chan11_raw << "/"
+                               << channels_override.chan12_raw << "/"
+                               << channels_override.chan13_raw << "/"
+                               << channels_override.chan14_raw << "/"
+                               << channels_override.chan15_raw << "/"
+                               << channels_override.chan16_raw
+                               << (values_changed ? " (MUDANÇA)" : " (KEEP-ALIVE)");
+
+                    QThread::msleep(MIN_LOOP_MS);
                 }
-                */
+                // --- FIM DA LÓGICA DE ENVIO OTIMIZADA ---
 
-                // Log dos dados (opcional, mas útil para debug)
-                qWarning() << "[MAVLink RC OUT] Ch1/Ch2/Ch3/Ch4:" << channels_override.chan1_raw << "/" << channels_override.chan2_raw << "/" << channels_override.chan3_raw << "/" << channels_override.chan4_raw;
-
-                // O comando RC Override deve ser enviado em alta frequência (ex: 50Hz = 20ms)
-                QThread::msleep(20);
+                // O loop deve rodar em alta frequência para processar dados seriais rapidamente
+                // mas a pausa do envio é controlada pela lógica acima.
+                // QThread::msleep(MIN_LOOP_MS); // Removido daqui, pois a pausa já está no final do loop principal ou no 'n <= 0'.
             }
+
+            // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio)
+
         }
 
         close(fd);
