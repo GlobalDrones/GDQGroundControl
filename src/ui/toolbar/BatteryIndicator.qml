@@ -24,7 +24,7 @@ Item {
     anchors.top:    parent.top
     anchors.bottom: parent.bottom
     width:          batteryIndicatorRow.width
-    visible: false
+    visible: true
 
     property bool showIndicator: true
 
@@ -92,6 +92,17 @@ Item {
                 return ""
             }
 
+            function getBatteryTensionText() {
+                if (isNaN(battery.voltage.rawValue)) {
+                    return qsTr("NaN")
+                } else if (!isNaN(battery.voltage.rawValue)) {
+                    return battery.voltage.valueString + battery.voltage.units
+                } else if (battery.chargeState.rawValue !== MAVLink.MAV_BATTERY_CHARGE_STATE_UNDEFINED) {
+                    return battery.chargeState.enumStringValue
+                }
+                return ""
+            }
+
             QGCColoredImage {
                 anchors.top:        parent.top
                 anchors.bottom:     parent.bottom
@@ -103,7 +114,7 @@ Item {
             }
 
             QGCLabel {
-                text:                   getBatteryPercentageText()
+                text:                   getBatteryTensionText()
                 font.pointSize:         ScreenTools.mediumFontPointSize
                 color:                  getBatteryColor()
                 anchors.verticalCenter: parent.verticalCenter

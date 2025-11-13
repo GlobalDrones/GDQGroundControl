@@ -1956,6 +1956,7 @@ Item {
     property string requestedAlerts
     property int alertCounts: 0;
     property color hudGrey: "#33333366"
+    property color hudPaleGreen: "#9AF5A5"
 
     function makeAlerts() {
         var alertas = ""
