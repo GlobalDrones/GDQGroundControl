@@ -1955,6 +1955,7 @@ Item {
 
     property string requestedAlerts
     property int alertCounts: 0;
+    property color hudGrey: "#33333366"
 
     function makeAlerts() {
         var alertas = ""
@@ -2870,9 +2871,11 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.horizontalCenter: parent.horizontalCenter
                             x: 0
-                            height: 2
+                            height: 4
                             width: angle % 10 === 0 ? parent.width * 0.5 : parent.width * 0.25
                             color: "white"//"#00FF00"
+                            border.width: 1
+                            border.color:"black"
                         }
 
                         Text {
@@ -2885,6 +2888,17 @@ Item {
                             anchors.left: parent.left
                             anchors.leftMargin: width * 0.55
                             z: parent.z + 20 // esse +20 é porquice, mas deixa assim por enquanto
+                            layer.enabled: true
+                            layer.smooth: true
+                            layer.effect: DropShadow {
+                                color: "black"
+                                horizontalOffset: 0
+                                verticalOffset: 0
+                                radius: 3
+                                smooth: true
+                                samples: 32
+                                spread: 0.8 // Ajuste para tornar a borda mais definida (menos difusa)
+                            }
                         }
                     }
                 }
@@ -2925,13 +2939,24 @@ Item {
 
                 Canvas {
                     anchors.fill: parent
-                    id: rollArc  // ajustado o id para coerência
+                    id: rollArc
                     renderTarget: Canvas.Image
                     renderStrategy: Canvas.Cooperative
                     visible: true
                     property real angleRoll: 0
                     Behavior on angleRoll {
                         NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+                    }
+                    layer.enabled: true
+                    layer.smooth: true
+                    layer.effect: DropShadow {
+                        color: "black"
+                        horizontalOffset: 0
+                        verticalOffset: 0
+                        radius: 2
+                        smooth: true
+                        samples: 32
+                        spread: 0.8 // Ajuste para tornar a borda mais definida (menos difusa)
                     }
                     onPaint: {
                         var ctx = getContext("2d")
@@ -2941,6 +2966,8 @@ Item {
                         var centerY = height / 2
                         var radius = Math.min(width, height) / 2.5
 
+
+                        // Desenha o arco branco
                         ctx.strokeStyle = "white"
                         ctx.lineWidth = 5
                         ctx.beginPath()
@@ -2950,7 +2977,6 @@ Item {
                         // Riscos picotados a cada 15 graus
                         ctx.strokeStyle = "white"
                         ctx.lineWidth = 5
-                        //console.log("Radius: ",radius)
                         for (var deg = 195; deg <= 345; deg += 15) {
                             var rad = deg * Math.PI / 180
                             var innerRadius = radius - 10
@@ -2970,6 +2996,12 @@ Item {
                             ctx.lineTo(xEnd, yEnd)
                             ctx.stroke()
                         }
+                        // É uma boa prática resetar as propriedades da sombra se você for desenhar
+                        // outros elementos que não devam ter sombra depois.
+                        // ctx.shadowColor = "transparent";
+                        // ctx.shadowBlur = 0;
+                        // ctx.shadowOffsetX = 0;
+                        // ctx.shadowOffsetY = 0;
                     }
                     Timer {
                         interval: 33; running: true; repeat: true
@@ -2993,6 +3025,17 @@ Item {
                     transformOrigin: Item.Bottom
                     rotation: (rollArc.angleRoll - 1.5 * Math.PI) * (180 / Math.PI)
                     smooth: true
+                    layer.enabled: true
+                    layer.smooth: true
+                    layer.effect: DropShadow {
+                        color: "black"
+                        horizontalOffset: 0
+                        verticalOffset: 0
+                        radius: 2
+                        smooth: true
+                        samples: 32
+                        spread: 0.8 // Ajuste para tornar a borda mais definida (menos difusa)
+                    }
                 }
             }
             ///// FIM DO ROLL
@@ -3008,6 +3051,17 @@ Item {
                 source: "/qmlimages/compassInstrumentDial.svg"
                 color: "white"
                 rotation: _activeVehicle.heading.rawValue.toFixed(2)
+                layer.enabled: true
+                layer.smooth: true
+                layer.effect: DropShadow {
+                    color: "black"
+                    horizontalOffset: 0
+                    verticalOffset: 0
+                    radius: 1
+                    smooth: true
+                    samples: 32
+                    spread: 0.5 // Ajuste para tornar a borda mais definida (menos difusa)
+                }
             }
             QGCColoredImage {
                 id: vehicleHeadingIcon
@@ -3018,6 +3072,18 @@ Item {
                 source: "/qmlimages/GD60_lowres.png"
                 color: "white"
                 rotation: 180
+                layer.enabled: true
+                layer.smooth: true
+                layer.effect: DropShadow {
+                    color: "black"
+                    horizontalOffset: 0
+                    verticalOffset: 0
+                    radius: 1
+                    smooth: true
+                    samples: 32
+                    spread: 0.5 // Ajuste para tornar a borda mais definida (menos difusa)
+                }
+
             }
             QGCColoredImage {
                 id: pointerHeading
@@ -3030,6 +3096,17 @@ Item {
                 source: "/qmlimages/rollPointer.svg"
                 rotation: 180
                 smooth: true
+                layer.enabled: true
+                layer.smooth: true
+                layer.effect: DropShadow {
+                    color: "black"
+                    horizontalOffset: 0
+                    verticalOffset: 0
+                    radius: 1
+                    smooth: true
+                    samples: 32
+                    spread: 0.5 // Ajuste para tornar a borda mais definida (menos difusa)
+                }
             }
             Item {
                 id: headingTextBox
@@ -3077,10 +3154,11 @@ Item {
                 Rectangle{
                     id: rectAirspeed
                     anchors.fill: parent
-                    color:"transparent"
+                    color: hudGrey
                     border.color: "white"
                     border.width: 2
                 }
+
 
                 // ⚙️ Repeater para criar a escala
                 Repeater {
@@ -3218,7 +3296,7 @@ Item {
                 Rectangle{
                     id: rectAltitude
                     anchors.fill: parent
-                    color:"transparent"
+                    color:hudGrey
                     border.color: "white"
                     border.width: 2 // Borda padrão
                     // Se precisar de borda esquerda 0, use: border.widths: [2, 2, 2, 0]
@@ -3347,7 +3425,7 @@ Item {
                 Rectangle{
                     id: rectVertSpeed
                     anchors.fill: parent
-                    color: "transparent"
+                    color: hudGrey
                     border.color: "white"
 
                     // Borda esquerda zero
