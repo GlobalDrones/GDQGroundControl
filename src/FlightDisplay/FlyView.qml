@@ -2630,9 +2630,9 @@ Item {
 
                 }//fim RPM4
 
-                //RPM GERADOR TODO: RPM DO GERADOR NÃO EXISTE COMO INFO AINDA
+                //RPM HORIZONTAL1 TODO: RPM DO HORIZONTAL1 NÃO EXISTE COMO INFO AINDA
                 Item{
-                    id: dialRPMGerador
+                    id: dialRPMHORIZONTAL1
                     anchors.left: parent.left
                     anchors.top: text_rpm3.bottom
                     anchors.topMargin:    _toolsMargin*2
@@ -2640,7 +2640,7 @@ Item {
                     width: height
                     Canvas {
                         anchors.fill: parent
-                        id: rotorGeradorArc
+                        id: rotorHORIZONTAL1Arc
                         renderTarget: Canvas.Image
                         renderStrategy: Canvas.Cooperative
                         property real angleRPMGerador: 0//accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100
@@ -2694,11 +2694,11 @@ Item {
                 }//fim RPM GERADOR
 
                 Text{
-                    id: text_rpmGerador
+                    id: text_rpmHORIZONTAL1
                     width: 1
                     height: 1
                     anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: dialRPMGerador.bottom
+                    anchors.top: dialRPMHORIZONTAL1.bottom
                     anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
                     font.pixelSize: _androidBuild? 20 : 18
                     text: _aceleracao_rotor_1 //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
@@ -2707,6 +2707,174 @@ Item {
                     horizontalAlignment: parent.width
                 }
 
+                //RPM GERADOR TODO: RPM DO GERADOR NÃO EXISTE COMO INFO AINDA
+                Item{
+                    id: dialRPMHORIZONTAL2
+                    anchors.left: parent.left
+                    anchors.top: text_rpmHORIZONTAL1.bottom
+                    anchors.topMargin:    _toolsMargin*2
+                    height: parent.width
+                    width: height
+                    Canvas {
+                        anchors.fill: parent
+                        id: rotorHORIZONTAL2Arc
+                        renderTarget: Canvas.Image
+                        renderStrategy: Canvas.Cooperative
+                        property real angleRPMGerador: 0//accelerationPercentageToRadius(_aceleracao_rotor_1/5000)*100
+                        Behavior on angleRPMGerador {
+                                NumberAnimation { duration: 100; easing.type: Easing.OutQuad } // suavizador de animação
+                            }
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.reset()
+                            ctx.clearRect(0, 0, width, height)
+                            var radius = Math.min(width, height) / 2.5
+                            var startAngle = Math.PI; // 180 graus
+                            var endAngle = Math.PI*2;          // 360
+
+                            // Arco de Fundo (cinza)
+                            ctx.strokeStyle = "gray" // Cor do arco de fundo
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            // ctx.arc(centro_x, centro_y, raio, ângulo_inicial, ângulo_final, sentido_antihorario)
+                            ctx.arc(width / 2, height / 2, radius, startAngle, endAngle, false)
+                            ctx.stroke()
+
+                            // Arco de Preenchimento (verde), usando a variável de ângulo 'angleRPMGerador'
+                            ctx.strokeStyle = "green"
+                            ctx.lineWidth = 8
+                            ctx.beginPath()
+                            ctx.arc(width / 2, height / 2, radius, startAngle, angleRPMGerador , false)
+                            ctx.stroke()
+
+                            // Define o ponto central (origem da linha)
+                            var centerX = width / 2;
+                            var centerY = height / 2;
+
+                            // Calcula as coordenadas X e Y da ponta do ponteiro usando o ângulo atual (angleRPMGerador)
+                            // Nota: O raio do ponteiro será o mesmo do arco (radius)
+                            var pointerX = centerX + radius * Math.cos(angleRPMGerador);
+                            var pointerY = centerY + radius * Math.sin(angleRPMGerador);
+
+                            ctx.strokeStyle = "red" // Cor do ponteiro
+                            ctx.lineWidth = 2       // Espessura do ponteiro
+
+                            ctx.beginPath()
+                            ctx.moveTo(centerX, centerY) // Inicia no centro
+                            ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
+                            ctx.stroke()
+                        }
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_aceleracao_rotor_2, 0, 5000, Math.PI, Math.PI*2);}}
+                    }
+
+
+                }//fim RPM GERADOR
+
+                Text{
+                    id: text_rpmHORIZONTAL2
+                    width: 1
+                    height: 1
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: dialRPMHORIZONTAL2.bottom
+                    anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
+                    font.pixelSize: _androidBuild? 20 : 18
+                    text: _aceleracao_rotor_2 //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
+                    color:"green"
+                    font.bold: true
+                    horizontalAlignment: parent.width
+                }
+
+                Grid {
+                    id: textMatrix2x2
+
+                    // âncoras e dimensões mantidas
+                    anchors.top: text_rpmHORIZONTAL2.bottom
+                    anchors.topMargin: _toolsMargin + (_androidBuild ? 24 : 22)
+                    anchors.leftMargin: _toolsMargin
+                    anchors.rightMargin: _toolsMargin
+
+                    width: parent.width - _toolsMargin * (_androidBuild? 4 : 8) // Correção: Subtrair _toolsMargin duas vezes
+                    height: width/2
+
+                    anchors.horizontalCenter: parent.horizontalCenter
+
+                    columns: 2
+                   //spacing: 5 // Manter o spacing para a fórmula de cálculo de tamanho
+
+                    // Definindo a largura/altura implícita em uma variável para simplificar a leitura
+                    property real cellDimension: width / 2 - spacing * 1.5 // Ajuste para compensar o spacing
+
+                    // Se o spacing for 5, a largura total é W = 2*W_cell + 1*Spacing. W_cell = (W - Spacing)/2
+
+                    // LINHA 1 - Células com Retângulos Transparentes
+                    Rectangle {
+                        color: "transparent"      // 🌟 TRANSPARENTE
+                        border.color: "white"     // 🌟 BORDA BRANCA
+                        border.width: 2
+
+                        // Cálculo de dimensão com base no spacing de 5
+                        implicitWidth: (textMatrix2x2.width - textMatrix2x2.spacing) / 2
+                        implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "28° \n TEMP1"       // 🌟 TEXTO NOVO
+                            color: "white"          // 🌟 COR BRANCA
+                            font.bold: true
+                            font.pixelSize: _androidBuild? 14 : 18
+                            horizontalAlignment: Text.AlignHCenter // Para alinhar o texto de várias linhas
+                        }
+                    }
+                    Rectangle {
+                        color: "transparent"
+                        border.color: "white"
+                        border.width: 2
+                        implicitWidth: (textMatrix2x2.width - textMatrix2x2.spacing) / 2
+                        implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
+                        Text {
+                            anchors.centerIn: parent
+                            text: "35° \n TEMP2"       // 🌟 TEXTO NOVO
+                            color: "white"
+                            font.bold: true
+                            font.pixelSize: _androidBuild? 14 : 18
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+
+                    // LINHA 2 - Células com Retângulos Transparentes
+                    Rectangle {
+                        color: "transparent"
+                        border.color: "white"
+                        border.width: 2
+                        implicitWidth: (textMatrix2x2.width - textMatrix2x2.spacing) / 2
+                        implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
+                        Text {
+                            anchors.centerIn: parent
+                            text: "42° \n TEMP3"       // 🌟 TEXTO NOVO
+                            color: "white"
+                            font.bold: true
+                            font.pixelSize: _androidBuild? 14 : 18
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+                    Rectangle {
+                        color: "transparent"
+                        border.color: "white"
+                        border.width: 2
+                        implicitWidth: (textMatrix2x2.width - textMatrix2x2.spacing) / 2
+                        implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
+                        Text {
+                            anchors.centerIn: parent
+                            text: "30° \n ESC"       // 🌟 TEXTO NOVO
+                            color: "white"
+                            font.bold: true
+                            font.pixelSize: _androidBuild? 14 : 18
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+
+
+                }
 
 
             }
@@ -2874,7 +3042,7 @@ Item {
                             x: 0
                             height: 4
                             width: angle % 10 === 0 ? parent.width * 0.5 : parent.width * 0.25
-                            color: "white"//"#00FF00"
+                            color: hudPaleGreen//"#00FF00"
                             border.width: 1
                             border.color:"black"
                         }
@@ -2882,7 +3050,7 @@ Item {
                         Text {
                             visible: angle % 10 === 0
                             text: angle + "°"
-                            color: "white"//"#00FF00"
+                            color: hudPaleGreen//"#00FF00"
                             font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
                             anchors.verticalCenter: parent.verticalCenter
                             font.bold: true
@@ -2911,7 +3079,7 @@ Item {
                 height: parent.width / 5
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.horizontalCenter: parent.horizontalCenter
-                color: "white"
+                color: hudPaleGreen
                 source: "/qmlimages/crossHair.svg"
                 layer.enabled: true
                 layer.smooth: true
@@ -2969,14 +3137,14 @@ Item {
 
 
                         // Desenha o arco branco
-                        ctx.strokeStyle = "white"
+                        ctx.strokeStyle = hudPaleGreen
                         ctx.lineWidth = 5
                         ctx.beginPath()
                         ctx.arc(centerX, centerY, radius - 10, Math.PI * 1.08, Math.PI * 1.92, false)
                         ctx.stroke()
 
                         // Riscos picotados a cada 15 graus
-                        ctx.strokeStyle = "white"
+                        ctx.strokeStyle = hudPaleGreen
                         ctx.lineWidth = 5
                         for (var deg = 195; deg <= 345; deg += 15) {
                             var rad = deg * Math.PI / 180
@@ -3021,7 +3189,7 @@ Item {
                     anchors.horizontalCenter: rollArc.horizontalCenter
                     anchors.verticalCenter: rollArc.verticalCenter
                     anchors.verticalCenterOffset: -dialRoll.height/4
-                    color: "white"
+                    color: hudPaleGreen
                     source: "/qmlimages/rollPointer.svg"
                     transformOrigin: Item.Bottom
                     rotation: (rollArc.angleRoll - 1.5 * Math.PI) * (180 / Math.PI)
@@ -3050,7 +3218,7 @@ Item {
                 anchors.top: pitchArea.bottom
                 anchors.margins: _toolsMargin*0.5
                 source: "/qmlimages/compassInstrumentDial.svg"
-                color: "white"
+                color: hudPaleGreen
                 rotation: _activeVehicle.heading.rawValue.toFixed(2)
                 layer.enabled: true
                 layer.smooth: true
@@ -3071,7 +3239,7 @@ Item {
                 anchors.horizontalCenter: headingIndicator.horizontalCenter
                 anchors.verticalCenter: headingIndicator.verticalCenter
                 source: "/qmlimages/GD60_lowres.png"
-                color: "white"
+                color: hudPaleGreen
                 rotation: 180
                 layer.enabled: true
                 layer.smooth: true
@@ -3093,7 +3261,7 @@ Item {
                 anchors.horizontalCenter: headingIndicator.horizontalCenter
                 anchors.bottom: headingIndicator.top
                 anchors.bottomMargin: -_toolsMargin*0.5
-                color: "white"
+                color: hudPaleGreen
                 source: "/qmlimages/rollPointer.svg"
                 rotation: 180
                 smooth: true
@@ -3120,13 +3288,13 @@ Item {
                     id: headingValuetextBox
                     anchors.fill: parent
                     color: "black"
-                    border.color: "white"
+                    border.color: hudPaleGreen
                     border.width: 1
                 }
 
                 Text {
                     text: _activeVehicle.heading.rawValue.toFixed(0).padStart(3, '0') + "°"
-                    color: "white"
+                    color: hudPaleGreen
                     font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: headingValuetextBox // Centraliza horizontal e verticalmente
@@ -3156,7 +3324,7 @@ Item {
                     id: rectAirspeed
                     anchors.fill: parent
                     color: hudGrey
-                    border.color: "white"
+                    border.color: hudPaleGreen
                     border.width: 2
                 }
 
@@ -3179,7 +3347,7 @@ Item {
                             height: 2
                             // Linha longa a cada 10 unidades. Se o passo é 10, todas são longas.
                             width: angle % 10 === 0 ? parent.width * 0.5 : parent.width * 0.25
-                            color: "white"
+                            color: hudPaleGreen
                         }
 
                         Text {
@@ -3187,7 +3355,7 @@ Item {
                             visible: angle % 10 === 0
                             // Se angle for 0, toFixed(0) é 0.
                             text: angle.toFixed(0)
-                            color: "white"
+                            color: hudPaleGreen
                             font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
                             anchors.verticalCenter: parent.verticalCenter
                             font.bold: true
@@ -3204,7 +3372,7 @@ Item {
                     width: parent.width * 0.5
                     height: width
                     anchors.verticalCenter: parent.verticalCenter
-                    color: "white"
+                    color: hudPaleGreen
                     z: 10
                     source: "/qmlimages/rollPointer.svg"
                     rotation: 270
@@ -3218,13 +3386,13 @@ Item {
                     anchors.leftMargin: -_toolsMargin*3
                     anchors.verticalCenter: parent.verticalCenter
                     color: "black"
-                    border.color: "white"
+                    border.color: hudPaleGreen
                     border.width: 1
                 }
 
                 Text {
                     text: _activeVehicle.airSpeed.rawValue.toFixed(1).padStart(3, '0')
-                    color: "white"
+                    color: hudPaleGreen
                     font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: airspeedValuetextBox // Centraliza horizontal e verticalmente
@@ -3246,11 +3414,11 @@ Item {
                     color:"black"
                     anchors.topMargin: -2
                     border.width: 2
-                    border.color: "white"
+                    border.color: hudPaleGreen
                 }
                 Text {
                     text: "GS: " + _activeVehicle.groundSpeed.rawValue.toFixed(1).padStart(3, '0')
-                    color: "white"
+                    color: hudPaleGreen
                     font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: groundSpeedValuetextBox // Centraliza horizontal e verticalmente
@@ -3298,7 +3466,7 @@ Item {
                     id: rectAltitude
                     anchors.fill: parent
                     color:hudGrey
-                    border.color: "white"
+                    border.color: hudPaleGreen
                     border.width: 2 // Borda padrão
                     // Se precisar de borda esquerda 0, use: border.widths: [2, 2, 2, 0]
                 }
@@ -3328,14 +3496,14 @@ Item {
                             height: 2
                             // Linha longa a cada 10 unidades
                             width: altitudeScale % 10 === 0 ? parent.width * 0.5 : parent.width * 0.25
-                            color: "white"
+                            color: hudPaleGreen
                         }
 
                         // Texto da escala
                         Text {
                             visible: altitudeScale % 10 === 0
                             text: altitudeScale.toFixed(0)
-                            color: "white"
+                            color: hudPaleGreen
                             font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
                             anchors.verticalCenter: parent.verticalCenter
                             font.bold: true
@@ -3353,7 +3521,7 @@ Item {
                     height: width
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.right: parent.right
-                    color: "white"
+                    color: hudPaleGreen
                     z: 10
                     source: "/qmlimages/rollPointer.svg"
                     rotation: 90
@@ -3367,13 +3535,13 @@ Item {
                     anchors.rightMargin: -_toolsMargin*3
                     anchors.verticalCenter: parent.verticalCenter
                     color: "black"
-                    border.color: "white"
+                    border.color: hudPaleGreen
                     border.width: 1
                 }
 
                 Text {
                     text: _activeVehicle.altitudeRelative.rawValue.toFixed(1).padStart(3, '0')
-                    color: "white"
+                    color: hudPaleGreen
                     font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: altitudeValuetextBox // Centraliza horizontal e verticalmente
@@ -3427,7 +3595,7 @@ Item {
                     id: rectVertSpeed
                     anchors.fill: parent
                     color: hudGrey
-                    border.color: "white"
+                    border.color: hudPaleGreen
 
                     // Borda esquerda zero
                     border.width: 2
@@ -3468,7 +3636,7 @@ Item {
                                    isMultipleOfOne ? parent.width * 0.5 :
                                    parent.width * 0.3
 
-                            color: "white"
+                            color: hudPaleGreen
                         }
 
                         // Texto da escala
@@ -3478,7 +3646,7 @@ Item {
                             // Formata o texto: 0 casas decimais para inteiros, 1 casa decimal caso contrário (embora só mostre múltiplos de 5)
                             text: verticalScale.toFixed(0)
 
-                            color: "white"
+                            color: hudPaleGreen
                             font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
                             anchors.verticalCenter: parent.verticalCenter
                             font.bold: true
@@ -3497,7 +3665,7 @@ Item {
                     height: width
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.right: parent.right
-                    color: "white"
+                    color: hudPaleGreen
                     z: 10
                     source: "/qmlimages/rollPointer.svg"
                     rotation: 90
@@ -3511,13 +3679,13 @@ Item {
                     anchors.rightMargin: -_toolsMargin*3
                     anchors.verticalCenter: parent.verticalCenter
                     color: "black"
-                    border.color: "white"
+                    border.color: hudPaleGreen
                     border.width: 1
                 }
 
                 Text {
                     text: _activeVehicle.climbRate.rawValue.toFixed(1).padStart(3, '0')
-                    color: "white"
+                    color: hudPaleGreen
                     font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: climbSpeedValuetextBox // Centraliza horizontal e verticalmente

@@ -660,7 +660,7 @@ void Vehicle::overwriteRC(){ //override
        // const int SAFETY_SEND_INTERVAL_MS = 100; // 10 Hz (Envio garantido)
 
         // Taxa de loop (para não saturar a CPU). Deve ser o alvo de envio (50 Hz = 20 ms).
-        const int MIN_LOOP_MS = 500;
+        const int MIN_LOOP_MS = 100;
         // =================================================================
 
         while (true) {
