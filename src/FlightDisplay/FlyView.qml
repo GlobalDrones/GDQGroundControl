@@ -360,20 +360,21 @@ Item {
             // console.log(_activeVehicle.rcRSSI.valueOf())
             _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue//_activeVehicle.batteries.index(0,1).voltage.rawValue
 
-
-            _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
-            _rcQuality_ARRAY.push(_rcQuality)
-            if(_rcQuality_ARRAY.length === 10){
-                var qual_temp1 = 0;
-                for(var i =0; i<10; i++){
-                    qual_temp1 = _rcQuality_ARRAY[i] + qual_temp1
+            if(_activeVehicle.rcRSSI != 0){
+                _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
+                _rcQuality_ARRAY.push(_rcQuality)
+                if(_rcQuality_ARRAY.length === 10){
+                    var qual_temp1 = 0;
+                    for(var i =0; i<10; i++){
+                        qual_temp1 = _rcQuality_ARRAY[i] + qual_temp1
+                    }
+                    qual_temp1 = qual_temp1/10
+                    _rcQuality_mean = qual_temp1
+                    _rcQuality_mean = _rcQuality_mean.toFixed(0)
+                    _rcQuality_ARRAY.shift();
                 }
-                qual_temp1 = qual_temp1/10
-                _rcQuality_mean = qual_temp1
-                _rcQuality_mean = _rcQuality_mean.toFixed(0)
-                _rcQuality_ARRAY.shift();
+                console.log("RCQUALITY: ",_rcQuality, " MEDIA: ",_rcQuality_mean, " ARRAY: ", _rcQuality_ARRAY)
             }
-
             horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
             minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
             segundos_restantes = (7200 * (_gasolina/100))%60
@@ -992,7 +993,7 @@ Item {
                     height:             parent.height*2/3
                     source:             "/qmlimages/RC.svg"
                     fillMode:           Image.PreserveAspectFit
-                    color:           _rcQuality_mean >= 60 ? "green" : (_rcQuality_mean>=30? "yellow": (_rcQuality_mean >= 20 ? "orange":"red"))
+                    color:           _activeVehicle.rcRSSI.valueOf() >= 60 ? "green" : (_activeVehicle.rcRSSI.valueOf()>=30? "yellow": (_activeVehicle.rcRSSI.valueOf() >= 20 ? "orange":"red"))
                     visible: true
 
                     MouseArea{
@@ -1030,7 +1031,7 @@ Item {
                         Layout.alignment:       Text.AlignHCenter
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
-                        text:                   _rcQuality_mean.toString()+"%" /*_activeVehicle.rcRSSI.toString() +"%"*/ /*_rcQuality + "%"*/
+                        text:                   _activeVehicle.rcRSSI.toString()+"%" /*_activeVehicle.rcRSSI.toString() +"%"*/ /*_rcQuality + "%"*/
                         font.bold: true
                         //font.pointSize:         ScreenTools.mediumFontPixelHeight
                     }
@@ -1968,6 +1969,7 @@ Item {
             iconLeftMargin: widgetLayer.iconLeftMargin
         }
 
+
         QGCPipOverlay {
             id: _pipOverlay
             anchors.left: parent.left
@@ -2046,6 +2048,7 @@ Item {
                 }
             ]
 
+
             Row {
                 spacing: ScreenTools.defaultFontPixelWidth
                 anchors.right: parent.right
@@ -2076,8 +2079,6 @@ Item {
                         font.bold: true
                     }
                 }
-
-
                 QGCColoredImage {
                     id: cameraButton
                     source: "/qmlimages/camera"
