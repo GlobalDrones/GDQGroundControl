@@ -32,7 +32,7 @@ Item {
 
     property real _rollAngle:   vehicle ? vehicle.roll.rawValue  : 0
     property real _pitchAngle:  vehicle ? vehicle.pitch.rawValue : 0
-
+    visible: false
     width:  size
     height: size
 

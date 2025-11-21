@@ -118,7 +118,7 @@ Item {
         visible: !multiVehiclePanelSelector.showSingleVehiclePanel
     }
 
-    /*FlyViewInstrumentPanel {
+    FlyViewInstrumentPanel {
         id: instrumentPanel
         anchors.margins: _toolsMargin
         //anchors.topMargin: anchors.margins + SiYi.iconsHeight
@@ -132,7 +132,7 @@ Item {
         availableHeight: parent.height - y - _toolsMargin
 
         property real rightInset: visible ? parent.width - x : 0
-    }*/
+    }
 
     PhotoVideoControl {
         id: photoVideoControl
@@ -259,7 +259,7 @@ Item {
         anchors.margins: _toolsMargin
         anchors.bottom:parent.bottom
         anchors.right:instrumentPanel.left
-        visible: false//!SiYi.hideWidgets
+        visible: false //!SiYi.hideWidgets
 
 
         /*// States for custom layout support
