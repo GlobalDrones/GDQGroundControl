@@ -543,7 +543,13 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     });
 }*/
 
-void Vehicle::overwriteRC(){ //override
+void Vehicle::overwriteRC(){ //override.
+
+    // para testar no folder do ardupilot/Tools/autotest: python3 sim_vehicle.py -v copter --no-mavproxy -A "--serial0=udpclient:192.168.1.114:14550"
+    // 192.168.1.114:14550 <- IP e Porta que o controle ta escutando.
+    // OU
+    // python3 sim_vehicle.py -v copter --console --map -w
+    // e escreve no mavproxyterminal:  output add 192.168.1.114:14550
     // =========================================================================
     // MODIFICAÇÃO: INÍCIO DA THREAD DE LEITURA SERIAL E ENVIO MAVLINK
     // =========================================================================
@@ -580,7 +586,7 @@ void Vehicle::overwriteRC(){ //override
     sendMessageMultiple(msg_out);
 
     qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
-
+    //_mavlink->_status.buffer_overrun
     QtConcurrent::run([=]() {
 
         const char* dev = "/dev/ttyHS3"; // Porta de comunicação
@@ -655,47 +661,19 @@ void Vehicle::overwriteRC(){ //override
 
         // Mantém o controle do tempo do último envio para o failsafe (em ms)
         qint64 last_sent_time = QDateTime::currentMSecsSinceEpoch();
-
+        qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+        qint64 elapsed_time = current_time - last_sent_time;
         // Intervalo de segurança (Keep-Alive) em ms. Deve ser menor que o tempo de failsafe do AP.
        // const int SAFETY_SEND_INTERVAL_MS = 100; // 10 Hz (Envio garantido)
 
         // Taxa de loop (para não saturar a CPU). Deve ser o alvo de envio (50 Hz = 20 ms).
-        const int MIN_LOOP_MS = 100;
+        const int MIN_LOOP_MS = 20;
         // =================================================================
-
+        bool needs_send = true;
         while (true) {
             // LER DADOS DA SERIAL
             int n = read(fd, buf, sizeof(buf));
 
-            // Pausa mínima para não saturar a CPU em loops de leitura falhados
-            if (n <= 0) {
-                QThread::msleep(5);
-
-                // Mesmo sem dados novos, verificamos se o tempo de segurança passou
-               /* qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-                bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
-
-                // Se o tempo passou, enviamos o último comando conhecido (previous_channels)
-                if (safety_interval_passed) {
-                    if (!_mavlink) {
-                        QThread::msleep(MIN_LOOP_MS);
-                        continue;
-                    }
-
-                    // Envia a última mensagem enviada (o estado neutro/anterior)
-                    mavlink_msg_rc_channels_override_encode(
-                        _mavlink->getSystemId(),
-                        _mavlink->getComponentId(),
-                        &msg,
-                        &previous_channels // ENVIAR O ESTADO ANTERIOR!
-                        );
-                    sendMessageMultiple(msg);
-                    last_sent_time = current_time;
-                    qWarning() << "[MAVLink RC OUT] Envio de Segurança (Keep-Alive).";
-                }
-*/
-                continue; // Tenta novamente na próxima iteração
-            }
 
             // LÓGICA DE EXTRAÇÃO E ENVIO MAVLINK
             // Verifica se o pacote tem o tamanho mínimo e o magic byte correto (0x42)
@@ -788,11 +766,12 @@ void Vehicle::overwriteRC(){ //override
                     channels_override.chan15_raw != previous_channels.chan15_raw ||
                     channels_override.chan16_raw != previous_channels.chan16_raw;
 
-                qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+                current_time = QDateTime::currentMSecsSinceEpoch();
+                elapsed_time = current_time - last_sent_time;
                // bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
-
+                needs_send = values_changed; //|| (elapsed_time >= MIN_LOOP_MS);
                 //if (values_changed || safety_interval_passed) { //Aqui é o IF original caso seja necessário um envio periódico mesmo que redundante
-                if (values_changed) { //esse aqui śo leva em conta o envio de mudanças, sem redundancias
+                if (needs_send) { //esse aqui śo leva em conta o envio de mudanças, sem redundancias
 
                     // 3c. Codificar e Enviar a mensagem
                     mavlink_msg_rc_channels_override_encode(
@@ -827,8 +806,6 @@ void Vehicle::overwriteRC(){ //override
                                << channels_override.chan15_raw << "/"
                                << channels_override.chan16_raw
                                << (values_changed ? " (MUDANÇA)" : " (KEEP-ALIVE)");
-
-                    QThread::msleep(MIN_LOOP_MS);
                 }
                 // --- FIM DA LÓGICA DE ENVIO OTIMIZADA ---
 
@@ -837,8 +814,8 @@ void Vehicle::overwriteRC(){ //override
                 // QThread::msleep(MIN_LOOP_MS); // Removido daqui, pois a pausa já está no final do loop principal ou no 'n <= 0'.
             }
 
-            // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio)
-
+            // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio) deletar para teste depois
+            QThread::msleep(1);
         }
 
         close(fd);

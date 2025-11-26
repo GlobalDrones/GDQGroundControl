@@ -1957,6 +1957,9 @@ Item {
     property int alertCounts: 0;
     property color hudGrey: "#33333366"
     property color hudPaleGreen: "#9AF5A5"
+    property color hudPaleBlue: "#00ffff"
+    property color hudPalePurple: "#ff00ff"
+
 
     function makeAlerts() {
         var alertas = ""
@@ -3208,7 +3211,7 @@ Item {
                 }
             }
             ///// FIM DO ROLL
-
+            //_activeVehicle.headingToNextWP. rollPointer.svg
             /////COMEÇO DO HEADING
             QGCColoredImage {
                 id: headingIndicator
@@ -3219,7 +3222,7 @@ Item {
                 anchors.margins: _toolsMargin*0.5
                 source: "/qmlimages/compassInstrumentDial.svg"
                 color: hudPaleGreen
-                rotation: _activeVehicle.heading.rawValue.toFixed(2)
+                rotation: -_activeVehicle.heading.rawValue.toFixed(2)
                 layer.enabled: true
                 layer.smooth: true
                 layer.effect: DropShadow {
@@ -3277,6 +3280,111 @@ Item {
                     spread: 0.5 // Ajuste para tornar a borda mais definida (menos difusa)
                 }
             }
+            QGCColoredImage {
+                id: pointerHeadingWayPoint
+                width: headingIndicator.width / 7
+                height: width
+                color: hudPaleBlue
+                source: "/qmlimages/rollPointer.svg"
+                rotation: angle_fixed +90
+                smooth: true
+                layer.enabled: true
+                layer.smooth: true
+
+                // centro da bússola
+                property real centerX: headingIndicator.x + headingIndicator.width / 2
+                property real centerY: headingIndicator.y + headingIndicator.height / 2
+
+                // raio interno
+                property real innerRadius: headingIndicator.width * 0.40
+
+                // heading real do drone
+                property real headingActual: _activeVehicle.heading.rawValue
+
+                // heading do waypoint
+                property real headingWP: _activeVehicle.headingToNextWP.value
+
+                // ângulo final relativo ao disco da bússola
+                property real angle_fixed: (headingWP - headingActual - 90)
+
+                // converter para radianos
+                property real angleRad: angle_fixed * Math.PI / 180
+
+                // posição cartesiana
+                x: centerX + innerRadius * Math.cos(angleRad) - width/2
+                y: centerY + innerRadius * Math.sin(angleRad) - height/2
+
+                // rotação visual do ponteiro (deixo igual ao movimento de posição)
+                transform: Rotation {
+                    origin.x: pointerHeadingWayPoint.width / 2
+                    origin.y: pointerHeadingWayPoint.height / 2
+                    angle: angle_fixed
+                }
+
+                layer.effect: DropShadow {
+                    color: "black"
+                    horizontalOffset: 0
+                    verticalOffset: 0
+                    radius: 1
+                    smooth: true
+                    samples: 32
+                    spread: 0.5
+                }
+            }
+
+            QGCColoredImage {
+                id: pointerHeadingHome
+                width: headingIndicator.width / 7
+                height: width
+                color: hudPalePurple
+                source: "/qmlimages/rollPointer.svg"
+                rotation: angle_fixed +90
+                smooth: true
+                layer.enabled: true
+                layer.smooth: true
+
+                // centro da bússola
+                property real centerX: headingIndicator.x + headingIndicator.width / 2
+                property real centerY: headingIndicator.y + headingIndicator.height / 2
+
+                // raio interno
+                property real innerRadius: headingIndicator.width * 0.40
+
+                // heading real do drone
+                property real headingActual: _activeVehicle.heading.rawValue
+
+                // heading do waypoint
+                property real headingHome: _activeVehicle.headingToHome.value
+
+                // ângulo final relativo ao disco da bússola
+                property real angle_fixed: (headingHome - headingActual - 90)
+
+                // converter para radianos
+                property real angleRad: angle_fixed * Math.PI / 180
+
+                // posição cartesiana
+                x: centerX + innerRadius * Math.cos(angleRad) - width/2
+                y: centerY + innerRadius * Math.sin(angleRad) - height/2
+
+                // rotação visual do ponteiro (deixo igual ao movimento de posição)
+                transform: Rotation {
+                    origin.x: pointerHeadingWayPoint.width / 2
+                    origin.y: pointerHeadingWayPoint.height / 2
+                    angle: angle_fixed
+                }
+
+                layer.effect: DropShadow {
+                    color: "black"
+                    horizontalOffset: 0
+                    verticalOffset: 0
+                    radius: 1
+                    smooth: true
+                    samples: 32
+                    spread: 0.5
+                }
+            }
+
+
             Item {
                 id: headingTextBox
                 width: ScreenTools.defaultFontPixelWidth * 6 // Mantém a largura original
@@ -3295,6 +3403,56 @@ Item {
                 Text {
                     text: _activeVehicle.heading.rawValue.toFixed(0).padStart(3, '0') + "°"
                     color: hudPaleGreen
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+                    anchors.centerIn: headingValuetextBox // Centraliza horizontal e verticalmente
+                    z: parent.z + 20
+                }
+            }
+            Item {
+                id: headingWayPointTextBox
+                width: ScreenTools.defaultFontPixelWidth * 10 // Mantém a largura original
+                height: ScreenTools.defaultFontPixelHeight
+                anchors.right: pointerHeading.left
+                anchors.rightMargin: _toolsMargin
+                anchors.verticalCenter:  pointerHeading.verticalCenter
+
+                Rectangle {
+                    id: headingWayPointValuetextBox
+                    anchors.fill: parent
+                    color: "black"
+                    border.color: hudPaleGreen
+                    border.width: 1
+                }
+
+                Text {
+                    text: " WP: "+_activeVehicle.headingToNextWP.rawValue.toFixed(0).padStart(3, '0') + "°"
+                    color: hudPaleBlue
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+                    anchors.centerIn: headingValuetextBox // Centraliza horizontal e verticalmente
+                    z: parent.z + 20
+                }
+            }
+            Item {
+                id: headingHomeTextBox
+                width: ScreenTools.defaultFontPixelWidth * 10 // Mantém a largura original
+                height: ScreenTools.defaultFontPixelHeight
+                anchors.left: pointerHeading.right
+                anchors.leftMargin: _toolsMargin
+                anchors.verticalCenter:  pointerHeading.verticalCenter
+
+                Rectangle {
+                    id: headingHomeValuetextBox
+                    anchors.fill: parent
+                    color: "black"
+                    border.color: hudPaleGreen
+                    border.width: 1
+                }
+
+                Text {
+                    text: " HM: "+_activeVehicle.headingToHome.rawValue.toFixed(0).padStart(3, '0') + "°"
+                    color: hudPalePurple
                     font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: headingValuetextBox // Centraliza horizontal e verticalmente
