@@ -117,6 +117,13 @@ AnalyzePage {
 
 
                         }
+                    if(controller.activeSystem.messages.get(i).name === "RC_CHANNELS"){
+                        curSystem.selected = i;
+                        //_TEMP_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
+
+
+
+                        }
                     }
 
                 }

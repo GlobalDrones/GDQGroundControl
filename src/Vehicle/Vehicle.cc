@@ -67,6 +67,8 @@
 #endif
 #include "Autotune.h"
 
+#define ABS_DIFF(a, b) ((a > b) ? (a - b) : (b - a))
+
 #if defined(QGC_AIRMAP_ENABLED)
 #include "AirspaceVehicleManager.h"
 #endif
@@ -668,6 +670,7 @@ void Vehicle::overwriteRC(){ //override.
 
         // Taxa de loop (para não saturar a CPU). Deve ser o alvo de envio (50 Hz = 20 ms).
         const int MIN_LOOP_MS = 20;
+        const int MIN_STEP_VALUE = 50;
         // =================================================================
         bool needs_send = true;
         while (true) {
@@ -748,23 +751,43 @@ void Vehicle::overwriteRC(){ //override.
                 }
 
                 // 3b. Verificar se os valores atuais (channels_override) mudaram em relação ao último envio (previous_channels)
-                bool values_changed =
-                    channels_override.chan1_raw != previous_channels.chan1_raw ||
-                    channels_override.chan2_raw != previous_channels.chan2_raw ||
-                    channels_override.chan3_raw != previous_channels.chan3_raw ||
-                    channels_override.chan4_raw != previous_channels.chan4_raw ||
-                    channels_override.chan5_raw != previous_channels.chan5_raw ||
-                    channels_override.chan6_raw != previous_channels.chan6_raw ||
-                    channels_override.chan7_raw != previous_channels.chan7_raw ||
-                    channels_override.chan8_raw != previous_channels.chan8_raw ||
-                    channels_override.chan9_raw != previous_channels.chan9_raw ||
-                    channels_override.chan10_raw != previous_channels.chan10_raw ||
-                    channels_override.chan11_raw != previous_channels.chan11_raw ||
-                    channels_override.chan12_raw != previous_channels.chan12_raw ||
-                    channels_override.chan13_raw != previous_channels.chan13_raw ||
-                    channels_override.chan14_raw != previous_channels.chan14_raw ||
-                    channels_override.chan15_raw != previous_channels.chan15_raw ||
-                    channels_override.chan16_raw != previous_channels.chan16_raw;
+                bool values_changed = false;
+                    if (
+                        // Canal 1
+                        ABS_DIFF(channels_override.chan1_raw, previous_channels.chan1_raw) >= MIN_STEP_VALUE ||
+                        // Canal 2
+                        ABS_DIFF(channels_override.chan2_raw, previous_channels.chan2_raw) >= MIN_STEP_VALUE ||
+                        // Canal 3
+                        ABS_DIFF(channels_override.chan3_raw, previous_channels.chan3_raw) >= MIN_STEP_VALUE ||
+                        // Canal 4
+                        ABS_DIFF(channels_override.chan4_raw, previous_channels.chan4_raw) >= MIN_STEP_VALUE ||
+                        // Canal 5
+                        ABS_DIFF(channels_override.chan5_raw, previous_channels.chan5_raw) >= MIN_STEP_VALUE ||
+                        // Canal 6
+                        ABS_DIFF(channels_override.chan6_raw, previous_channels.chan6_raw) >= MIN_STEP_VALUE ||
+                        // Canal 7
+                        ABS_DIFF(channels_override.chan7_raw, previous_channels.chan7_raw) >= MIN_STEP_VALUE ||
+                        // Canal 8
+                        ABS_DIFF(channels_override.chan8_raw, previous_channels.chan8_raw) >= MIN_STEP_VALUE ||
+                        // Canal 9
+                        ABS_DIFF(channels_override.chan9_raw, previous_channels.chan9_raw) >= MIN_STEP_VALUE ||
+                        // Canal 10
+                        ABS_DIFF(channels_override.chan10_raw, previous_channels.chan10_raw) >= MIN_STEP_VALUE ||
+                        // Canal 11
+                        ABS_DIFF(channels_override.chan11_raw, previous_channels.chan11_raw) >= MIN_STEP_VALUE ||
+                        // Canal 12
+                        ABS_DIFF(channels_override.chan12_raw, previous_channels.chan12_raw) >= MIN_STEP_VALUE ||
+                        // Canal 13
+                        ABS_DIFF(channels_override.chan13_raw, previous_channels.chan13_raw) >= MIN_STEP_VALUE ||
+                        // Canal 14
+                        ABS_DIFF(channels_override.chan14_raw, previous_channels.chan14_raw) >= MIN_STEP_VALUE ||
+                        // Canal 15
+                        ABS_DIFF(channels_override.chan15_raw, previous_channels.chan15_raw) >= MIN_STEP_VALUE ||
+                        // Canal 16
+                        ABS_DIFF(channels_override.chan16_raw, previous_channels.chan16_raw) >= MIN_STEP_VALUE
+                        ) {
+                    values_changed = true;
+                }
 
                 current_time = QDateTime::currentMSecsSinceEpoch();
                 elapsed_time = current_time - last_sent_time;
@@ -781,7 +804,7 @@ void Vehicle::overwriteRC(){ //override.
                         &channels_override // ENVIAR O ESTADO ATUAL!
                         );
 
-                    sendMessageMultiple(msg);
+                    sendMessageOnLinkThreadSafe(vehicleLinkManager()->primaryLink().lock().get(),msg);
 
                     // 3d. Atualizar o estado e o tempo SOMENTE se houver envio
                     previous_channels = channels_override; // O estado atual se torna o estado anterior
