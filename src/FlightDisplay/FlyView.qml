@@ -1961,6 +1961,19 @@ Item {
     property color hudPalePurple: "#ff00ff"
 
 
+    /* valores teóricos do Guilherme:
+        V_estol = 22m/s
+        V_segura acima de  26,4 até 44,44
+        V_max = 44,44 m/s
+        V_nunca exceder = 47,22 m/s
+
+    */
+    readonly property real v_estol: 22
+    readonly property real v_segura_min: 22
+    readonly property real v_segura_max: 44
+    readonly property real v_max: 47.22
+
+
     function makeAlerts() {
         var alertas = ""
         var count = 0
@@ -2883,6 +2896,46 @@ Item {
             }
 
         }
+        //_activeVehicle.overwriteRC();
+        Rectangle {
+            id: btnOverride
+            property bool overriding: false
+            width: parent.width*0.75
+            height: parent.height*0.1
+            radius: 5
+            color: overriding ? "red" : "green"  // cor dinâmica
+            border.color: "black"
+            border.width: 1
+            anchors.horizontalCenter:  parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: _toolsMargin
+            z: _fullItemZorder + 10
+
+            // texto centralizado
+            Text {
+                anchors.centerIn: parent
+                text: btnOverride.overriding? "Stop Override":"Override RC"
+                color: "white"
+                font.bold: true
+            }
+
+            // efeito de clique
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    if(!btnOverride.overriding){
+                        _activeVehicle.overwriteRC();
+                        }
+                    else{
+                        _activeVehicle.stopRCOverride();
+                    }
+                    btnOverride.overriding = !btnOverride.overriding;
+                }
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+            }
+        }
+
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2916,6 +2969,9 @@ Item {
             mapControl: _mapControl
             visible: !QGroundControl.videoManager.fullScreen
         }
+
+
+
 
         /*FlyViewCustomLayer {
             id: customOverlay
@@ -3472,9 +3528,9 @@ Item {
                 anchors.rightMargin: _toolsMargin*10
                 clip: true
                 property real current_value: -_activeVehicle.airSpeed.rawValue.toFixed(2) // Usando o rawValue para cálculo
-                property real lineSpacing: height / 6
-                readonly property int totalLines: 40 // De -190 a 200 (se o passo for 10)
-                readonly property real unitsPerLineSpacing: 10
+                property real lineSpacing: height / 10
+                readonly property int totalLines: 80 // De -190 a 200 (se o passo for 10)
+                readonly property real unitsPerLineSpacing: 5
                 readonly property real pixelPerUnit: barraLateralEsquerda.lineSpacing / barraLateralEsquerda.unitsPerLineSpacing
                 property real scrollOffsetY: -1 * barraLateralEsquerda.current_value * barraLateralEsquerda.pixelPerUnit
 
@@ -3493,9 +3549,12 @@ Item {
                     delegate: Item {
                         width: parent.width
                         height: barraLateralEsquerda.lineSpacing
-                        property int angle: 190 - index * 10
-                        readonly property real centerOffset: barraLateralEsquerda.height / 2 - (19 * barraLateralEsquerda.lineSpacing)
-                        y: ((index-0.5) * barraLateralEsquerda.lineSpacing) + barraLateralEsquerda.scrollOffsetY + centerOffset
+                        property int angle: 190 - index * 5
+                        readonly property real indexZero: 190 / 5   // = 38
+                        readonly property real centerOffset: barraLateralEsquerda.height/2 - (indexZero * barraLateralEsquerda.lineSpacing)
+                        y: ((index - 0.5) * barraLateralEsquerda.lineSpacing)
+                           + barraLateralEsquerda.scrollOffsetY
+                           + centerOffset
 
                         visible: y + height >= 0 && y <= barraLateralEsquerda.height
 
@@ -3558,6 +3617,88 @@ Item {
                 }
 
             }
+            // === barra de cores de velocidade ===
+            Item {
+                id: speedColorBar
+                width: barraLateralEsquerda.width * 0.1
+                anchors.top: barraLateralEsquerda.top
+                anchors.bottom: barraLateralEsquerda.bottom
+                anchors.left: barraLateralEsquerda.right
+                clip: true
+                //anchors.leftMargin: 4
+
+                // conversão unidade → pixel
+                property real px_per_unit: barraLateralEsquerda.pixelPerUnit
+                property real scroll_y: barraLateralEsquerda.scrollOffsetY
+                //readonly property real v_estol: 2.0
+                //readonly property real v_segura_min: 5.01
+                //readonly property real v_segura_max: 15.44
+                //readonly property real v_max: 47.22
+
+
+                // valores principais (minúsculas)
+
+                // função de conversão para Y
+                function y_for(v) {
+                    let center = barraLateralEsquerda.height / 2
+                    return center - (v * px_per_unit) + scroll_y
+                }
+
+                Rectangle {
+                    // faixa vermelho (stall)
+                    property real v1: -v_segura_min
+                    property real v2: v_segura_min
+                    width: parent.width
+                    y: speedColorBar.y_for(v2)
+                    height: Math.abs(v2 - v1) * speedColorBar.px_per_unit
+                    color: "red"
+                    opacity: 0.75
+                    border.width: 1
+                    border.color: hudPaleGreen
+                }
+
+                Rectangle {
+                    property real v1: v_segura_min
+                    property real v2: v_segura_max
+                    width: parent.width
+                    y: speedColorBar.y_for(v2)
+                    height: Math.abs(v2 - v1) * speedColorBar.px_per_unit
+                    color: "green"
+                    opacity: 0.75
+                    border.width: 1
+                    border.color: hudPaleGreen
+                }
+
+
+                Rectangle {
+                    property real v1: v_segura_max
+                    property real v2: v_max
+                    width: parent.width
+                    y: speedColorBar.y_for(v2)
+                    height: Math.abs(v2 - v1) * speedColorBar.px_per_unit
+                    color: "yellow"
+                    opacity: 0.75
+                    border.width: 1
+                    border.color: hudPaleGreen
+                }
+
+                Rectangle {
+                    property real v1: v_max
+                    property real v2: 80     // limite arbitrário superior
+                    width: parent.width
+                    y: speedColorBar.y_for(v2)
+                    height: Math.abs(v2 - v1) * speedColorBar.px_per_unit
+                    color: "red"
+                    opacity: 0.75
+                    border.width: 1
+                    border.color: hudPaleGreen
+                }
+
+
+
+            }
+
+
             Item{
                 id: subbarraLateralEsquerda
                 anchors.top: barraLateralEsquerda.bottom
@@ -3997,7 +4138,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            _activeVehicle.overwriteRC();
+                            //_activeVehicle.overwriteRC();
                             if (QGroundControl.videoManager.streams.length > 0) {
                                 cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % QGroundControl.videoManager.streams.length
 

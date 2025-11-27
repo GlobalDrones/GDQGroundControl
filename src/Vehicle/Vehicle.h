@@ -531,6 +531,8 @@ public:
 
     /// Start the Overwritting thread for RC channels with controller serial input
     Q_INVOKABLE void overwriteRC(void);
+    Q_INVOKABLE void stopRCOverride(void);
+
 
     // The follow method are used to turn on/off the tracking of settings updates for firmware/vehicle type on offline vehicles.
     void trackFirmwareVehicleTypeChanges(void);
@@ -1061,6 +1063,8 @@ private:
     QFile               _csvLogFile;
 
     bool            _joystickEnabled = false;
+    std::atomic<bool> _overrideRunning{false};
+    QFuture<void> _overrideFuture;
 
     UAS* _uas = nullptr;
 

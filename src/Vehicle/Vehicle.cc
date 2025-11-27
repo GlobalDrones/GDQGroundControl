@@ -62,6 +62,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <atomic>
 #ifdef QT_DEBUG
 #include "MockLink.h"
 #endif
@@ -357,194 +358,16 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
 
 }
 
-/*void Vehicle::overwriteRC(){
-    // =========================================================================
-    // MODIFICAÇÃO: INÍCIO DA THREAD DE LEITURA SERIAL E ENVIO MAVLINK
-    // =========================================================================
-    QtConcurrent::run([=]() {
+void Vehicle::stopRCOverride() {
+    if (!_overrideRunning) return;
 
-        const char* dev = "/dev/ttyHS3"; // Porta de comunicação
+    _overrideRunning = false;
 
-        // Abrir para leitura E ESCRITA (O_RDWR)
-        int fd = open(dev, O_RDWR | O_NOCTTY);
-
-        if (fd < 0) {
-            qWarning() << "Não foi possível abrir" << dev << "erro:" << strerror(errno);
-            return;
-        }
-
-        struct termios tty;
-        if (tcgetattr(fd, &tty) != 0) {
-            qWarning() << "Erro tcgetattr:" << strerror(errno);
-            close(fd);
-            return;
-        }
-
-        // Configuração da porta: 115200 baud, Raw, 8N1
-        cfmakeraw(&tty);
-        cfsetispeed(&tty, B115200);
-        cfsetospeed(&tty, B115200);
-        tty.c_cflag |= (CREAD | CLOCAL | CS8); // CREAD, CLOCAL, CS8
-        tty.c_cflag &= ~(CSTOPB | CRTSCTS);   // ~CSTOPB, ~CRTSCTS
-
-        // Configurações de tempo limite (VMIN=0, VTIME=0 para leitura não bloqueante)
-        tty.c_cc[VMIN] = 0;
-        tty.c_cc[VTIME] = 0;
-
-        if (tcsetattr(fd, TCSANOW, &tty) != 0) {
-            qWarning() << "Erro tcsetattr:" << strerror(errno);
-            close(fd);
-            return;
-        }
-
-        qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud.";
-
-        // --- CONFIGURAÇÃO MAVLINK ---
+    // Opcional: aguardar a thread terminar antes de prosseguir
 
 
-        mavlink_message_t msg;
-        mavlink_rc_channels_override_t channels_override;
-        uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
-
-        unsigned char buf[256];
-        int write_count = 0;
-
-        // Inicializa todos os canais para IGNORAR (UINT16_MAX = 65535)
-        channels_override.chan1_raw  = 65535; channels_override.chan2_raw  = 65535;
-        channels_override.chan3_raw  = 65535; channels_override.chan4_raw  = 65535;
-        channels_override.chan5_raw  = 65535; channels_override.chan6_raw  = 65535;
-        channels_override.chan7_raw  = 65535; channels_override.chan8_raw  = 65535;
-        channels_override.chan9_raw  = 65535; channels_override.chan10_raw = 65535;
-        channels_override.chan11_raw = 65535; channels_override.chan12_raw = 65535;
-        channels_override.chan13_raw = 65535; channels_override.chan14_raw = 65535;
-        channels_override.chan15_raw = 65535; channels_override.chan16_raw = 65535;
-        channels_override.chan17_raw = 65535; channels_override.chan18_raw = 65535;
-
-        qWarning() << "Iniciando loop de leitura serial e envio MAVLink RC_CHANNELS_OVERRIDE...";
-
-        // NOTA: O código de envio da sequência hexadecimal inicial (0x55 0x66...) foi removido,
-        // e o loop de leitura agora inclui a lógica de envio MAVLink.
-
-        while (true) {
-
-
-            // LER DADOS DA SERIAL
-            int n = read(fd, buf, sizeof(buf));
-
-            if (n < 0) {
-                qWarning() << "Erro na leitura:" << strerror(errno);
-                break;
-            }
-
-            // LÓGICA DE EXTRAÇÃO E ENVIO MAVLINK
-            if (n > 30 && buf[7] == 0x42) {
-
-                // --- 1. EXTRAIR VALORES BRUTOS little-endian (sem escalonamento) ---
-
-                // Mapeamento baseado nos seus comentários (byte_baixo | (byte_alto << 8)):
-
-                // Canal 1
-                uint16_t raw_ch1 = (uint16_t)buf[8] | ((uint16_t)buf[9] << 8);
-
-                // Canal 2
-                uint16_t raw_ch2 = (uint16_t)buf[10] | ((uint16_t)buf[11] << 8);
-
-                // Canal 3
-                uint16_t raw_ch3 = (uint16_t)buf[12] | ((uint16_t)buf[13] << 8);
-
-                // Canal 4
-                uint16_t raw_ch4 = (uint16_t)buf[14] | ((uint16_t)buf[15] << 8);
-
-                // Canal 5
-                uint16_t raw_ch5 = (uint16_t)buf[28] | ((uint16_t)buf[29] << 8);
-
-                // Canal 6
-                uint16_t raw_ch6 = (uint16_t)buf[30] | ((uint16_t)buf[31] << 8);
-
-                // Canal 7
-                uint16_t raw_ch7 = (uint16_t)buf[18] | ((uint16_t)buf[19] << 8);
-
-                //Canal 8
-                uint16_t raw_ch8 = (uint16_t)buf[20] | ((uint16_t)buf[21] << 8);
-
-                uint16_t raw_ch9 = (uint16_t)buf[22] | ((uint16_t)buf[23] << 8);
-
-                // Se precisar de mais canais (baseado nos seus comentários):
-                // Canal 8: Aux 4 (M_BUTTON) - Byte 16, 17
-                // uint16_t raw_ch8 = (uint16_t)buf[16] | ((uint16_t)buf[17] << 8);
-                // channels_override.chan8_raw = raw_ch8;
-
-                // --- 2. PREENCHER RC_CHANNELS_OVERRIDE COM VALORES RAW ---
-
-
-                channels_override.target_system    = id();                    // ID do veículo (ex: 1)
-                channels_override.target_component = MAV_COMP_ID_AUTOPILOT1;  // 1 (autopilot principal)
-
-
-                channels_override.chan1_raw = raw_ch1;
-                channels_override.chan2_raw = raw_ch2;
-                channels_override.chan3_raw = raw_ch3;
-                channels_override.chan4_raw = raw_ch4;
-                channels_override.chan5_raw = raw_ch5;
-                channels_override.chan6_raw = raw_ch6;
-                channels_override.chan7_raw = raw_ch7;
-                channels_override.chan8_raw = raw_ch8;
-                channels_override.chan9_raw = raw_ch9;
-
-                qWarning() << "[MAVLink RC OUT] Ch1/Ch2/Ch3/Ch4:" << channels_override.chan1_raw << "/" << channels_override.chan2_raw << "/" << channels_override.chan3_raw << "/" << channels_override.chan4_raw;
-                qWarning() << "[MAVLink RC OUT] Ch5/Ch6/Ch7/Ch8/Ch9:" << channels_override.chan5_raw << "/" << channels_override.chan6_raw << "/" << channels_override.chan7_raw << "/" << channels_override.chan8_raw << "/" << channels_override.chan9_raw;
-                // --- 3. EMPACOTAR E ENVIAR MAVLINK ---
-                while (!_mavlink) { //PROBLEMA TA AQUI, RESOLVER COMO GARANTIR QUE O CONTROLE TA CONECTADO
-                    qWarning() << "Aguardando veículo conectar...";
-                    QThread::sleep(1);
-
-                }
-
-                qWarning()<<"ENVIANDOOOO";
-                mavlink_msg_rc_channels_override_encode(
-                    _mavlink->getSystemId(),     // ID do GCS, geralmente 255
-                    _mavlink->getComponentId(),  // componente do GCS, geralmente 0
-                    &msg,
-                    &channels_override
-                    );
-
-                qWarning() << "GCS sysid=" << _mavlink->getSystemId()
-                           << "compid=" << _mavlink->getComponentId()
-                           << "target_sys=" << channels_override.target_system
-                           << "target_comp=" << channels_override.target_component;
-
-                SharedLinkInterfacePtr sharedLink = vehicleLinkManager()->primaryLink().lock();
-                if (!sharedLink.get()) {
-                    qWarning() << "Sem link ativo — RC override não será enviado!";
-                    continue;
-                }
-
-
-                uint16_t len = mavlink_msg_to_send_buffer(buffer, &msg);
-                int w_n = write(fd, buffer, len);
-
-                if (w_n != (int)len) {
-                    qWarning() << "ERRO DE ESCRITA MAVLINK. Enviado:" << w_n << "bytes. Erro:" << strerror(errno);
-                } else {
-                    write_count++;
-                    // Log da linha hexadecimal recebida
-                    QString hexLine;
-                    for (int i = 0; i < n; ++i)
-                        hexLine += QString("%1 ").arg(buf[i], 2, 16, QLatin1Char('0')).toUpper();
-                    qWarning() << "[UART /dev/ttyHS3] RECEBIDO e Enviado MAVLink:" << hexLine.trimmed();
-                }
-
-                // O comando RC Override deve ser enviado em alta frequência (ex: 50Hz = 20ms)
-                QThread::msleep(20);
-            }
-        }
-
-
-
-        close(fd);
-    });
-}*/
-
+    _overrideRunning = false;
+}
 void Vehicle::overwriteRC(){ //override.
 
     // para testar no folder do ardupilot/Tools/autotest: python3 sim_vehicle.py -v copter --no-mavproxy -A "--serial0=udpclient:192.168.1.114:14550"
@@ -555,6 +378,12 @@ void Vehicle::overwriteRC(){ //override.
     // =========================================================================
     // MODIFICAÇÃO: INÍCIO DA THREAD DE LEITURA SERIAL E ENVIO MAVLINK
     // =========================================================================
+    if (_overrideRunning) {
+        qWarning() << "Override já ativo";
+        return;
+    }
+
+    _overrideRunning = true;
 
     setJoystickEnabled(false);
     _joystickManager->activeJoystick()->terminate();
@@ -589,7 +418,7 @@ void Vehicle::overwriteRC(){ //override.
 
     qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
     //_mavlink->_status.buffer_overrun
-    QtConcurrent::run([=]() {
+    _overrideFuture = QtConcurrent::run([=]() {
 
         const char* dev = "/dev/ttyHS3"; // Porta de comunicação
 
@@ -673,7 +502,7 @@ void Vehicle::overwriteRC(){ //override.
         const int MIN_STEP_VALUE = 50;
         // =================================================================
         bool needs_send = true;
-        while (true) {
+        while (_overrideRunning) {
             // LER DADOS DA SERIAL
             int n = read(fd, buf, sizeof(buf));
 
@@ -792,7 +621,7 @@ void Vehicle::overwriteRC(){ //override.
                 current_time = QDateTime::currentMSecsSinceEpoch();
                 elapsed_time = current_time - last_sent_time;
                // bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
-                needs_send = values_changed; //|| (elapsed_time >= MIN_LOOP_MS);
+                needs_send = values_changed || (elapsed_time >= MIN_LOOP_MS);
                 //if (values_changed || safety_interval_passed) { //Aqui é o IF original caso seja necessário um envio periódico mesmo que redundante
                 if (needs_send) { //esse aqui śo leva em conta o envio de mudanças, sem redundancias
 
@@ -842,6 +671,7 @@ void Vehicle::overwriteRC(){ //override.
         }
 
         close(fd);
+
     });
 }
 

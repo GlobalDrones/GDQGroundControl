@@ -31,7 +31,7 @@ message(Qt version $$[QT_VERSION])
 
 include(QGCCommon.pri)
 
-TARGET   = GD25_QGC
+TARGET   = GD60_QGC_GAR
 TEMPLATE = app
 QGCROOT  = $$PWD
 
