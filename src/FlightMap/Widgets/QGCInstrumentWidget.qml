@@ -21,12 +21,14 @@ import QGroundControl.Palette       1.0
 ColumnLayout {
     id:         root
     spacing:    ScreenTools.defaultFontPixelHeight / 4
+    property bool _gd60 : true
+    visible: !_gd60
 
     property real   _innerRadius:           (width - (_topBottomMargin * 3)) / 4
     property real   _outerRadius:           _innerRadius + _topBottomMargin
     property real   _spacing:               ScreenTools.defaultFontPixelHeight * 0.33
     property real   _topBottomMargin:       (width * 0.05) / 2
-    visible: false
+
     QGCPalette { id: qgcPal }
 
     Rectangle {
