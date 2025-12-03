@@ -21,7 +21,7 @@ import QGroundControl.Palette       1.0
 ColumnLayout {
     id:         root
     spacing:    ScreenTools.defaultFontPixelHeight / 4
-    property bool _gd60 : true
+    property bool _gd60 : false
     visible: !_gd60
 
     property real   _innerRadius:           (width - (_topBottomMargin * 3)) / 4

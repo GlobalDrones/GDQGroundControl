@@ -1955,8 +1955,8 @@ Item {
 
     property string requestedAlerts
     property int alertCounts: 0;
-    property color hudGrey: "#33333366"
-    property color hudPaleGreen: "#9AF5A5"
+    property color hudGrey: "#85333366"
+    property color hudPaleGreen: "#9AFF75"
     property color hudPaleBlue: "#00ffff"
     property color hudPalePurple: "#ff00ff"
 
@@ -3075,7 +3075,7 @@ Item {
                 anchors.centerIn: parent
                 clip: true
 
-                property real pitch: _activeVehicle.pitch.rawValue.toFixed(2)
+                property real pitch:-_activeVehicle.pitch.rawValue.toFixed(2)
                 property real lineSpacing: height / 5
                 readonly property int totalLines: 37 // -90 a 90 a cada 5 graus
 
@@ -3156,6 +3156,8 @@ Item {
             /////FIM DO PITCH
 
 
+
+
             /////COMEÇO DO ROLL
             Item {
                 id: dialRoll
@@ -3164,6 +3166,13 @@ Item {
                 anchors.topMargin: 0
                 width: parent.width
                 height: parent.width / 2
+                function degToArcRad(deg) {
+                    var t = (deg + 60) / 120          // normaliza -60..60 → 0..1
+                    return Math.PI * 1.08 + t * (Math.PI * (1.92 - 1.08))
+                }
+                // ---------------------------------------------------
+                // Conversão de graus de -60 a +60 para ângulo do arco
+                // ---------------------------------------------------
 
                 Canvas {
                     anchors.fill: parent
@@ -3172,9 +3181,11 @@ Item {
                     renderStrategy: Canvas.Cooperative
                     visible: true
                     property real angleRoll: 0
+
                     Behavior on angleRoll {
                         NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
                     }
+
                     layer.enabled: true
                     layer.smooth: true
                     layer.effect: DropShadow {
@@ -3184,38 +3195,53 @@ Item {
                         radius: 2
                         smooth: true
                         samples: 32
-                        spread: 0.8 // Ajuste para tornar a borda mais definida (menos difusa)
+                        spread: 0.8
                     }
+
+                    function degToArcRad(deg) {
+                        var t = (deg + 60) / 120          // normaliza -60..60 → 0..1
+                        return Math.PI * 1.08 + t * (Math.PI * (1.92 - 1.08))
+                    }
+
                     onPaint: {
                         var ctx = getContext("2d")
                         ctx.reset()
                         ctx.clearRect(0, 0, width, height)
+
                         var centerX = width / 2
                         var centerY = height / 2
                         var radius = Math.min(width, height) / 2.5
 
-
-                        // Desenha o arco branco
+                        // -----------------------
+                        // Arco principal (verde)
+                        // -----------------------
                         ctx.strokeStyle = hudPaleGreen
                         ctx.lineWidth = 5
                         ctx.beginPath()
-                        ctx.arc(centerX, centerY, radius - 10, Math.PI * 1.08, Math.PI * 1.92, false)
+                        ctx.arc(centerX, centerY, radius - 10,
+                                Math.PI * 1.08, Math.PI * 1.92, false)
                         ctx.stroke()
 
-                        // Riscos picotados a cada 15 graus
-                        ctx.strokeStyle = hudPaleGreen
-                        ctx.lineWidth = 5
-                        for (var deg = 195; deg <= 345; deg += 15) {
-                            var rad = deg * Math.PI / 180
+                        // -----------------------------------------
+                        // Listras das marcações -60..60
+                        // -----------------------------------------
+                        var marcacoes = [-60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60]
+
+                        for (var i = 0; i < marcacoes.length; i++) {
+                            var deg = marcacoes[i]
+                            var rad = degToArcRad(deg)
+
                             var innerRadius = radius - 10
-                            var outerRadius = radius
-                            if (deg % 5 === 0) {
-                                outerRadius = radius + 10
-                            }
+                            var outerRadius
+
+                            // Listras maiores
+                            if (deg === -60 || deg === -30 || deg === 30 || deg === 60)
+                                outerRadius = radius + 15
+                            else
+                                outerRadius = radius + 5
 
                             var xStart = centerX + innerRadius * Math.cos(rad)
                             var yStart = centerY + innerRadius * Math.sin(rad)
-
                             var xEnd = centerX + outerRadius * Math.cos(rad)
                             var yEnd = centerY + outerRadius * Math.sin(rad)
 
@@ -3224,23 +3250,28 @@ Item {
                             ctx.lineTo(xEnd, yEnd)
                             ctx.stroke()
                         }
-                        // É uma boa prática resetar as propriedades da sombra se você for desenhar
-                        // outros elementos que não devam ter sombra depois.
-                        // ctx.shadowColor = "transparent";
-                        // ctx.shadowBlur = 0;
-                        // ctx.shadowOffsetX = 0;
-                        // ctx.shadowOffsetY = 0;
                     }
+
+                    // Atualização do roll vindo do veículo
                     Timer {
+                        function degToArcRad(deg) {
+                            var t = (deg + 60) / 120          // normaliza -60..60 → 0..1
+                            return Math.PI * 1.08 + t * (Math.PI * (1.92 - 1.08))
+                        }
                         interval: 33; running: true; repeat: true
                         onTriggered: {
                             parent.requestPaint()
-                            parent.angleRoll = mapValueToRadians(_activeVehicle.roll.rawValue.toFixed(2), -150, 150, Math.PI * 1.08, Math.PI * 1.92)
-                            //console.log("airspeed:", _activeVehicle.airSpeed.rawValue.toFixed(2))
+                            var rollDeg = _activeVehicle.roll.rawValue   // -150..150 possível
+                            rollDeg = Math.max(-60, Math.min(60, rollDeg)) // limita para -60..60
+
+                            parent.angleRoll = degToArcRad(rollDeg)
                         }
                     }
                 }
 
+                // --------------------------
+                // PONTEIRO
+                // --------------------------
                 QGCColoredImage {
                     id: pointerRoll
                     width: dialRoll.width / 10
@@ -3248,10 +3279,14 @@ Item {
                     anchors.horizontalCenter: rollArc.horizontalCenter
                     anchors.verticalCenter: rollArc.verticalCenter
                     anchors.verticalCenterOffset: -dialRoll.height/4
+
                     color: hudPaleGreen
                     source: "/qmlimages/rollPointer.svg"
                     transformOrigin: Item.Bottom
-                    rotation: (rollArc.angleRoll - 1.5 * Math.PI) * (180 / Math.PI)
+
+                    // Converte radianos para graus e alinha o topo em 0°
+                    rotation: (rollArc.angleRoll * 180 / Math.PI) - 270
+
                     smooth: true
                     layer.enabled: true
                     layer.smooth: true
@@ -3262,11 +3297,12 @@ Item {
                         radius: 2
                         smooth: true
                         samples: 32
-                        spread: 0.8 // Ajuste para tornar a borda mais definida (menos difusa)
+                        spread: 0.8
                     }
                 }
             }
             ///// FIM DO ROLL
+
             //_activeVehicle.headingToNextWP. rollPointer.svg
             /////COMEÇO DO HEADING
             QGCColoredImage {
@@ -3573,7 +3609,7 @@ Item {
                             // Se angle for 0, toFixed(0) é 0.
                             text: angle.toFixed(0)
                             color: hudPaleGreen
-                            font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
+                            font.pixelSize: _androidBuild? 15 : ScreenTools.defaultFontPixelWidth*2
                             anchors.verticalCenter: parent.verticalCenter
                             font.bold: true
                             anchors.left: parent.left
@@ -3605,12 +3641,13 @@ Item {
                     color: "black"
                     border.color: hudPaleGreen
                     border.width: 1
+                    z: airspeedPointer.z +1
                 }
 
                 Text {
                     text: _activeVehicle.airSpeed.rawValue.toFixed(1).padStart(3, '0')
                     color: hudPaleGreen
-                    font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
+                    font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 2 : ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: airspeedValuetextBox // Centraliza horizontal e verticalmente
                     z: parent.z + 20
@@ -3803,7 +3840,7 @@ Item {
                             visible: altitudeScale % 10 === 0
                             text: altitudeScale.toFixed(0)
                             color: hudPaleGreen
-                            font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
+                            font.pixelSize: _androidBuild? 14 : ScreenTools.defaultFontPixelWidth*2
                             anchors.verticalCenter: parent.verticalCenter
                             font.bold: true
                             // O texto fica à direita do painel da direita (Altitude)
@@ -3836,6 +3873,7 @@ Item {
                     color: "black"
                     border.color: hudPaleGreen
                     border.width: 1
+                    z:altitudePointer.z+1
                 }
 
                 Text {
@@ -3946,7 +3984,7 @@ Item {
                             text: verticalScale.toFixed(0)
 
                             color: hudPaleGreen
-                            font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
+                            font.pixelSize: _androidBuild? 15 : ScreenTools.defaultFontPixelWidth*2
                             anchors.verticalCenter: parent.verticalCenter
                             font.bold: true
                             // Alinha o texto na borda direita
@@ -3980,6 +4018,7 @@ Item {
                     color: "black"
                     border.color: hudPaleGreen
                     border.width: 1
+                    z: climbSpeedPointer.z+1
                 }
 
                 Text {

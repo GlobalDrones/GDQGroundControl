@@ -42,7 +42,7 @@ Item {
     property real _courseOverGround:    _activeVehicle ? _activeVehicle.gps.courseOverGround.rawValue : 0
 
     property bool usedByMultipleVehicleList:  false
-    property bool _gd60 : true
+    property bool _gd60 : false
     visible: !_gd60
     function isCOGAngleOK(){
         if(_groundSpeed < 0.5){
