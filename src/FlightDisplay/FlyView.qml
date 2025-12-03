@@ -3562,7 +3562,7 @@ Item {
                 height: parent.height*2/3
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.right: crosshair_central.left
-                anchors.rightMargin: _toolsMargin*10
+                anchors.rightMargin: _toolsMargin*20
                 clip: true
                 property real current_value: -_activeVehicle.airSpeed.rawValue.toFixed(2) // Usando o rawValue para cálculo
                 property real lineSpacing: height / 10
@@ -3771,7 +3771,7 @@ Item {
                 height: parent.height*2/3
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: crosshair_central.right
-                anchors.leftMargin: _toolsMargin*10
+                anchors.leftMargin: _toolsMargin*20
                 clip: true
 
                 // 💨 Valor Atual: Usamos a altitude. Removemos o sinal '-' inicial, pois a rolagem é tratada no scrollOffsetY.
