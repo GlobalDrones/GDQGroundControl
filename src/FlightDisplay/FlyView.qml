@@ -3061,6 +3061,7 @@ Item {
             z: videoControl.z
             visible: !_mainWindowIsMap
 
+
             Rectangle{ //delimitador de área só pra ver os limites. Apagar quando completo
                 anchors.fill: parent
                 color:"red"
@@ -3087,7 +3088,7 @@ Item {
                     delegate: Item {
                         width: parent.width
                         height: pitchArea.lineSpacing
-
+                        rotation: _activeVehicle.roll.rawValue.toFixed(1)
                         property int angle: 90 - index * 5
 
                         y: index * pitchArea.lineSpacing + pitchArea.pitchOffsetY * -1
@@ -3110,7 +3111,7 @@ Item {
                             visible: angle % 10 === 0
                             text: angle + "°"
                             color: hudPaleGreen//"#00FF00"
-                            font.pixelSize: _androidBuild? 12 : ScreenTools.defaultFontPixelWidth*2
+                            font.pixelSize: _androidBuild? 18 : ScreenTools.defaultFontPixelWidth*2
                             anchors.verticalCenter: parent.verticalCenter
                             font.bold: true
                             anchors.left: parent.left
@@ -3236,7 +3237,7 @@ Item {
 
                             // Listras maiores
                             if (deg === -60 || deg === -30 || deg === 30 || deg === 60)
-                                outerRadius = radius + 15
+                                outerRadius = radius + 25
                             else
                                 outerRadius = radius + 5
 
@@ -4090,12 +4091,12 @@ Item {
                 anchors.fill: parent
                 color: "red"
                 border.color: "black"
-                visible: true
+                visible: false//true
                 Text {
                     anchors.centerIn: parent
                     text: requestedAlerts
                     font.bold: false
-                    visible: true
+                    visible: false//true
 
                      font.pixelSize: _androidBuild? 12 : 14
                 }
