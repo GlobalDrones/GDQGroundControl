@@ -1959,6 +1959,7 @@ Item {
     property color hudPaleGreen: "#9AFF75"
     property color hudPaleBlue: "#00ffff"
     property color hudPalePurple: "#ff00ff"
+    property bool overrideActive: false
 
 
     /* valores teóricos do Guilherme:
@@ -2896,6 +2897,9 @@ Item {
             }
 
         }
+
+
+
         //_activeVehicle.overwriteRC();
         Rectangle {
             id: btnOverride
@@ -2903,7 +2907,7 @@ Item {
             width: parent.width*0.75
             height: parent.height*0.1
             radius: 5
-            color: overriding ? "red" : "green"  // cor dinâmica
+            color: overrideActive ? "red" : "green"  // cor dinâmica
             border.color: "black"
             border.width: 1
             anchors.horizontalCenter:  parent.horizontalCenter
@@ -2914,27 +2918,26 @@ Item {
             // texto centralizado
             Text {
                 anchors.centerIn: parent
-                text: btnOverride.overriding? "Stop Override":"Override RC"
+                text: overrideActive? "Stop Override":"Override RC"
                 color: "white"
                 font.bold: true
             }
 
             // efeito de clique
             MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    if(!btnOverride.overriding){
-                        _activeVehicle.overwriteRC();
-                        }
-                    else{
-                        _activeVehicle.stopRCOverride();
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+
+                    onClicked: {
+                        // botão apenas abre popup
+                        confirmOverridePopup.wantsToEnable = !overrideActive
+                        confirmOverridePopup.open()
                     }
-                    btnOverride.overriding = !btnOverride.overriding;
                 }
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-            }
         }
+
+
 
     }
 
@@ -2971,7 +2974,112 @@ Item {
         }
 
 
+        Popup {
+            id: confirmOverridePopup
+            modal: true
+            focus: true
+            width: parent.width * 0.4
+            height: parent.height * 0.25
+            anchors.centerIn: Overlay.overlay
 
+            // popup precisa saber se vai ativar ou desativar
+            property bool wantsToEnable: true
+
+            background: Rectangle {
+                color: "#333"
+                radius: 8
+                border.color: "white"
+
+            }
+
+            Column {
+                spacing: 20
+                anchors.centerIn: parent
+
+
+                Text {
+                    text: !overrideActive
+                          ? "Tem certeza que deseja ATIVAR o Override RC?"
+                          : "Tem certeza que deseja DESATIVAR o Override RC?"
+                    color: "white"
+                    font.pixelSize: 18
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                Row {
+                    spacing: 20
+                    anchors.horizontalCenter: parent.horizontalCenter
+
+                    // BOTÃO "SIM"
+                    Rectangle {
+                        property bool selected: false
+                        id: btnYes
+                        width: 100
+                        height: 40
+                        radius: 5
+                        color: "#66bb6a"
+                        border.width: selected ? 3 : 0
+                        border.color: "yellow"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "SIM"
+                            color: "white"
+                            font.bold: true
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                if (!overrideActive) {
+                                    _activeVehicle.overwriteRC()
+                                    //confirmOverridePopup.wantsToEnable = false
+                                    overrideActive = true
+                                } else {
+                                    _activeVehicle.stopRCOverride()
+                                    overrideActive = false
+                                }
+                                confirmOverridePopup.close()
+                            }
+                            hoverEnabled: true
+                            onEntered: btnYes.selected = true
+                            onExited: btnYes.selected = false
+                        }
+                    }
+
+                    // BOTÃO "NÃO"
+                    Rectangle {
+                        id: btnNo
+                        property bool selected: false
+                        width: 100
+                        height: 40
+                        radius: 5
+                        color: "#e53935"
+                        border.width: selected ? 3 : 0
+                        border.color: "yellow"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "NÃO"
+                            color: "white"
+                            font.bold: true
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: {
+                                confirmOverridePopup.close()
+                            }
+                            onEntered: btnNo.selected = true
+                            onExited: btnNo.selected = false
+                        }
+                    }
+
+                }
+            }
+        }
 
         /*FlyViewCustomLayer {
             id: customOverlay
