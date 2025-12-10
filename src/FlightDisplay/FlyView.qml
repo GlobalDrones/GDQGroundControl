@@ -1961,6 +1961,10 @@ Item {
     property color hudPalePurple: "#ff00ff"
     property bool overrideActive: false
 
+    property real start_roll_angle: Math.PI * 1.138 //1.08-> 195°
+    property real end_roll_angle: Math.PI * 1.805 //1.92 -> 315°
+    property real diff_roll_angle: Math.abs(end_roll_angle - start_roll_angle)
+
 
     /* valores teóricos do Guilherme:
         V_estol = 22m/s
@@ -2012,6 +2016,11 @@ Item {
     function _calcCenterViewPort() {
         var newToolInset = Qt.rect(0, 0, width, height)
         toolstrip.adjustToolInset(newToolInset)
+    }
+
+    function degToArcRad(deg) {
+        var t = (deg + 60) / 120          // normaliza -60..60 → 0..1
+        return start_roll_angle+ t * diff_roll_angle
     }
 
     function dropMessageIndicatorTool() {
@@ -3036,9 +3045,11 @@ Item {
                                     _activeVehicle.overwriteRC()
                                     //confirmOverridePopup.wantsToEnable = false
                                     overrideActive = true
+                                    confirmOverridePopup.close()
                                 } else {
                                     _activeVehicle.stopRCOverride()
                                     overrideActive = false
+                                    confirmOverridePopup.close()
                                 }
                                 confirmOverridePopup.close()
                             }
@@ -3273,12 +3284,9 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
                 anchors.topMargin: 0
-                width: parent.width
+                width: parent.width*1.5
                 height: parent.width / 2
-                function degToArcRad(deg) {
-                    var t = (deg + 60) / 120          // normaliza -60..60 → 0..1
-                    return Math.PI * 1.08 + t * (Math.PI * (1.92 - 1.08))
-                }
+                rotation: 5
                 // ---------------------------------------------------
                 // Conversão de graus de -60 a +60 para ângulo do arco
                 // ---------------------------------------------------
@@ -3307,10 +3315,6 @@ Item {
                         spread: 0.8
                     }
 
-                    function degToArcRad(deg) {
-                        var t = (deg + 60) / 120          // normaliza -60..60 → 0..1
-                        return Math.PI * 1.08 + t * (Math.PI * (1.92 - 1.08))
-                    }
 
                     onPaint: {
                         var ctx = getContext("2d")
@@ -3328,7 +3332,7 @@ Item {
                         ctx.lineWidth = 5
                         ctx.beginPath()
                         ctx.arc(centerX, centerY, radius - 10,
-                                Math.PI * 1.08, Math.PI * 1.92, false)
+                                start_roll_angle, end_roll_angle, false)
                         ctx.stroke()
 
                         // -----------------------------------------
@@ -3363,10 +3367,6 @@ Item {
 
                     // Atualização do roll vindo do veículo
                     Timer {
-                        function degToArcRad(deg) {
-                            var t = (deg + 60) / 120          // normaliza -60..60 → 0..1
-                            return Math.PI * 1.08 + t * (Math.PI * (1.92 - 1.08))
-                        }
                         interval: 33; running: true; repeat: true
                         onTriggered: {
                             parent.requestPaint()
@@ -3383,7 +3383,7 @@ Item {
                 // --------------------------
                 QGCColoredImage {
                     id: pointerRoll
-                    width: dialRoll.width / 10
+                    width: dialRoll.width / 15
                     height: dialRoll.height / 2
                     anchors.horizontalCenter: rollArc.horizontalCenter
                     anchors.verticalCenter: rollArc.verticalCenter

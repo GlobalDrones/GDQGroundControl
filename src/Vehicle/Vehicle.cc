@@ -223,7 +223,7 @@ Vehicle::Vehicle(LinkInterface*             link,
         _settingsManager->videoSettings()->lowLatencyMode()->setRawValue(true);
     }
 
-    //-- Airspace Management
+//-- Airspace Management
 #if defined(QGC_AIRMAP_ENABLED)
     AirspaceManager* airspaceManager = _toolbox->airspaceManager();
     if (airspaceManager) {
@@ -495,10 +495,10 @@ void Vehicle::overwriteRC(){ //override.
         qint64 current_time = QDateTime::currentMSecsSinceEpoch();
         qint64 elapsed_time = current_time - last_sent_time;
         // Intervalo de segurança (Keep-Alive) em ms. Deve ser menor que o tempo de failsafe do AP.
-       // const int SAFETY_SEND_INTERVAL_MS = 100; // 10 Hz (Envio garantido)
+        // const int SAFETY_SEND_INTERVAL_MS = 100; // 10 Hz (Envio garantido)
 
         // Taxa de loop (para não saturar a CPU). Deve ser o alvo de envio (50 Hz = 20 ms).
-        const int MIN_LOOP_MS = 20;
+        const int MIN_LOOP_MS = 10;
         const int MIN_STEP_VALUE = 50;
         // =================================================================
         bool needs_send = true;
@@ -581,46 +581,46 @@ void Vehicle::overwriteRC(){ //override.
 
                 // 3b. Verificar se os valores atuais (channels_override) mudaram em relação ao último envio (previous_channels)
                 bool values_changed = false;
-                    if (
-                        // Canal 1
-                        ABS_DIFF(channels_override.chan1_raw, previous_channels.chan1_raw) >= MIN_STEP_VALUE ||
-                        // Canal 2
-                        ABS_DIFF(channels_override.chan2_raw, previous_channels.chan2_raw) >= MIN_STEP_VALUE ||
-                        // Canal 3
-                        ABS_DIFF(channels_override.chan3_raw, previous_channels.chan3_raw) >= MIN_STEP_VALUE ||
-                        // Canal 4
-                        ABS_DIFF(channels_override.chan4_raw, previous_channels.chan4_raw) >= MIN_STEP_VALUE ||
-                        // Canal 5
-                        ABS_DIFF(channels_override.chan5_raw, previous_channels.chan5_raw) >= MIN_STEP_VALUE ||
-                        // Canal 6
-                        ABS_DIFF(channels_override.chan6_raw, previous_channels.chan6_raw) >= MIN_STEP_VALUE ||
-                        // Canal 7
-                        ABS_DIFF(channels_override.chan7_raw, previous_channels.chan7_raw) >= MIN_STEP_VALUE ||
-                        // Canal 8
-                        ABS_DIFF(channels_override.chan8_raw, previous_channels.chan8_raw) >= MIN_STEP_VALUE ||
-                        // Canal 9
-                        ABS_DIFF(channels_override.chan9_raw, previous_channels.chan9_raw) >= MIN_STEP_VALUE ||
-                        // Canal 10
-                        ABS_DIFF(channels_override.chan10_raw, previous_channels.chan10_raw) >= MIN_STEP_VALUE ||
-                        // Canal 11
-                        ABS_DIFF(channels_override.chan11_raw, previous_channels.chan11_raw) >= MIN_STEP_VALUE ||
-                        // Canal 12
-                        ABS_DIFF(channels_override.chan12_raw, previous_channels.chan12_raw) >= MIN_STEP_VALUE ||
-                        // Canal 13
-                        ABS_DIFF(channels_override.chan13_raw, previous_channels.chan13_raw) >= MIN_STEP_VALUE ||
-                        // Canal 14
-                        ABS_DIFF(channels_override.chan14_raw, previous_channels.chan14_raw) >= MIN_STEP_VALUE ||
-                        // Canal 15
-                        ABS_DIFF(channels_override.chan15_raw, previous_channels.chan15_raw) >= MIN_STEP_VALUE ||
-                        // Canal 16
-                        ABS_DIFF(channels_override.chan16_raw, previous_channels.chan16_raw) >= MIN_STEP_VALUE
-                        ) {
+                if (
+                    // Canal 1
+                    ABS_DIFF(channels_override.chan1_raw, previous_channels.chan1_raw) >= MIN_STEP_VALUE ||
+                    // Canal 2
+                    ABS_DIFF(channels_override.chan2_raw, previous_channels.chan2_raw) >= MIN_STEP_VALUE ||
+                    // Canal 3
+                    ABS_DIFF(channels_override.chan3_raw, previous_channels.chan3_raw) >= MIN_STEP_VALUE ||
+                    // Canal 4
+                    ABS_DIFF(channels_override.chan4_raw, previous_channels.chan4_raw) >= MIN_STEP_VALUE ||
+                    // Canal 5
+                    ABS_DIFF(channels_override.chan5_raw, previous_channels.chan5_raw) >= MIN_STEP_VALUE ||
+                    // Canal 6
+                    ABS_DIFF(channels_override.chan6_raw, previous_channels.chan6_raw) >= MIN_STEP_VALUE ||
+                    // Canal 7
+                    ABS_DIFF(channels_override.chan7_raw, previous_channels.chan7_raw) >= MIN_STEP_VALUE ||
+                    // Canal 8
+                    ABS_DIFF(channels_override.chan8_raw, previous_channels.chan8_raw) >= MIN_STEP_VALUE ||
+                    // Canal 9
+                    ABS_DIFF(channels_override.chan9_raw, previous_channels.chan9_raw) >= MIN_STEP_VALUE ||
+                    // Canal 10
+                    ABS_DIFF(channels_override.chan10_raw, previous_channels.chan10_raw) >= MIN_STEP_VALUE ||
+                    // Canal 11
+                    ABS_DIFF(channels_override.chan11_raw, previous_channels.chan11_raw) >= MIN_STEP_VALUE ||
+                    // Canal 12
+                    ABS_DIFF(channels_override.chan12_raw, previous_channels.chan12_raw) >= MIN_STEP_VALUE ||
+                    // Canal 13
+                    ABS_DIFF(channels_override.chan13_raw, previous_channels.chan13_raw) >= MIN_STEP_VALUE ||
+                    // Canal 14
+                    ABS_DIFF(channels_override.chan14_raw, previous_channels.chan14_raw) >= MIN_STEP_VALUE ||
+                    // Canal 15
+                    ABS_DIFF(channels_override.chan15_raw, previous_channels.chan15_raw) >= MIN_STEP_VALUE ||
+                    // Canal 16
+                    ABS_DIFF(channels_override.chan16_raw, previous_channels.chan16_raw) >= MIN_STEP_VALUE
+                    ) {
                     values_changed = true;
                 }
 
                 current_time = QDateTime::currentMSecsSinceEpoch();
                 elapsed_time = current_time - last_sent_time;
-               // bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
+                // bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
                 needs_send = values_changed || (elapsed_time >= MIN_LOOP_MS);
                 //if (values_changed || safety_interval_passed) { //Aqui é o IF original caso seja necessário um envio periódico mesmo que redundante
                 if (needs_send) { //esse aqui śo leva em conta o envio de mudanças, sem redundancias
@@ -814,7 +814,7 @@ void Vehicle::_commonInit()
         _settingsManager->videoSettings()->lowLatencyMode()->setRawValue(true);
     }
 
-    //-- Airspace Management
+//-- Airspace Management
 #if defined(QGC_AIRMAP_ENABLED)
     AirspaceManager* airspaceManager = _toolbox->airspaceManager();
     if (airspaceManager) {
@@ -1159,12 +1159,12 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             qWarning() << "Invalid count for SERIAL_CONTROL, discarding." << ser.count;
         } else {
             emit mavlinkSerialControl(ser.device, ser.flags, ser.timeout, ser.baudrate,
-                    QByteArray(reinterpret_cast<const char*>(ser.data), ser.count));
+                                      QByteArray(reinterpret_cast<const char*>(ser.data), ser.count));
         }
     }
-        break;
+    break;
 
-        // Following are ArduPilot dialect messages
+// Following are ArduPilot dialect messages
 #if !defined(NO_ARDUPILOT_DIALECT)
     case MAVLINK_MSG_ID_CAMERA_FEEDBACK:
         _handleCameraFeedback(message);
@@ -1567,8 +1567,8 @@ void Vehicle::_handleHighLatency(mavlink_message_t& message)
         const double altitude;
     } coordinate {
         highLatency.latitude  / (double)1E7,
-                highLatency.longitude  / (double)1E7,
-                static_cast<double>(highLatency.altitude_amsl)
+        highLatency.longitude  / (double)1E7,
+        static_cast<double>(highLatency.altitude_amsl)
     };
 
     _coordinate.setLatitude(coordinate.latitude);
@@ -1625,13 +1625,13 @@ void Vehicle::_handleHighLatency2(mavlink_message_t& message)
     };
 
     static const failure2Sensor_s rgFailure2Sensor[] = {
-        { HL_FAILURE_FLAG_GPS,                      MAV_SYS_STATUS_SENSOR_GPS },
-        { HL_FAILURE_FLAG_DIFFERENTIAL_PRESSURE,    MAV_SYS_STATUS_SENSOR_DIFFERENTIAL_PRESSURE },
-        { HL_FAILURE_FLAG_ABSOLUTE_PRESSURE,        MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE },
-        { HL_FAILURE_FLAG_3D_ACCEL,                 MAV_SYS_STATUS_SENSOR_3D_ACCEL },
-        { HL_FAILURE_FLAG_3D_GYRO,                  MAV_SYS_STATUS_SENSOR_3D_GYRO },
-        { HL_FAILURE_FLAG_3D_MAG,                   MAV_SYS_STATUS_SENSOR_3D_MAG },
-    };
+                                                        { HL_FAILURE_FLAG_GPS,                      MAV_SYS_STATUS_SENSOR_GPS },
+                                                        { HL_FAILURE_FLAG_DIFFERENTIAL_PRESSURE,    MAV_SYS_STATUS_SENSOR_DIFFERENTIAL_PRESSURE },
+                                                        { HL_FAILURE_FLAG_ABSOLUTE_PRESSURE,        MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE },
+                                                        { HL_FAILURE_FLAG_3D_ACCEL,                 MAV_SYS_STATUS_SENSOR_3D_ACCEL },
+                                                        { HL_FAILURE_FLAG_3D_GYRO,                  MAV_SYS_STATUS_SENSOR_3D_GYRO },
+                                                        { HL_FAILURE_FLAG_3D_MAG,                   MAV_SYS_STATUS_SENSOR_3D_MAG },
+                                                        };
 
     // Map from MAV_FAILURE bits to standard SYS_STATUS message handling
     uint32_t newOnboardControlSensorsEnabled = 0;
@@ -1709,13 +1709,13 @@ QString Vehicle::vehicleUIDStr()
     uint8_t* pUid = (uint8_t*)(void*)&_uid;
     uid.asprintf("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
                  pUid[0] & 0xff,
-            pUid[1] & 0xff,
-            pUid[2] & 0xff,
-            pUid[3] & 0xff,
-            pUid[4] & 0xff,
-            pUid[5] & 0xff,
-            pUid[6] & 0xff,
-            pUid[7] & 0xff);
+                 pUid[1] & 0xff,
+                 pUid[2] & 0xff,
+                 pUid[3] & 0xff,
+                 pUid[4] & 0xff,
+                 pUid[5] & 0xff,
+                 pUid[6] & 0xff,
+                 pUid[7] & 0xff);
     return uid;
 }
 
@@ -1755,7 +1755,7 @@ bool Vehicle::_apmArmingNotRequired()
 {
     QString armingRequireParam("ARMING_REQUIRE");
     return _parameterManager->parameterExists(FactSystem::defaultComponentId, armingRequireParam) &&
-            _parameterManager->getParameter(FactSystem::defaultComponentId, armingRequireParam)->rawValue().toInt() == 0;
+           _parameterManager->getParameter(FactSystem::defaultComponentId, armingRequireParam)->rawValue().toInt() == 0;
 }
 
 void Vehicle::_handleSysStatus(mavlink_message_t& message)
@@ -1886,8 +1886,8 @@ void Vehicle::_handleHomePosition(mavlink_message_t& message)
     mavlink_msg_home_position_decode(&message, &homePos);
 
     QGeoCoordinate newHomePosition (homePos.latitude / 10000000.0,
-                                    homePos.longitude / 10000000.0,
-                                    homePos.altitude / 1000.0);
+                                   homePos.longitude / 10000000.0,
+                                   homePos.altitude / 1000.0);
     _setHomePosition(newHomePosition);
 }
 
@@ -2091,10 +2091,10 @@ EventHandler& Vehicle::_eventHandler(uint8_t compid)
             if (sharedLink) {
                 mavlink_message_t message;
                 mavlink_msg_request_event_encode_chan(_mavlink->getSystemId(),
-                        _mavlink->getComponentId(),
-                        sharedLink->mavlinkChannel(),
-                        &message,
-                        &msg);
+                                                      _mavlink->getComponentId(),
+                                                      sharedLink->mavlinkChannel(),
+                                                      &message,
+                                                      &msg);
                 sendMessageOnLinkThreadSafe(sharedLink.get(), message);
             }
         };
@@ -2102,9 +2102,9 @@ EventHandler& Vehicle::_eventHandler(uint8_t compid)
         QString profile = "dev"; // TODO: should be configurable
 
         QSharedPointer<EventHandler> eventHandler{new EventHandler(this, profile,
-                std::bind(&Vehicle::_handleEvent, this, compid, std::placeholders::_1),
-                sendRequestEventMessageCB,
-                _mavlink->getSystemId(), _mavlink->getComponentId(), _id, compid)};
+                                                                   std::bind(&Vehicle::_handleEvent, this, compid, std::placeholders::_1),
+                                                                   sendRequestEventMessageCB,
+                                                                   _mavlink->getSystemId(), _mavlink->getComponentId(), _id, compid)};
         eventData = _events.insert(compid, eventHandler);
     }
     return *eventData->data();
@@ -2823,13 +2823,13 @@ void Vehicle::virtualTabletJoystickValue(double roll, double pitch, double yaw, 
 {
     // The following if statement prevents the virtualTabletJoystick from sending values if the standard joystick is enabled
     if (!_joystickEnabled) {
-       // qWarning()<<"TESTE VIRTUALjOYSTICK "<<roll<<pitch<<yaw<<thrust;
+        // qWarning()<<"TESTE VIRTUALjOYSTICK "<<roll<<pitch<<yaw<<thrust;
         sendJoystickDataThreadSafe(
-                    static_cast<float>(roll),
-                    static_cast<float>(pitch),
-                    static_cast<float>(yaw),
-                    static_cast<float>(thrust),
-                    0);
+            static_cast<float>(roll),
+            static_cast<float>(pitch),
+            static_cast<float>(yaw),
+            static_cast<float>(thrust),
+            0);
     }
 }
 
@@ -2900,35 +2900,35 @@ bool Vehicle::supportsTerrainFrame() const
 
 QString Vehicle::vehicleTypeName() const {
     static QMap<int, QString> typeNames = {
-        { MAV_TYPE_GENERIC,         tr("Generic micro air vehicle" )},
-        { MAV_TYPE_FIXED_WING,      tr("Fixed wing aircraft")},
-        { MAV_TYPE_QUADROTOR,       tr("Quadrotor")},
-        { MAV_TYPE_COAXIAL,         tr("Coaxial helicopter")},
-        { MAV_TYPE_HELICOPTER,      tr("Normal helicopter with tail rotor.")},
-        { MAV_TYPE_ANTENNA_TRACKER, tr("Ground installation")},
-        { MAV_TYPE_GCS,             tr("Operator control unit / ground control station")},
-        { MAV_TYPE_AIRSHIP,         tr("Airship, controlled")},
-        { MAV_TYPE_FREE_BALLOON,    tr("Free balloon, uncontrolled")},
-        { MAV_TYPE_ROCKET,          tr("Rocket")},
-        { MAV_TYPE_GROUND_ROVER,    tr("Ground rover")},
-        { MAV_TYPE_SURFACE_BOAT,    tr("Surface vessel, boat, ship")},
-        { MAV_TYPE_SUBMARINE,       tr("Submarine")},
-        { MAV_TYPE_HEXAROTOR,       tr("Hexarotor")},
-        { MAV_TYPE_OCTOROTOR,       tr("Octorotor")},
-        { MAV_TYPE_TRICOPTER,       tr("Octorotor")},
-        { MAV_TYPE_FLAPPING_WING,   tr("Flapping wing")},
-        { MAV_TYPE_KITE,            tr("Flapping wing")},
-        { MAV_TYPE_ONBOARD_CONTROLLER, tr("Onboard companion controller")},
-        { MAV_TYPE_VTOL_DUOROTOR,   tr("Two-rotor VTOL using control surfaces in vertical operation in addition. Tailsitter")},
-        { MAV_TYPE_VTOL_QUADROTOR,  tr("Quad-rotor VTOL using a V-shaped quad config in vertical operation. Tailsitter")},
-        { MAV_TYPE_VTOL_TILTROTOR,  tr("Tiltrotor VTOL")},
-        { MAV_TYPE_VTOL_RESERVED2,  tr("VTOL reserved 2")},
-        { MAV_TYPE_VTOL_RESERVED3,  tr("VTOL reserved 3")},
-        { MAV_TYPE_VTOL_RESERVED4,  tr("VTOL reserved 4")},
-        { MAV_TYPE_VTOL_RESERVED5,  tr("VTOL reserved 5")},
-        { MAV_TYPE_GIMBAL,          tr("Onboard gimbal")},
-        { MAV_TYPE_ADSB,            tr("Onboard ADSB peripheral")},
-    };
+                                           { MAV_TYPE_GENERIC,         tr("Generic micro air vehicle" )},
+                                           { MAV_TYPE_FIXED_WING,      tr("Fixed wing aircraft")},
+                                           { MAV_TYPE_QUADROTOR,       tr("Quadrotor")},
+                                           { MAV_TYPE_COAXIAL,         tr("Coaxial helicopter")},
+                                           { MAV_TYPE_HELICOPTER,      tr("Normal helicopter with tail rotor.")},
+                                           { MAV_TYPE_ANTENNA_TRACKER, tr("Ground installation")},
+                                           { MAV_TYPE_GCS,             tr("Operator control unit / ground control station")},
+                                           { MAV_TYPE_AIRSHIP,         tr("Airship, controlled")},
+                                           { MAV_TYPE_FREE_BALLOON,    tr("Free balloon, uncontrolled")},
+                                           { MAV_TYPE_ROCKET,          tr("Rocket")},
+                                           { MAV_TYPE_GROUND_ROVER,    tr("Ground rover")},
+                                           { MAV_TYPE_SURFACE_BOAT,    tr("Surface vessel, boat, ship")},
+                                           { MAV_TYPE_SUBMARINE,       tr("Submarine")},
+                                           { MAV_TYPE_HEXAROTOR,       tr("Hexarotor")},
+                                           { MAV_TYPE_OCTOROTOR,       tr("Octorotor")},
+                                           { MAV_TYPE_TRICOPTER,       tr("Octorotor")},
+                                           { MAV_TYPE_FLAPPING_WING,   tr("Flapping wing")},
+                                           { MAV_TYPE_KITE,            tr("Flapping wing")},
+                                           { MAV_TYPE_ONBOARD_CONTROLLER, tr("Onboard companion controller")},
+                                           { MAV_TYPE_VTOL_DUOROTOR,   tr("Two-rotor VTOL using control surfaces in vertical operation in addition. Tailsitter")},
+                                           { MAV_TYPE_VTOL_QUADROTOR,  tr("Quad-rotor VTOL using a V-shaped quad config in vertical operation. Tailsitter")},
+                                           { MAV_TYPE_VTOL_TILTROTOR,  tr("Tiltrotor VTOL")},
+                                           { MAV_TYPE_VTOL_RESERVED2,  tr("VTOL reserved 2")},
+                                           { MAV_TYPE_VTOL_RESERVED3,  tr("VTOL reserved 3")},
+                                           { MAV_TYPE_VTOL_RESERVED4,  tr("VTOL reserved 4")},
+                                           { MAV_TYPE_VTOL_RESERVED5,  tr("VTOL reserved 5")},
+                                           { MAV_TYPE_GIMBAL,          tr("Onboard gimbal")},
+                                           { MAV_TYPE_ADSB,            tr("Onboard ADSB peripheral")},
+                                           };
     return typeNames[_vehicleType];
 }
 
@@ -3075,27 +3075,27 @@ void Vehicle::guidedModeOrbit(const QGeoCoordinate& centerCoord, double radius, 
     }
     if (capabilityBits() & MAV_PROTOCOL_CAPABILITY_COMMAND_INT) {
         sendMavCommandInt(
-                    defaultComponentId(),
-                    MAV_CMD_DO_ORBIT,
-                    MAV_FRAME_GLOBAL,
-                    true,                           // show error if fails
-                    static_cast<float>(radius),
-                    static_cast<float>(qQNaN()),    // Use default velocity
-                    0,                              // Vehicle points to center
-                    static_cast<float>(qQNaN()),    // reserved
-                    centerCoord.latitude(), centerCoord.longitude(), static_cast<float>(amslAltitude));
+            defaultComponentId(),
+            MAV_CMD_DO_ORBIT,
+            MAV_FRAME_GLOBAL,
+            true,                           // show error if fails
+            static_cast<float>(radius),
+            static_cast<float>(qQNaN()),    // Use default velocity
+            0,                              // Vehicle points to center
+            static_cast<float>(qQNaN()),    // reserved
+            centerCoord.latitude(), centerCoord.longitude(), static_cast<float>(amslAltitude));
     } else {
         sendMavCommand(
-                    defaultComponentId(),
-                    MAV_CMD_DO_ORBIT,
-                    true,                           // show error if fails
-                    static_cast<float>(radius),
-                    static_cast<float>(qQNaN()),    // Use default velocity
-                    0,                              // Vehicle points to center
-                    static_cast<float>(qQNaN()),    // reserved
-                    static_cast<float>(centerCoord.latitude()),
-                    static_cast<float>(centerCoord.longitude()),
-                    static_cast<float>(amslAltitude));
+            defaultComponentId(),
+            MAV_CMD_DO_ORBIT,
+            true,                           // show error if fails
+            static_cast<float>(radius),
+            static_cast<float>(qQNaN()),    // Use default velocity
+            0,                              // Vehicle points to center
+            static_cast<float>(qQNaN()),    // reserved
+            static_cast<float>(centerCoord.latitude()),
+            static_cast<float>(centerCoord.longitude()),
+            static_cast<float>(amslAltitude));
     }
 }
 
@@ -3107,29 +3107,29 @@ void Vehicle::guidedModeROI(const QGeoCoordinate& centerCoord)
     }
     if (capabilityBits() & MAV_PROTOCOL_CAPABILITY_COMMAND_INT) {
         sendMavCommandInt(
-                    defaultComponentId(),
-                    MAV_CMD_DO_SET_ROI_LOCATION,
-                    MAV_FRAME_GLOBAL,
-                    true,                           // show error if fails
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    centerCoord.latitude(),
-                    centerCoord.longitude(),
-                    static_cast<float>(centerCoord.altitude()));
+            defaultComponentId(),
+            MAV_CMD_DO_SET_ROI_LOCATION,
+            MAV_FRAME_GLOBAL,
+            true,                           // show error if fails
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            centerCoord.latitude(),
+            centerCoord.longitude(),
+            static_cast<float>(centerCoord.altitude()));
     } else {
         sendMavCommand(
-                    defaultComponentId(),
-                    MAV_CMD_DO_SET_ROI_LOCATION,
-                    true,                           // show error if fails
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(centerCoord.latitude()),
-                    static_cast<float>(centerCoord.longitude()),
-                    static_cast<float>(centerCoord.altitude()));
+            defaultComponentId(),
+            MAV_CMD_DO_SET_ROI_LOCATION,
+            true,                           // show error if fails
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(centerCoord.latitude()),
+            static_cast<float>(centerCoord.longitude()),
+            static_cast<float>(centerCoord.altitude()));
     }
 }
 
@@ -3141,29 +3141,29 @@ void Vehicle::stopGuidedModeROI()
     }
     if (capabilityBits() & MAV_PROTOCOL_CAPABILITY_COMMAND_INT) {
         sendMavCommandInt(
-                    defaultComponentId(),
-                    MAV_CMD_DO_SET_ROI_NONE,
-                    MAV_FRAME_GLOBAL,
-                    true,                           // show error if fails
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<double>(qQNaN()),   // Empty
-                    static_cast<double>(qQNaN()),   // Empty
-                    static_cast<float>(qQNaN()));   // Empty
+            defaultComponentId(),
+            MAV_CMD_DO_SET_ROI_NONE,
+            MAV_FRAME_GLOBAL,
+            true,                           // show error if fails
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<double>(qQNaN()),   // Empty
+            static_cast<double>(qQNaN()),   // Empty
+            static_cast<float>(qQNaN()));   // Empty
     } else {
         sendMavCommand(
-                    defaultComponentId(),
-                    MAV_CMD_DO_SET_ROI_NONE,
-                    true,                           // show error if fails
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()),    // Empty
-                    static_cast<float>(qQNaN()));   // Empty
+            defaultComponentId(),
+            MAV_CMD_DO_SET_ROI_NONE,
+            true,                           // show error if fails
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()),    // Empty
+            static_cast<float>(qQNaN()));   // Empty
     }
 }
 
@@ -3179,10 +3179,10 @@ void Vehicle::pauseVehicle()
 void Vehicle::abortLanding(double climbOutAltitude)
 {
     sendMavCommand(
-                defaultComponentId(),
-                MAV_CMD_DO_GO_AROUND,
-                true,        // show error if fails
-                static_cast<float>(climbOutAltitude));
+        defaultComponentId(),
+        MAV_CMD_DO_GO_AROUND,
+        true,        // show error if fails
+        static_cast<float>(climbOutAltitude));
 }
 
 bool Vehicle::guidedMode() const
@@ -3198,11 +3198,11 @@ void Vehicle::setGuidedMode(bool guidedMode)
 void Vehicle::emergencyStop()
 {
     sendMavCommand(
-                _defaultComponentId,
-                MAV_CMD_COMPONENT_ARM_DISARM,
-                true,        // show error if fails
-                0.0f,
-                21196.0f);  // Magic number for emergency stop
+        _defaultComponentId,
+        MAV_CMD_COMPONENT_ARM_DISARM,
+        true,        // show error if fails
+        0.0f,
+        21196.0f);  // Magic number for emergency stop
 }
 
 void Vehicle::setCurrentMissionSequence(int seq)
@@ -3219,13 +3219,13 @@ void Vehicle::setCurrentMissionSequence(int seq)
         seq--;
     }
     mavlink_msg_mission_set_current_pack_chan(
-                static_cast<uint8_t>(_mavlink->getSystemId()),
-                static_cast<uint8_t>(_mavlink->getComponentId()),
-                sharedLink->mavlinkChannel(),
-                &msg,
-                static_cast<uint8_t>(id()),
-                _compID,
-                static_cast<uint16_t>(seq));
+        static_cast<uint8_t>(_mavlink->getSystemId()),
+        static_cast<uint8_t>(_mavlink->getComponentId()),
+        sharedLink->mavlinkChannel(),
+        &msg,
+        static_cast<uint8_t>(id()),
+        _compID,
+        static_cast<uint16_t>(seq));
     sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
 }
 
@@ -3244,15 +3244,15 @@ void Vehicle::sendMavCommand(int compId, MAV_CMD command, bool showError, float 
 void Vehicle::sendCommand(int compId, int command, bool showError, double param1, double param2, double param3, double param4, double param5, double param6, double param7)
 {
     sendMavCommand(
-                compId, static_cast<MAV_CMD>(command),
-                showError,
-                static_cast<float>(param1),
-                static_cast<float>(param2),
-                static_cast<float>(param3),
-                static_cast<float>(param4),
-                static_cast<float>(param5),
-                static_cast<float>(param6),
-                static_cast<float>(param7));
+        compId, static_cast<MAV_CMD>(command),
+        showError,
+        static_cast<float>(param1),
+        static_cast<float>(param2),
+        static_cast<float>(param3),
+        static_cast<float>(param4),
+        static_cast<float>(param5),
+        static_cast<float>(param6),
+        static_cast<float>(param7));
 }
 
 void Vehicle::sendMavCommandWithHandler(MavCmdResultHandler resultHandler, void *resultHandlerData, int compId, MAV_CMD command, float param1, float param2, float param3, float param4, float param5, float param6, float param7)
@@ -3932,11 +3932,11 @@ void Vehicle::_ackMavlinkLogData(uint16_t sequence)
     ack.target_component = _defaultComponentId;
     ack.target_system = id();
     mavlink_msg_logging_ack_encode_chan(
-                _mavlink->getSystemId(),
-                _mavlink->getComponentId(),
-                sharedLink->mavlinkChannel(),
-                &msg,
-                &ack);
+        _mavlink->getSystemId(),
+        _mavlink->getComponentId(),
+        sharedLink->mavlinkChannel(),
+        &msg,
+        &ack);
     sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
 }
 
@@ -4139,8 +4139,8 @@ void Vehicle::_updateHeadingToNextWP()
     QList<MissionItem*> llist = _missionManager->missionItems();
 
     if(llist.size()>currentIndex && currentIndex!=-1
-            && llist[currentIndex]->coordinate().longitude()!=0.0
-            && coordinate().distanceTo(llist[currentIndex]->coordinate())>5.0 ){
+        && llist[currentIndex]->coordinate().longitude()!=0.0
+        && coordinate().distanceTo(llist[currentIndex]->coordinate())>5.0 ){
 
         _headingToNextWPFact.setRawValue(coordinate().azimuthTo(llist[currentIndex]->coordinate()));
     }
@@ -4312,7 +4312,7 @@ void Vehicle::_writeCsvLine()
 {
     // Only save the logs after the the vehicle gets armed, unless "Save logs even if vehicle was not armed" is checked
     if(!_csvLogFile.isOpen() &&
-            (_armed || _toolbox->settingsManager()->appSettings()->telemetrySaveNotArmed()->rawValue().toBool())){
+        (_armed || _toolbox->settingsManager()->appSettings()->telemetrySaveNotArmed()->rawValue().toBool())){
         _initializeCsv();
     }
 
@@ -4355,16 +4355,16 @@ void Vehicle::gimbalControlValue(double pitch, double yaw)
 {
     //qDebug() << "Gimbal:" << pitch << yaw;
     sendMavCommand(
-                _defaultComponentId,
-                MAV_CMD_DO_MOUNT_CONTROL,
-                false,                               // show errors
-                static_cast<float>(pitch),           // Pitch 0 - 90
-                0,                                   // Roll (not used)
-                static_cast<float>(yaw),             // Yaw -180 - 180
-                0,                                   // Altitude (not used)
-                0,                                   // Latitude (not used)
-                0,                                   // Longitude (not used)
-                MAV_MOUNT_MODE_MAVLINK_TARGETING);   // MAVLink Roll,Pitch,Yaw
+        _defaultComponentId,
+        MAV_CMD_DO_MOUNT_CONTROL,
+        false,                               // show errors
+        static_cast<float>(pitch),           // Pitch 0 - 90
+        0,                                   // Roll (not used)
+        static_cast<float>(yaw),             // Yaw -180 - 180
+        0,                                   // Altitude (not used)
+        0,                                   // Latitude (not used)
+        0,                                   // Longitude (not used)
+        MAV_MOUNT_MODE_MAVLINK_TARGETING);   // MAVLink Roll,Pitch,Yaw
 }
 
 void Vehicle::gimbalPitchStep(int direction)
@@ -4508,17 +4508,17 @@ void Vehicle::sendJoystickDataThreadSafe(float roll, float pitch, float yaw, flo
     float newThrustCommand =    thrust * axesScaling;
 
     mavlink_msg_manual_control_pack_chan(
-                static_cast<uint8_t>(_mavlink->getSystemId()),
-                static_cast<uint8_t>(_mavlink->getComponentId()),
-                sharedLink->mavlinkChannel(),
-                &message,
-                static_cast<uint8_t>(_id),
-                static_cast<int16_t>(newPitchCommand),
-                static_cast<int16_t>(newRollCommand),
-                static_cast<int16_t>(newThrustCommand),
-                static_cast<int16_t>(newYawCommand),
-                buttons,
-                0, 0, 0, 0);
+        static_cast<uint8_t>(_mavlink->getSystemId()),
+        static_cast<uint8_t>(_mavlink->getComponentId()),
+        sharedLink->mavlinkChannel(),
+        &message,
+        static_cast<uint8_t>(_id),
+        static_cast<int16_t>(newPitchCommand),
+        static_cast<int16_t>(newRollCommand),
+        static_cast<int16_t>(newThrustCommand),
+        static_cast<int16_t>(newYawCommand),
+        buttons,
+        0, 0, 0, 0);
     sendMessageOnLinkThreadSafe(sharedLink.get(), message);
 }
 
