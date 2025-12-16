@@ -112,6 +112,18 @@ AnalyzePage {
                     }*/
                     if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){
                         curSystem.selected = i;
+                        var temperature_name = controller.activeSystem.messages.get(i).fields.get(1).value
+                        var temperature_value = controller.activeSystem.messages.get(i).fields.get(2).value
+                        console.log(temperature_name)
+                        if(temperature_name === "Temp1"){
+                            console.log("MAVLINKINSPECTOR TEMP1 ",temperature_value)
+                        }
+                        if(temperature_name === "Temp2"){
+                            console.log("MAVLINKINSPECTOR TEMP2 ",temperature_value)
+                        }
+                        if(temperature_name === "Temp3"){
+                            console.log("MAVLINKINSPECTOR TEMP3 ",temperature_value)
+                        }
                         _TEMP_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
 
 

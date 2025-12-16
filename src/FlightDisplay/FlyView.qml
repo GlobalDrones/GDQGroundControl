@@ -2176,6 +2176,23 @@ Item {
 
         onTriggered:{
 
+            console.log("Listing all ESC Status Fact Names:")
+
+                        // Iterate over all properties of the escStatus FactGroup
+                        for (var prop in _activeVehicle.escStatus) {
+                            // We check if the property is a "Fact" object
+                            // FactGroups often have other QObject properties, so we filter them
+                            var fact = _activeVehicle.escStatus[prop]
+
+                            // Check if it's a valid object and looks like a Fact (has a name/value)
+                            if (fact && fact.hasOwnProperty("name") && fact.hasOwnProperty("value")) {
+                                console.log("Fact Name found: " + prop + " (Display Name: " + fact.name + ")")
+                            }
+                        }
+                        console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmFirst"].name, _activeVehicle.escStatus["rpmFirst"].value)
+                        console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmSecond"].name, _activeVehicle.escStatus["rpmSecond"].value)
+                        console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmThird"].name, _activeVehicle.escStatus["rpmThird"].value)
+                        console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmFourth"].name, _activeVehicle.escStatus["rpmFourth"].value)
 
             if(_GD60){
 
@@ -2844,7 +2861,7 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "28° \n TEMP1"       // 🌟 TEXTO NOVO
+                            text: _activeVehicle.gd60_Sensor1.rawValue.toFixed(1).toString() + "° \n TEMP1"       // 🌟 TEXTO NOVO
                             color: "white"          // 🌟 COR BRANCA
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18
@@ -2859,7 +2876,7 @@ Item {
                         implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
                         Text {
                             anchors.centerIn: parent
-                            text: "35° \n TEMP2"       // 🌟 TEXTO NOVO
+                            text: _activeVehicle.gd60_Sensor2.rawValue.toFixed(1).toString() + "° \n TEMP2"       // 🌟 TEXTO NOVO
                             color: "white"
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18
@@ -2876,7 +2893,7 @@ Item {
                         implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
                         Text {
                             anchors.centerIn: parent
-                            text: "42° \n TEMP3"       // 🌟 TEXTO NOVO
+                            text: _activeVehicle.gd60_Sensor3.rawValue.toFixed(1).toString() + "° \n TEMP3"       // 🌟 TEXTO NOVO
                             color: "white"
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18

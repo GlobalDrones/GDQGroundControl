@@ -305,6 +305,9 @@ public:
     Q_PROPERTY(Fact* throttlePct        READ throttlePct        CONSTANT)
     Q_PROPERTY(Fact* rangeFinderDist    READ rangeFinderDist    CONSTANT)
     Q_PROPERTY(Fact* flightTimeCustom   READ flightTimeCustom          CONSTANT)
+    Q_PROPERTY(Fact* gd60_Sensor1       READ gd60_Sensor1       CONSTANT)
+    Q_PROPERTY(Fact* gd60_Sensor2       READ gd60_Sensor2       CONSTANT)
+    Q_PROPERTY(Fact* gd60_Sensor3       READ gd60_Sensor3       CONSTANT)
 
     Q_PROPERTY(FactGroup*           gps             READ gpsFactGroup               CONSTANT)
     Q_PROPERTY(FactGroup*           gps2            READ gps2FactGroup              CONSTANT)
@@ -658,6 +661,9 @@ public:
     Fact* throttlePct                       () { return &_throttlePctFact; }
     Fact* rangeFinderDist                   () { return &_rangeFinderDistFact; }
     Fact* flightTimeCustom                  () { return &_flightTimeFact;}
+    Fact* gd60_Sensor1                      () { return &_gd60_Sensor1Fact;}
+    Fact* gd60_Sensor2                      () { return &_gd60_Sensor2Fact;}
+    Fact* gd60_Sensor3                      () { return &_gd60_Sensor3Fact;}
 
     FactGroup* gpsFactGroup                 () { return &_gpsFactGroup; }
     FactGroup* gps2FactGroup                () { return &_gps2FactGroup; }
@@ -1311,6 +1317,9 @@ private:
     Fact _xTrackErrorFact;
     Fact _flightDistanceFact;
     Fact _flightTimeFact;
+    Fact _gd60_Sensor1Fact;
+    Fact _gd60_Sensor2Fact;
+    Fact _gd60_Sensor3Fact;
     Fact _distanceToHomeFact;
     Fact _missionItemIndexFact;
     Fact _headingToNextWPFact;
@@ -1365,6 +1374,9 @@ private:
     static const char* _xTrackErrorFactName;
     static const char* _flightDistanceFactName;
     static const char* _flightTimeFactName;
+    static const char* _gd60_Sensor1FactName;
+    static const char* _gd60_Sensor2FactName;
+    static const char* _gd60_Sensor3FactName;
     static const char* _distanceToHomeFactName;
     static const char* _missionItemIndexFactName;
     static const char* _headingToNextWPFactName;

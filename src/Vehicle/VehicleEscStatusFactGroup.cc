@@ -89,4 +89,10 @@ void VehicleEscStatusFactGroup::handleMessage(Vehicle* /* vehicle */, mavlink_me
     voltageSecond()->setRawValue                (content.voltage[1]);
     voltageThird()->setRawValue                 (content.voltage[2]);
     voltageFourth()->setRawValue                (content.voltage[3]);
+
+    if (message.msgid == MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4){
+        mavlink_esc_telemetry_1_to_4_t msg_et14;
+        mavlink_msg_esc_telemetry_1_to_4_decode(&message, &msg_et14);
+        qWarning()<<"TESTE MSG_ID_ESC_tELEMETRY "<< msg_et14.rpm[0] << msg_et14.rpm[1] << msg_et14.rpm[2];
+    }
 }

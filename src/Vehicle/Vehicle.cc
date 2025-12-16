@@ -102,6 +102,9 @@ const char* Vehicle::_altitudeTuningFactName =      "altitudeTuning";
 const char* Vehicle::_altitudeTuningSetpointFactName = "altitudeTuningSetpoint";
 const char* Vehicle::_flightDistanceFactName =      "flightDistance";
 const char* Vehicle::_flightTimeFactName =          "flightTime";
+const char* Vehicle::_gd60_Sensor1FactName =         "gd60_sensor1";
+const char* Vehicle::_gd60_Sensor2FactName =         "gd60_sensor2";
+const char* Vehicle::_gd60_Sensor3FactName =         "gd60_sensor3";
 const char* Vehicle::_distanceToHomeFactName =      "distanceToHome";
 const char* Vehicle::_missionItemIndexFactName =    "missionItemIndex";
 const char* Vehicle::_headingToNextWPFactName =     "headingToNextWP";
@@ -323,6 +326,9 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _xTrackErrorFact                       (0, _xTrackErrorFactName,       FactMetaData::valueTypeDouble)
     , _flightDistanceFact                    (0, _flightDistanceFactName,    FactMetaData::valueTypeDouble)
     , _flightTimeFact                        (0, _flightTimeFactName,        FactMetaData::valueTypeElapsedTimeInSeconds)
+    , _gd60_Sensor1Fact                      (0, _gd60_Sensor1FactName,      FactMetaData::valueTypeFloat)
+    , _gd60_Sensor2Fact                      (0, _gd60_Sensor2FactName,      FactMetaData::valueTypeFloat)
+    , _gd60_Sensor3Fact                      (0, _gd60_Sensor3FactName,      FactMetaData::valueTypeFloat)
     , _distanceToHomeFact                    (0, _distanceToHomeFactName,    FactMetaData::valueTypeDouble)
     , _missionItemIndexFact                  (0, _missionItemIndexFactName,  FactMetaData::valueTypeUint16)
     , _headingToNextWPFact                   (0, _headingToNextWPFactName,   FactMetaData::valueTypeDouble)
@@ -765,6 +771,9 @@ void Vehicle::_commonInit()
     _addFact(&_xTrackErrorFact,         _xTrackErrorFactName);
     _addFact(&_flightDistanceFact,      _flightDistanceFactName);
     _addFact(&_flightTimeFact,          _flightTimeFactName);
+    _addFact(&_gd60_Sensor1Fact,        _gd60_Sensor1FactName);
+    _addFact(&_gd60_Sensor2Fact,        _gd60_Sensor2FactName);
+    _addFact(&_gd60_Sensor3Fact,        _gd60_Sensor3FactName);
     _addFact(&_distanceToHomeFact,      _distanceToHomeFactName);
     _addFact(&_missionItemIndexFact,    _missionItemIndexFactName);
     _addFact(&_headingToNextWPFact,     _headingToNextWPFactName);
@@ -803,6 +812,9 @@ void Vehicle::_commonInit()
     }
 
     _flightDistanceFact.setRawValue(0);
+    _gd60_Sensor1Fact.setRawValue(0);
+    _gd60_Sensor2Fact.setRawValue(0);
+    _gd60_Sensor3Fact.setRawValue(0);
     _flightTimeFact.setRawValue(0);
     _flightTimeUpdater.setInterval(1000);
     _flightTimeUpdater.setSingleShot(false);
@@ -1148,6 +1160,41 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
                  << "target_component:" << rc.target_component;
         // ... adicione mais canais conforme necessário
 
+        break;
+    }
+
+    case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
+    {
+        enum TempID {
+            UNKNOWN = 0,
+            TEMP1,
+            TEMP2,
+            TEMP3
+        };
+
+        mavlink_named_value_float_t msg_nvf;
+        mavlink_msg_named_value_float_decode(&message, &msg_nvf);
+        TempID id = UNKNOWN;
+        if (strncmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
+        else if (strncmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
+        else if (strncmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
+
+        switch(id) {
+        case TEMP1:
+            qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
+            _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
+            break;
+        case TEMP2:
+            qWarning() << "MEU SWITCH FUNCIONA PARA TEMP2:" << msg_nvf.value;
+            _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
+            break;
+        case TEMP3:
+            qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
+            _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
+            break;
+        default:
+            break;
+        }
         break;
     }
 
