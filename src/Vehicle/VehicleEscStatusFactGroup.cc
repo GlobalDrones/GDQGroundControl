@@ -27,6 +27,11 @@ const char* VehicleEscStatusFactGroup::_voltageSecondFactName =                 
 const char* VehicleEscStatusFactGroup::_voltageThirdFactName =                      "voltage3";
 const char* VehicleEscStatusFactGroup::_voltageFourthFactName =                     "voltage4";
 
+const char* VehicleEscStatusFactGroup::_temperatureFirstFactName =                  "temperature1";
+const char* VehicleEscStatusFactGroup::_temperatureSecondFactName =                 "temperature2";
+const char* VehicleEscStatusFactGroup::_temperatureThirdFactName =                  "temperature3";
+const char* VehicleEscStatusFactGroup::_temperatureFourthFactName =                 "temperature4";
+
 VehicleEscStatusFactGroup::VehicleEscStatusFactGroup(QObject* parent)
     : FactGroup                         (1000, ":/json/Vehicle/EscStatusFactGroup.json", parent)
     , _indexFact                        (0, _indexFactName,                         FactMetaData::valueTypeUint8)
@@ -45,6 +50,11 @@ VehicleEscStatusFactGroup::VehicleEscStatusFactGroup(QObject* parent)
     , _voltageSecondFact                (0, _voltageSecondFactName,                 FactMetaData::valueTypeFloat)
     , _voltageThirdFact                 (0, _voltageThirdFactName,                  FactMetaData::valueTypeFloat)
     , _voltageFourthFact                (0, _voltageFourthFactName,                 FactMetaData::valueTypeFloat)
+
+    , _temperatureFirstFact             (0, _temperatureFirstFactName,              FactMetaData::valueTypeFloat)
+    , _temperatureSecondFact            (0, _temperatureSecondFactName,             FactMetaData::valueTypeFloat)
+    , _temperatureThirdFact             (0, _temperatureThirdFactName,              FactMetaData::valueTypeFloat)
+    , _temperatureFourthFact            (0, _temperatureFourthFactName,             FactMetaData::valueTypeFloat)
 {
     _addFact(&_indexFact,                       _indexFactName);
 
@@ -62,15 +72,39 @@ VehicleEscStatusFactGroup::VehicleEscStatusFactGroup(QObject* parent)
     _addFact(&_voltageSecondFact,               _voltageSecondFactName);
     _addFact(&_voltageThirdFact,                _voltageThirdFactName);
     _addFact(&_voltageFourthFact,               _voltageFourthFactName);
+
+    _addFact(&_temperatureFirstFact,                    _temperatureFirstFactName);
+    _addFact(&_temperatureSecondFact,                   _temperatureSecondFactName);
+    _addFact(&_temperatureThirdFact,                    _temperatureThirdFactName);
+    _addFact(&_temperatureFourthFact,                   _temperatureFourthFactName);
+
 }
 
 void VehicleEscStatusFactGroup::handleMessage(Vehicle* /* vehicle */, mavlink_message_t& message)
 {
-    if (message.msgid != MAVLINK_MSG_ID_ESC_STATUS) {
+    if (message.msgid != MAVLINK_MSG_ID_ESC_STATUS && message.msgid != MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4) {
+
         return;
+
     }
 
-    mavlink_esc_status_t content;
+    if (message.msgid == MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4){
+        mavlink_esc_telemetry_1_to_4_t msg_et14;
+        mavlink_msg_esc_telemetry_1_to_4_decode(&message, &msg_et14);
+        qWarning()<<"TESTE MSG_ID_ESC_tELEMETRY "<< msg_et14.rpm[0] << msg_et14.rpm[1] << msg_et14.rpm[2] << msg_et14.rpm[3];
+        rpmFirst()->setRawValue                     (msg_et14.rpm[0]);
+        rpmSecond()->setRawValue                    (msg_et14.rpm[1]);
+        rpmThird()->setRawValue                     (msg_et14.rpm[2]);
+        rpmFourth()->setRawValue                    (msg_et14.rpm[3]);
+
+        temperatureFirst()->setRawValue             (msg_et14.temperature[0]);
+        temperatureSecond()->setRawValue            (msg_et14.temperature[1]);
+        temperatureThird()->setRawValue             (msg_et14.temperature[2]);
+        temperatureFourth()->setRawValue            (msg_et14.temperature[3]);
+
+    }
+    //ESC_STATUS não existe como mensagem atualmente
+    /*mavlink_esc_status_t content;
     mavlink_msg_esc_status_decode(&message, &content);
 
     index()->setRawValue                        (content.index);
@@ -88,11 +122,7 @@ void VehicleEscStatusFactGroup::handleMessage(Vehicle* /* vehicle */, mavlink_me
     voltageFirst()->setRawValue                 (content.voltage[0]);
     voltageSecond()->setRawValue                (content.voltage[1]);
     voltageThird()->setRawValue                 (content.voltage[2]);
-    voltageFourth()->setRawValue                (content.voltage[3]);
+    voltageFourth()->setRawValue                (content.voltage[3]);*/
 
-    if (message.msgid == MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4){
-        mavlink_esc_telemetry_1_to_4_t msg_et14;
-        mavlink_msg_esc_telemetry_1_to_4_decode(&message, &msg_et14);
-        qWarning()<<"TESTE MSG_ID_ESC_tELEMETRY "<< msg_et14.rpm[0] << msg_et14.rpm[1] << msg_et14.rpm[2];
-    }
+
 }

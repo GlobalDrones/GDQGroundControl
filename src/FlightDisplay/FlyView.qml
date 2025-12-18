@@ -2185,14 +2185,21 @@ Item {
                             var fact = _activeVehicle.escStatus[prop]
 
                             // Check if it's a valid object and looks like a Fact (has a name/value)
-                            if (fact && fact.hasOwnProperty("name") && fact.hasOwnProperty("value")) {
-                                console.log("Fact Name found: " + prop + " (Display Name: " + fact.name + ")")
-                            }
+                            //if (fact && fact.hasOwnProperty("name") && fact.hasOwnProperty("value")) {
+                            //    console.log("Fact Name found: " + prop + " (Display Name: " + fact.name + ")")
+                            //}
                         }
-                        console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmFirst"].name, _activeVehicle.escStatus["rpmFirst"].value)
-                        console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmSecond"].name, _activeVehicle.escStatus["rpmSecond"].value)
-                        console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmThird"].name, _activeVehicle.escStatus["rpmThird"].value)
-                        console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmFourth"].name, _activeVehicle.escStatus["rpmFourth"].value)
+                        //console.log("aaaaaaaa: ",)
+                        //console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmSecond"].name, _activeVehicle.escStatus["rpmSecond"].value)
+                        //console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmThird"].name, _activeVehicle.escStatus["rpmThird"].value)
+                        //console.log("aaaaaaaa: ", _activeVehicle.escStatus["rpmFourth"].name, _activeVehicle.escStatus["rpmFourth"].value)
+                        console.log("bbbbbbbb: ", _activeVehicle.escStatus["temperatureFirst"].name, _activeVehicle.escStatus["temperatureFirst"].value)
+                        console.log("bbbbbbbb: ", _activeVehicle.escStatus["temperatureSecond"].name, _activeVehicle.escStatus["temperatureSecond"].value)
+                        console.log("bbbbbbbb: ", _activeVehicle.escStatus["temperatureThird"].name, _activeVehicle.escStatus["temperatureThird"].value)
+                        console.log("bbbbbbbb: ", _activeVehicle.escStatus["temperatureFourth"].name, _activeVehicle.escStatus["temperatureFourth"].value)
+
+
+
 
             if(_GD60){
 
@@ -2273,10 +2280,10 @@ Item {
 
             _motor_temp = _motor_temp
             if(_GD60){
-                _aceleracao_rotor_1 = _aceleracao_rotor_1
-                _aceleracao_rotor_2 = _aceleracao_rotor_2
-                _aceleracao_rotor_3 = _aceleracao_rotor_3
-                _aceleracao_rotor_4 = _aceleracao_rotor_4
+                _aceleracao_rotor_1 = _activeVehicle.escStatus["rpmFirst"].value
+                _aceleracao_rotor_2 = _activeVehicle.escStatus["rpmSecond"].value
+                _aceleracao_rotor_3 = _activeVehicle.escStatus["rpmThird"].value
+                _aceleracao_rotor_4 = _activeVehicle.escStatus["rpmFourth"].value
             }
             else{
                 aceleracao_rotor_1_ARRAY.push(_aceleracao_rotor_1)
@@ -2908,7 +2915,13 @@ Item {
                         implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
                         Text {
                             anchors.centerIn: parent
-                            text: "30° \n ESC"       // 🌟 TEXTO NOVO
+                            text: {
+                               var max_temp = Math.max(_activeVehicle.escStatus["temperatureFirst"].value,
+                                         _activeVehicle.escStatus["temperatureSecond"].value,
+                                         _activeVehicle.escStatus["temperatureThird"].value,
+                                         _activeVehicle.escStatus["temperatureFourth"].value);
+                                return max_temp.toString()+"° \n ESC";
+                            }
                             color: "white"
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18

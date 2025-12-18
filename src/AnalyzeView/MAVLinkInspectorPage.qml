@@ -111,7 +111,7 @@ AnalyzePage {
                         }
                     }*/
                     if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){
-                        curSystem.selected = i;
+                      //  curSystem.selected = i;
                         var temperature_name = controller.activeSystem.messages.get(i).fields.get(1).value
                         var temperature_value = controller.activeSystem.messages.get(i).fields.get(2).value
                         console.log(temperature_name)
@@ -129,13 +129,7 @@ AnalyzePage {
 
 
                         }
-                    if(controller.activeSystem.messages.get(i).name === "RC_CHANNELS"){
-                        curSystem.selected = i;
-                        //_TEMP_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
 
-
-
-                        }
                     }
 
                 }
