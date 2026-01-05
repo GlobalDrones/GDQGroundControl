@@ -1181,15 +1181,15 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
 
         switch(id) {
         case TEMP1:
-            qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
+           // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
         case TEMP2:
-            qWarning() << "MEU SWITCH FUNCIONA PARA TEMP2:" << msg_nvf.value;
+            //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP2:" << msg_nvf.value;
             _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
             break;
         case TEMP3:
-            qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
+            //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
             _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
         default:

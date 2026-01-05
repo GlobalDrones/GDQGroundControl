@@ -2868,7 +2868,7 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: _activeVehicle.gd60_Sensor1.rawValue.toFixed(1).toString() + "° \n TEMP1"       // 🌟 TEXTO NOVO
+                            text: _activeVehicle.gd60_Sensor1.rawValue.toFixed(0).toString() + "° \n TEMP1"       // 🌟 TEXTO NOVO
                             color: "white"          // 🌟 COR BRANCA
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18
@@ -2883,7 +2883,7 @@ Item {
                         implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
                         Text {
                             anchors.centerIn: parent
-                            text: _activeVehicle.gd60_Sensor2.rawValue.toFixed(1).toString() + "° \n TEMP2"       // 🌟 TEXTO NOVO
+                            text: _activeVehicle.gd60_Sensor2.rawValue.toFixed(0).toString() + "° \n TEMP2"       // 🌟 TEXTO NOVO
                             color: "white"
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18
@@ -2900,7 +2900,7 @@ Item {
                         implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
                         Text {
                             anchors.centerIn: parent
-                            text: _activeVehicle.gd60_Sensor3.rawValue.toFixed(1).toString() + "° \n TEMP3"       // 🌟 TEXTO NOVO
+                            text: _activeVehicle.gd60_Sensor3.rawValue.toFixed(0).toString() + "° \n TEMP3"       // 🌟 TEXTO NOVO
                             color: "white"
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18

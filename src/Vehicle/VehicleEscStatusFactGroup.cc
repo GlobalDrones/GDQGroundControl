@@ -91,10 +91,10 @@ void VehicleEscStatusFactGroup::handleMessage(Vehicle* /* vehicle */, mavlink_me
     if (message.msgid == MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4){
         mavlink_esc_telemetry_1_to_4_t msg_et14;
         mavlink_msg_esc_telemetry_1_to_4_decode(&message, &msg_et14);
-        qWarning()<<"TESTE MSG_ID_ESC_tELEMETRY "<< msg_et14.rpm[0] << msg_et14.rpm[1] << msg_et14.rpm[2] << msg_et14.rpm[3];
+        //qWarning()<<"TESTE MSG_ID_ESC_TELEMETRY "<< msg_et14.rpm[0] << msg_et14.rpm[1] << msg_et14.rpm[2] << msg_et14.rpm[3];
         rpmFirst()->setRawValue                     (msg_et14.rpm[0]);
         rpmSecond()->setRawValue                    (msg_et14.rpm[1]);
-        rpmThird()->setRawValue                     (msg_et14.rpm[2]);
+        rpmThird()->setRawValue                    (msg_et14.rpm[2]);
         rpmFourth()->setRawValue                    (msg_et14.rpm[3]);
 
         temperatureFirst()->setRawValue             (msg_et14.temperature[0]);
