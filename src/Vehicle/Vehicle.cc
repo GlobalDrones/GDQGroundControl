@@ -11,11 +11,12 @@
 #include <QDateTime>
 #include <QLocale>
 #include <QQuaternion>
-#include <fcntl.h>
-#include <termios.h>
-#include <unistd.h>
-#include <errno.h>
 #include <Eigen/Eigen>
+#include <QtConcurrent>
+#include <QThread>
+#include <QSharedPointer>
+#include <atomic>
+#include <string.h>
 
 #include "Vehicle.h"
 #include "MAVLinkProtocol.h"
@@ -54,19 +55,19 @@
 #include "VehicleBatteryFactGroup.h"
 #include "EventHandler.h"
 #include "Actuators/Actuators.h"
-#include <QtConcurrent>
-#include <QThread>
-#include <QSharedPointer>
-#include <termios.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <atomic>
+#include "Autotune.h"
+
 #ifdef QT_DEBUG
 #include "MockLink.h"
 #endif
-#include "Autotune.h"
+
+#ifndef WIN32 //se não é windows, inclui as libs pra dar RC-Override pelo socket linux
+#include <termios.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#endif
+
 
 #define ABS_DIFF(a, b) ((a > b) ? (a - b) : (b - a))
 
@@ -375,7 +376,7 @@ void Vehicle::stopRCOverride() {
     _overrideRunning = false;
 }
 void Vehicle::overwriteRC(){ //override.
-
+    #ifndef WIN32
     // para testar no folder do ardupilot/Tools/autotest: python3 sim_vehicle.py -v copter --no-mavproxy -A "--serial0=udpclient:192.168.1.114:14550"
     // 192.168.1.114:14550 <- IP e Porta que o controle ta escutando.
     // OU
@@ -679,6 +680,7 @@ void Vehicle::overwriteRC(){ //override.
         close(fd);
 
     });
+#endif
 }
 
 void Vehicle::trackFirmwareVehicleTypeChanges(void)
