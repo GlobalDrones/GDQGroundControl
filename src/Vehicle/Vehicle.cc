@@ -375,8 +375,9 @@ void Vehicle::stopRCOverride() {
 
     _overrideRunning = false;
 }
+#ifndef WIN32
 void Vehicle::overwriteRC(){ //override.
-    #ifndef WIN32
+
     // para testar no folder do ardupilot/Tools/autotest: python3 sim_vehicle.py -v copter --no-mavproxy -A "--serial0=udpclient:192.168.1.114:14550"
     // 192.168.1.114:14550 <- IP e Porta que o controle ta escutando.
     // OU
@@ -680,9 +681,186 @@ void Vehicle::overwriteRC(){ //override.
         close(fd);
 
     });
-#endif
+
+}
+#else
+void Vehicle::overwriteRC() { //override compilavel para windows
+
+    if (_overrideRunning) {
+        qWarning() << "Override já ativo";
+        return;
+    }
+
+    _overrideRunning = true;
+
+    setJoystickEnabled(false);
+    _joystickManager->activeJoystick()->terminate();
+
+    // =========================================================
+    // RESET RC OVERRIDE
+    // =========================================================
+    mavlink_rc_channels_override_t rc_reset {};
+    rc_reset.target_system    = id();
+    rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+    for (int i = 0; i < 18; ++i)
+        ((uint16_t*)&rc_reset)[i] = 65535;
+
+    mavlink_message_t msg_out;
+    mavlink_msg_rc_channels_override_encode(
+        _mavlink->getSystemId(),
+        _mavlink->getComponentId(),
+        &msg_out,
+        &rc_reset
+        );
+
+    sendMessageMultiple(msg_out);
+
+    qWarning() << "RC Override reset enviado.";
+
+    // =========================================================
+    // THREAD SERIAL + MAVLINK
+    // =========================================================
+    _overrideFuture = QtConcurrent::run([=]() {
+
+        unsigned char buf[256];
+
+// =====================================================
+// WINDOWS (WIN32)
+// =====================================================
+        const char* dev = "COM3"; // AJUSTE AQUI
+
+        HANDLE hSerial = CreateFileA(
+            dev,
+            GENERIC_READ | GENERIC_WRITE,
+            0,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr
+            );
+
+        if (hSerial == INVALID_HANDLE_VALUE) {
+            qWarning() << "Falha ao abrir" << dev;
+            return;
+        }
+
+        DCB dcb {};
+        dcb.DCBlength = sizeof(DCB);
+
+        if (!GetCommState(hSerial, &dcb)) {
+            qWarning() << "GetCommState falhou";
+            CloseHandle(hSerial);
+            return;
+        }
+
+        dcb.BaudRate = CBR_115200;
+        dcb.ByteSize = 8;
+        dcb.Parity   = NOPARITY;
+        dcb.StopBits = ONESTOPBIT;
+        dcb.fBinary  = TRUE;
+        dcb.fDtrControl = DTR_CONTROL_DISABLE;
+        dcb.fRtsControl = RTS_CONTROL_DISABLE;
+
+        if (!SetCommState(hSerial, &dcb)) {
+            qWarning() << "SetCommState falhou";
+            CloseHandle(hSerial);
+            return;
+        }
+
+        COMMTIMEOUTS timeouts {};
+        timeouts.ReadIntervalTimeout        = 1;
+        timeouts.ReadTotalTimeoutConstant   = 1;
+        timeouts.ReadTotalTimeoutMultiplier = 0;
+        SetCommTimeouts(hSerial, &timeouts);
+
+        qWarning() << ">>> Serial WIN32 inicializada:" << dev;
+
+
+        // =====================================================
+        // MAVLINK STATE
+        // =====================================================
+        mavlink_message_t msg;
+        mavlink_rc_channels_override_t channels_override {};
+        mavlink_rc_channels_override_t previous_channels {};
+
+        channels_override.target_system    = id();
+        channels_override.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+        for (int i = 0; i < 18; ++i)
+            ((uint16_t*)&channels_override)[i] = 65535;
+
+        previous_channels = channels_override;
+
+        const int MIN_STEP_VALUE = 50;
+
+        // =====================================================
+        // LOOP PRINCIPAL
+        // =====================================================
+        while (_overrideRunning) {
+
+            int n = 0;
+
+
+            DWORD bytesRead = 0;
+            if (!ReadFile(hSerial, buf, sizeof(buf), &bytesRead, nullptr)) {
+                QThread::msleep(1);
+                continue;
+            }
+            n = (int)bytesRead;
+
+
+            if (n > 30 && buf[7] == 0x42) {
+
+                for (int i = 0; i < 16; ++i) {
+                    ((uint16_t*)&channels_override)[i] =
+                        (uint16_t)buf[8 + i * 2] |
+                        ((uint16_t)buf[9 + i * 2] << 8);
+                }
+
+                bool values_changed = false;
+                for (int i = 0; i < 16; ++i) {
+                    if (ABS_DIFF(
+                            ((uint16_t*)&channels_override)[i],
+                            ((uint16_t*)&previous_channels)[i]
+                            ) >= MIN_STEP_VALUE) {
+                        values_changed = true;
+                        break;
+                    }
+                }
+
+                if (values_changed && _mavlink) {
+
+                    mavlink_msg_rc_channels_override_encode(
+                        _mavlink->getSystemId(),
+                        _mavlink->getComponentId(),
+                        &msg,
+                        &channels_override
+                        );
+
+                    sendMessageOnLinkThreadSafe(
+                        vehicleLinkManager()->primaryLink().lock().get(),
+                        msg
+                        );
+
+                    previous_channels = channels_override;
+                }
+            }
+
+            QThread::msleep(1);
+        }
+
+        // =====================================================
+        // CLEANUP
+        // =====================================================
+
+        CloseHandle(hSerial);
+
+    });
 }
 
+
+#endif
 void Vehicle::trackFirmwareVehicleTypeChanges(void)
 {
     connect(_settingsManager->appSettings()->offlineEditingFirmwareClass(), &Fact::rawValueChanged, this, &Vehicle::_offlineFirmwareTypeSettingChanged);
