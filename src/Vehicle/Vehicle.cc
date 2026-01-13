@@ -421,6 +421,7 @@ void Vehicle::overwriteRC(){ //override.
         &rc_reset
         );
 
+
     // Envia o comando de reset 3 vezes para garantir a entrega
     sendMessageMultiple(msg_out);
 
@@ -509,6 +510,48 @@ void Vehicle::overwriteRC(){ //override.
         const int MIN_LOOP_MS = 10;
         const int MIN_STEP_VALUE = 50;
         // =================================================================
+
+        /*// -------- IP LOCAL via Qt --------
+        QString localIp = "unknown";
+
+        const auto interfaces = QNetworkInterface::allAddresses();
+        for (const QHostAddress& addr : interfaces) {
+            if (addr.protocol() == QAbstractSocket::IPv4Protocol &&
+                !addr.isLoopback()) {
+                localIp = addr.toString();
+                break;
+            }
+        }
+        // --------------------------------
+        mavlink_message_t _overrideStartMsg;
+        mavlink_statustext_t _overrideStartText;
+        _overrideStartText.id = 0;
+        _overrideStartText.chunk_seq = 0;
+        _overrideStartText.severity  = MAV_SEVERITY_INFO;
+
+        snprintf(
+            _overrideStartText.text,
+            sizeof(_overrideStartText.text),
+            "RC Override initiated from IPv4: %s",
+            localIp.toUtf8().constData()
+            );
+
+        mavlink_msg_statustext_encode(42, //numero qualquer para evitar autofilter
+                                      MAV_COMP_ID_ONBOARD_COMPUTER,
+                                      &_overrideStartMsg,
+                                      &_overrideStartText);
+
+        SharedLinkInterfacePtr sharedLink = vehicleLinkManager()->primaryLink().lock();
+        if(sharedLink){
+            sendMessageOnLinkThreadSafe(sharedLink.get(), _overrideStartMsg);
+            qDebug() << "SENDING STATUSTEXT:"
+                     << _overrideStartText.text;
+        }
+        else{
+            qDebug() << "SEM SHAREDLINK PRA STATUSTEXT";
+        }*/
+
+
         bool needs_send = true;
         while (_overrideRunning) {
             // LER DADOS DA SERIAL
@@ -793,6 +836,32 @@ void Vehicle::overwriteRC() { //override compilavel para windows
         previous_channels = channels_override;
 
         const int MIN_STEP_VALUE = 50;
+
+        // -------- IP LOCAL via Qt --------
+        QString localIp = "unknown";
+
+        const auto interfaces = QNetworkInterface::allAddresses();
+        for (const QHostAddress& addr : interfaces) {
+            if (addr.protocol() == QAbstractSocket::IPv4Protocol &&
+                !addr.isLoopback()) {
+                localIp = addr.toString();
+                break;
+            }
+        }
+        // --------------------------------
+        //mavlink_message_t _overrideStartMsg;
+        mavlink_statustext_t _overrideStartText;
+        _overrideStartText.id = 0;
+        _overrideStartText.chunk_seq = 0;
+        _overrideStartText.severity  = MAV_SEVERITY_CRITICAL;
+
+        snprintf(
+            _overrideStartText.text,
+            sizeof(_overrideStartText.text),
+            "RC Override initiated from IPv4: %s",
+            localIp.toUtf8().constData()
+            );
+
 
         // =====================================================
         // LOOP PRINCIPAL
@@ -1575,6 +1644,8 @@ void Vehicle::_handleStatusText(mavlink_message_t& message)
         chunkedInfo.severity = statustext.severity;
         chunkedInfo.rgMessageChunks.append(messageText);
         _chunkedStatusTextInfoMap[compId] = chunkedInfo;
+        qDebug() << "STATUSTEXT:" << messageText;
+
     } else {
         if (_chunkedStatusTextInfoMap.contains(compId)) {
             // A chunk sequence is in progress
@@ -3790,6 +3861,7 @@ void Vehicle::_handleCommandAck(mavlink_message_t& message)
     // advance PID tuning setup/teardown
     if (ack.command == MAV_CMD_SET_MESSAGE_INTERVAL) {
         _mavlinkStreamConfig.gotSetMessageIntervalAck();
+        qDebug()<<"MESSAGE_INTERVAL RECEBIDO";
     }
 }
 
