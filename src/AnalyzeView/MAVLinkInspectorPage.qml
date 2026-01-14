@@ -46,6 +46,8 @@ AnalyzePage {
     property real _RPM_MOTOR:0
     property real _TEMP_MOTOR:0
     property var array_valores_rc_MV: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    property var servo_output14: 0;
+    property var servo_output16: 0;
 
     MAVLinkInspectorController {
         id: controller
@@ -108,6 +110,12 @@ AnalyzePage {
                         //console.log("ARRAY_VALORES_MV = ", array_valores_rc_MV)
                     }
 
+                    if(controller.activeSystem.messages.get(i).name === "SERVO_OUTPUT_RAW"){
+                        curSystem.selected = i
+                        servo_output14 = controller.activeSystem.messages.get(i).fields.get(15).value
+                        servo_output16 = controller.activeSystem.messages.get(i).fields.get(17).value
+                        console.log("SERVO_OUTPUT_RAW",servo_output14,servo_output16)
+                    }
                     /*if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){
                         curSystem.selected = i
                         //console.log(controller.activeSystem.messages.get(i).fields.get(1).name, controller.activeSystem.messages.get(i).fields.get(2).value)

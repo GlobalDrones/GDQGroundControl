@@ -61,6 +61,8 @@ ApplicationWindow {
             flightView._motor_temp   = controller4._TEMP_MOTOR
 
             flightView.array_valores_rc = controller4.array_valores_rc_MV
+            flightView.servo_output14 = controller4.servo_output14
+            flightView.servo_output16 = controller4.servo_output16
             //console.log("TESTE MAINVIEW:")
             //for(var j = 0; j<16;j++){console.log(flightView.array_valores_rc[j])}
             //console.log("FIM TESTE MAINVIEW")

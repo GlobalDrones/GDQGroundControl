@@ -199,6 +199,8 @@ Item {
     property var array_valores_rc: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     property bool override_first_clicked: false;
 
+    property var servo_output14: 0
+    property var servo_output16: 0
 
     function makeAlerts() {
         var alertas = ""
@@ -958,7 +960,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*2);}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output14, 800, 2200, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -972,7 +974,7 @@ Item {
                     anchors.top: dialRPMHORIZONTAL1.bottom
                     anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
                     font.pixelSize: _androidBuild? 20 : 18
-                    text: _aceleracao_rotor_1 //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
+                    text: servo_output14 //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
                     color:"green"
                     font.bold: true
                     horizontalAlignment: parent.width
@@ -1035,7 +1037,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_aceleracao_rotor_2, 0, 5000, Math.PI, Math.PI*2);}}
+                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output16, 800, 2200, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -1049,7 +1051,7 @@ Item {
                     anchors.top: dialRPMHORIZONTAL2.bottom
                     anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
                     font.pixelSize: _androidBuild? 20 : 18
-                    text: _aceleracao_rotor_2 //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
+                    text: servo_output16 //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
                     color:"green"
                     font.bold: true
                     horizontalAlignment: parent.width
