@@ -175,6 +175,7 @@ Item {
     property string _breachAlertColor
 
     property bool canShowBreachAlert: true
+    property var array_valores_rc: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
     Timer {
         id: breachCooldownTimer
@@ -2190,6 +2191,7 @@ Item {
                                 border.color: "yellow"
 
                                 Text {
+                                    id: _simText
                                     anchors.centerIn: parent
                                     text: "SIM"
                                     color: "white"
@@ -2198,18 +2200,44 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
+                                    property bool first_clicked: false;
                                     onClicked: {
+                                        //array_valores_rc
+                                        var arrayInt = array_valores_rc.map(v => Number(v) | 0)
                                         if (!overrideActive) {
-                                            _activeVehicle.overwriteRC()
-                                            //confirmOverridePopup.wantsToEnable = false
-                                            overrideActive = true
-                                            confirmOverridePopup.close()
+                                            if(!first_clicked){
+                                                var try_override = _activeVehicle.validateRCChannels(arrayInt);
+                                                console.log("RESULTADO TRY_OVERRIDE: ",try_override)
+                                                if(try_override!==""){
+                                                    _alertaForceOverride.text = "ATENÇÃO: "+try_override
+                                                    first_clicked = true;
+                                                    _simText.color = "black"
+                                                    btnYes.color = "yellow"
+                                                }
+                                                else{
+                                                    overrideActive = true
+                                                    confirmOverridePopup.close()
+                                                }
+                                                //confirmOverridePopup.wantsToEnable = false
+                                            }
+                                            else{
+                                                console.log("FORÇANDO OVERRIDE")
+                                                _activeVehicle.overwriteRC(arrayInt, true)
+                                                overrideActive = true
+                                                first_clicked = false;
+                                                _simText.color = "white"
+                                                btnYes.color = "#66bb6a"
+                                                _alertaForceOverride.text = ""
+                                                confirmOverridePopup.close()
+                                            }
+
                                         } else {
                                             _activeVehicle.stopRCOverride()
                                             overrideActive = false
+                                            first_clicked = false;
                                             confirmOverridePopup.close()
                                         }
-                                        confirmOverridePopup.close()
+                                        //confirmOverridePopup.close()
                                     }
                                     hoverEnabled: true
                                     onEntered: btnYes.selected = true
@@ -2247,6 +2275,17 @@ Item {
                             }
 
                         }
+
+                    }
+                    Text {
+                        id: _alertaForceOverride
+                        text: ""
+                        anchors.bottom: parent.bottom
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        font.pixelSize: 18
+                        wrapMode: Text.WordWrap
+                        horizontalAlignment: Text.AlignHCenter
+                        color: "white"
                     }
                 }
 
