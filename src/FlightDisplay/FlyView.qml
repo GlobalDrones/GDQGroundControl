@@ -176,6 +176,7 @@ Item {
 
     property bool canShowBreachAlert: true
     property var array_valores_rc: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    property bool override_first_clicked: false;
 
     Timer {
         id: breachCooldownTimer
@@ -2200,17 +2201,17 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
-                                    property bool first_clicked: false;
+
                                     onClicked: {
                                         //array_valores_rc
                                         var arrayInt = array_valores_rc.map(v => Number(v) | 0)
                                         if (!overrideActive) {
-                                            if(!first_clicked){
+                                            if(!override_first_clicked){
                                                 var try_override = _activeVehicle.validateRCChannels(arrayInt);
                                                 console.log("RESULTADO TRY_OVERRIDE: ",try_override)
                                                 if(try_override!==""){
                                                     _alertaForceOverride.text = "ATENÇÃO: "+try_override
-                                                    first_clicked = true;
+                                                    override_first_clicked = true;
                                                     _simText.color = "black"
                                                     btnYes.color = "yellow"
                                                 }
@@ -2224,7 +2225,7 @@ Item {
                                                 console.log("FORÇANDO OVERRIDE")
                                                 _activeVehicle.overwriteRC(arrayInt, true)
                                                 overrideActive = true
-                                                first_clicked = false;
+                                                override_first_clicked = false;
                                                 _simText.color = "white"
                                                 btnYes.color = "#66bb6a"
                                                 _alertaForceOverride.text = ""
@@ -2234,7 +2235,7 @@ Item {
                                         } else {
                                             _activeVehicle.stopRCOverride()
                                             overrideActive = false
-                                            first_clicked = false;
+                                            override_first_clicked = false;
                                             confirmOverridePopup.close()
                                         }
                                         //confirmOverridePopup.close()
@@ -2268,6 +2269,10 @@ Item {
                                     hoverEnabled: true
                                     onClicked: {
                                         confirmOverridePopup.close()
+                                        _simText.color = "white"
+                                        btnYes.color = "#66bb6a"
+                                        _alertaForceOverride.text = ""
+                                        override_first_clicked = false
                                     }
                                     onEntered: btnNo.selected = true
                                     onExited: btnNo.selected = false
