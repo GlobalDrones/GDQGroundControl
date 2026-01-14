@@ -25,7 +25,6 @@ Item {
     width:          height
     anchors.top:    parent.top
     anchors.bottom: parent.bottom
-    visible: false
 
     property bool showIndicator: true
 

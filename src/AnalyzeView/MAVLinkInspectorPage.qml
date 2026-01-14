@@ -45,6 +45,7 @@ AnalyzePage {
 
     property real _RPM_MOTOR:0
     property real _TEMP_MOTOR:0
+    property var array_valores_rc_MV: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
     MAVLinkInspectorController {
         id: controller
@@ -97,6 +98,14 @@ AnalyzePage {
                         _RPM_R4 = controller.activeSystem.messages.get(i).fields.get(3).value
                         _RPM_R5 = controller.activeSystem.messages.get(i).fields.get(4).value
                         _RPM_R6 = controller.activeSystem.messages.get(i).fields.get(5).value*/
+                    }
+                    if(controller.activeSystem.messages.get(i).name === "RC_CHANNELS"){
+                        curSystem.selected = i
+                        for(var j = 2; j<18;j++){
+                            array_valores_rc_MV[j-2] = controller.activeSystem.messages.get(i).fields.get(j).value
+                            //console.log("ch[",j-2,"]",controller.activeSystem.messages.get(i).fields.get(j).value, array_valores_rc_MV[j-2])
+                        }
+                        //console.log("ARRAY_VALORES_MV = ", array_valores_rc_MV)
                     }
 
                     /*if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){

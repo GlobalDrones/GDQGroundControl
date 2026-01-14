@@ -107,8 +107,9 @@ public:
             JoystickManager*        joystickManager);
 
     // Pass these into the offline constructor to create an offline vehicle which tracks the offline vehicle settings
-    static const MAV_AUTOPILOT    MAV_AUTOPILOT_TRACK = static_cast<MAV_AUTOPILOT>(-1);
-    static const MAV_TYPE         MAV_TYPE_TRACK = static_cast<MAV_TYPE>(-1);
+    static constexpr MAV_AUTOPILOT MAV_AUTOPILOT_TRACK = MAV_AUTOPILOT_INVALID;
+    static constexpr MAV_TYPE      MAV_TYPE_TRACK      = MAV_TYPE_GCS;
+
 
     // The following is used to create a disconnected Vehicle for use while offline editing.
     Vehicle(MAV_AUTOPILOT           firmwareType,
@@ -533,8 +534,9 @@ public:
     void requestDataStream(MAV_DATA_STREAM stream, uint16_t rate, bool sendMultiple = true);
 
     /// Start the Overwritting thread for RC channels with controller serial input
-    Q_INVOKABLE void overwriteRC(void);
+    Q_INVOKABLE QString overwriteRC(const QVariantList &arrayRC, bool force_override);
     Q_INVOKABLE void stopRCOverride(void);
+    Q_INVOKABLE QString validateRCChannels(const QVariantList &arrayRC);
 
 
     // The follow method are used to turn on/off the tracking of settings updates for firmware/vehicle type on offline vehicles.

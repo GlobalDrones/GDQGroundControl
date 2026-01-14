@@ -74,7 +74,7 @@ LinuxBuild {
         $$PWD
 
     contains(ANDROID_TARGET_ARCH, armeabi-v7a) {
-        GST_ROOT = C:\gstreatreamer\gstreamer-1.0-android-universal-1.18.6\armv7
+        GST_ROOT = $$PWD/gstreamer-1.0-android-universal-1.18.6/armv7
     } else:contains(ANDROID_TARGET_ARCH, arm64-v8a) {
         GST_ROOT = $$PWD/gstreamer-1.0-android-universal-1.18.6/arm64
     } else:contains(ANDROID_TARGET_ARCH, x86_64) {

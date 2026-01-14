@@ -31,7 +31,7 @@ message(Qt version $$[QT_VERSION])
 
 include(QGCCommon.pri)
 
-TARGET   = GD60_QGC_GAR
+TARGET   = GD60_QGC_DEV
 TEMPLATE = app
 QGCROOT  = $$PWD
 
@@ -1486,7 +1486,6 @@ contains (CONFIG, DISABLE_VIDEOSTREAMING) {
     include(src/VideoReceiver/VideoReceiver.pri)
 }
 
-!VideoEnabled {
     INCLUDEPATH += \
         src/VideoReceiver
 
@@ -1496,7 +1495,7 @@ contains (CONFIG, DISABLE_VIDEOSTREAMING) {
 
     SOURCES += \
         src/VideoManager/GLVideoItemStub.cc
-}
+
 
 #-------------------------------------------------------------------------------------
 # Android

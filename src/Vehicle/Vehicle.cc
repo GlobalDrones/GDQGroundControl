@@ -375,8 +375,9 @@ void Vehicle::stopRCOverride() {
 
     _overrideRunning = false;
 }
-void Vehicle::overwriteRC(){ //override.
-    #ifndef WIN32
+#ifndef WIN32
+QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ //override.
+
     // para testar no folder do ardupilot/Tools/autotest: python3 sim_vehicle.py -v copter --no-mavproxy -A "--serial0=udpclient:192.168.1.114:14550"
     // 192.168.1.114:14550 <- IP e Porta que o controle ta escutando.
     // OU
@@ -387,7 +388,13 @@ void Vehicle::overwriteRC(){ //override.
     // =========================================================================
     if (_overrideRunning) {
         qWarning() << "Override já ativo";
-        return;
+        return "Override já ativo";
+    }
+
+    int rc[16];
+
+    for (int i = 0; i < 16; ++i) {
+        rc[i] = arrayRC[i].toInt();
     }
 
     _overrideRunning = true;
@@ -420,10 +427,17 @@ void Vehicle::overwriteRC(){ //override.
         &rc_reset
         );
 
+
     // Envia o comando de reset 3 vezes para garantir a entrega
     sendMessageMultiple(msg_out);
 
     qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
+
+    if(!force_override){ //Faz a verificação de RC_Channel se não esta tentando forçar o override
+        QString retorno = validateRCChannels(arrayRC);
+        //if(retorno!="") return retorno;
+    }
+
     //_mavlink->_status.buffer_overrun
     _overrideFuture = QtConcurrent::run([=]() {
 
@@ -508,6 +522,8 @@ void Vehicle::overwriteRC(){ //override.
         const int MIN_LOOP_MS = 10;
         const int MIN_STEP_VALUE = 50;
         // =================================================================
+
+
         bool needs_send = true;
         while (_overrideRunning) {
             // LER DADOS DA SERIAL
@@ -680,9 +696,284 @@ void Vehicle::overwriteRC(){ //override.
         close(fd);
 
     });
-#endif
+    return "";
 }
 
+QString Vehicle::validateRCChannels(const QVariantList &arrayRC)
+{
+
+    int rc[16];
+
+    for (int i = 0; i < 16; ++i) {
+        rc[i] = arrayRC[i].toInt();
+    }
+    // Número de canais esperados
+    constexpr int kNumChannels = 16;
+    constexpr int kFirstChannelOffset = 8;
+    constexpr int kBytesPerChannel = 2;
+
+    const char* dev = "/dev/ttyHS3"; // Porta de comunicação
+
+    // Abrir para leitura E ESCRITA (O_RDWR)
+    int fd = open(dev, O_RDWR | O_NOCTTY);
+
+    if (fd < 0) {
+        qWarning() << "Não foi possível abrir" << dev << "erro:" << strerror(errno);
+        return "erro ao abrir socket";
+    }
+
+    struct termios tty;
+    if (tcgetattr(fd, &tty) != 0) {
+        qWarning() << "Erro tcgetattr:" << strerror(errno);
+        close(fd);
+        return "Erro tcgetattr:";
+    }
+
+    // Configuração da porta: 115200 baud, Raw, 8N1
+    cfmakeraw(&tty);
+    cfsetispeed(&tty, B115200);
+    cfsetospeed(&tty, B115200);
+    tty.c_cflag |= (CREAD | CLOCAL | CS8); // CREAD, CLOCAL, CS8
+    tty.c_cflag &= ~(CSTOPB | CRTSCTS);     // ~CSTOPB, ~CRTSCTS
+
+    // Configurações de tempo limite (VMIN=0, VTIME=0 para leitura não bloqueante)
+    tty.c_cc[VMIN] = 0;
+    tty.c_cc[VTIME] = 0;
+
+    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+        qWarning() << "Erro tcsetattr:" << strerror(errno);
+        close(fd);
+        return "Erro tcgetattr:";
+    }
+
+    qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud.";
+
+
+    unsigned char buf[256];
+
+    // Buffer para os canais
+    uint16_t raw_channels[kNumChannels] = {0};
+    while (true) {
+        int n = read(fd, buf, sizeof(buf));
+
+        if (n > 30 && buf[7] == 0x42) {
+
+            QString erro;   // UMA única QString
+            bool first = true;
+
+            for (int ch = 0; ch < kNumChannels; ++ch) {
+                int offset = kFirstChannelOffset + ch * kBytesPerChannel;
+
+                raw_channels[ch] =
+                    static_cast<uint16_t>(buf[offset]) |
+                    (static_cast<uint16_t>(buf[offset + 1]) << 8);
+
+                int diff = std::abs(raw_channels[ch] - rc[ch]);
+
+                qDebug() << "Raw[" << ch << "]:" << raw_channels[ch]
+                         << "| RC_CHAN[" << ch << "]:" << rc[ch]
+                         << "| diff:" << diff;
+
+                if (diff > 50) {
+                    if (!first)
+                        erro += ", ";
+
+                    erro += QString("%1")
+                                .arg(ch + 1);
+
+                    first = false;
+                }
+            }
+
+            if (!erro.isEmpty()) {
+                return "RC divergente nos canais: " + erro;
+            }
+
+            qDebug() << "Posição dos valores RC validada";
+            return QString(); // OK → string vazia
+        }
+    }
+}
+#else
+QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override) { //override compilavel para windows
+
+    if (_overrideRunning) {
+        qWarning() << "Override já ativo";
+        return;
+    }
+
+    _overrideRunning = true;
+
+    setJoystickEnabled(false);
+    _joystickManager->activeJoystick()->terminate();
+
+    // =========================================================
+    // RESET RC OVERRIDE
+    // =========================================================
+    mavlink_rc_channels_override_t rc_reset {};
+    rc_reset.target_system    = id();
+    rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+    for (int i = 0; i < 18; ++i)
+        ((uint16_t*)&rc_reset)[i] = 65535;
+
+    mavlink_message_t msg_out;
+    mavlink_msg_rc_channels_override_encode(
+        _mavlink->getSystemId(),
+        _mavlink->getComponentId(),
+        &msg_out,
+        &rc_reset
+        );
+
+    sendMessageMultiple(msg_out);
+
+    qWarning() << "RC Override reset enviado.";
+
+    // =========================================================
+    // THREAD SERIAL + MAVLINK
+    // =========================================================
+    _overrideFuture = QtConcurrent::run([=]() {
+
+        unsigned char buf[256];
+
+        // =====================================================
+        // WINDOWS (WIN32)
+        // =====================================================
+        const char* dev = "COM3"; // AJUSTE AQUI
+
+        HANDLE hSerial = CreateFileA(
+            dev,
+            GENERIC_READ | GENERIC_WRITE,
+            0,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr
+            );
+
+        if (hSerial == INVALID_HANDLE_VALUE) {
+            qWarning() << "Falha ao abrir" << dev;
+            return;
+        }
+
+        DCB dcb {};
+        dcb.DCBlength = sizeof(DCB);
+
+        if (!GetCommState(hSerial, &dcb)) {
+            qWarning() << "GetCommState falhou";
+            CloseHandle(hSerial);
+            return;
+        }
+
+        dcb.BaudRate = CBR_115200;
+        dcb.ByteSize = 8;
+        dcb.Parity   = NOPARITY;
+        dcb.StopBits = ONESTOPBIT;
+        dcb.fBinary  = TRUE;
+        dcb.fDtrControl = DTR_CONTROL_DISABLE;
+        dcb.fRtsControl = RTS_CONTROL_DISABLE;
+
+        if (!SetCommState(hSerial, &dcb)) {
+            qWarning() << "SetCommState falhou";
+            CloseHandle(hSerial);
+            return;
+        }
+
+        COMMTIMEOUTS timeouts {};
+        timeouts.ReadIntervalTimeout        = 1;
+        timeouts.ReadTotalTimeoutConstant   = 1;
+        timeouts.ReadTotalTimeoutMultiplier = 0;
+        SetCommTimeouts(hSerial, &timeouts);
+
+        qWarning() << ">>> Serial WIN32 inicializada:" << dev;
+
+
+        // =====================================================
+        // MAVLINK STATE
+        // =====================================================
+        mavlink_message_t msg;
+        mavlink_rc_channels_override_t channels_override {};
+        mavlink_rc_channels_override_t previous_channels {};
+
+        channels_override.target_system    = id();
+        channels_override.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+        for (int i = 0; i < 18; ++i)
+            ((uint16_t*)&channels_override)[i] = 65535;
+
+        previous_channels = channels_override;
+
+        const int MIN_STEP_VALUE = 50;
+
+
+
+        // =====================================================
+        // LOOP PRINCIPAL
+        // =====================================================
+        while (_overrideRunning) {
+
+            int n = 0;
+
+
+            DWORD bytesRead = 0;
+            if (!ReadFile(hSerial, buf, sizeof(buf), &bytesRead, nullptr)) {
+                QThread::msleep(1);
+                continue;
+            }
+            n = (int)bytesRead;
+
+
+            if (n > 30 && buf[7] == 0x42) {
+
+                for (int i = 0; i < 16; ++i) {
+                    ((uint16_t*)&channels_override)[i] =
+                        (uint16_t)buf[8 + i * 2] |
+                        ((uint16_t)buf[9 + i * 2] << 8);
+                }
+
+                bool values_changed = false;
+                for (int i = 0; i < 16; ++i) {
+                    if (ABS_DIFF(
+                            ((uint16_t*)&channels_override)[i],
+                            ((uint16_t*)&previous_channels)[i]
+                            ) >= MIN_STEP_VALUE) {
+                        values_changed = true;
+                        break;
+                    }
+                }
+
+                if (values_changed && _mavlink) {
+
+                    mavlink_msg_rc_channels_override_encode(
+                        _mavlink->getSystemId(),
+                        _mavlink->getComponentId(),
+                        &msg,
+                        &channels_override
+                        );
+
+                    sendMessageOnLinkThreadSafe(
+                        vehicleLinkManager()->primaryLink().lock().get(),
+                        msg
+                        );
+
+                    previous_channels = channels_override;
+                }
+            }
+
+            QThread::msleep(1);
+        }
+
+        // =====================================================
+        // CLEANUP
+        // =====================================================
+
+        CloseHandle(hSerial);
+
+    });
+}
+
+
+#endif
 void Vehicle::trackFirmwareVehicleTypeChanges(void)
 {
     connect(_settingsManager->appSettings()->offlineEditingFirmwareClass(), &Fact::rawValueChanged, this, &Vehicle::_offlineFirmwareTypeSettingChanged);
@@ -1183,7 +1474,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
 
         switch(id) {
         case TEMP1:
-           // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
+            // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
         case TEMP2:
@@ -1379,10 +1670,14 @@ void Vehicle::_handleStatusText(mavlink_message_t& message)
     uint8_t compId = message.compid;
 
     b.resize(MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN+1);
-    strncpy(b.data(), statustext.text, MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN);
+    snprintf(b.data(),
+             MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN,
+             "%s",
+             statustext.text);
     b[b.length()-1] = '\0';
     messageText = QString(b);
     bool includesNullTerminator = messageText.length() < MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN;
+    qDebug() << "STATUSTEXT:" << messageText;
 
     if (_chunkedStatusTextInfoMap.contains(compId) && _chunkedStatusTextInfoMap[compId].chunkId != statustext.id) {
         // We have an incomplete chunked status still pending
@@ -1397,6 +1692,8 @@ void Vehicle::_handleStatusText(mavlink_message_t& message)
         chunkedInfo.severity = statustext.severity;
         chunkedInfo.rgMessageChunks.append(messageText);
         _chunkedStatusTextInfoMap[compId] = chunkedInfo;
+
+
     } else {
         if (_chunkedStatusTextInfoMap.contains(compId)) {
             // A chunk sequence is in progress
@@ -2321,8 +2618,6 @@ void Vehicle::_handleRCChannels(mavlink_message_t& message)
 #else
 #pragma GCC diagnostic pop
 #endif
-#else
-#pragma warning(pop, 0)
 #endif
 
 bool Vehicle::sendMessageOnLinkThreadSafe(LinkInterface* link, mavlink_message_t message)
@@ -3612,6 +3907,7 @@ void Vehicle::_handleCommandAck(mavlink_message_t& message)
     // advance PID tuning setup/teardown
     if (ack.command == MAV_CMD_SET_MESSAGE_INTERVAL) {
         _mavlinkStreamConfig.gotSetMessageIntervalAck();
+        qDebug()<<"MESSAGE_INTERVAL RECEBIDO";
     }
 }
 
