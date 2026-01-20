@@ -144,6 +144,7 @@ Item {
     property bool _selected_rotor_4: false
     property bool _selected_rotor_5: false
     property bool _selected_rotor_6: false
+
     property bool overrideActive: false
     property real _motor_temp: 30
     property real _motor_rpm: 3000
@@ -177,6 +178,11 @@ Item {
     property bool canShowBreachAlert: true
     property var array_valores_rc: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     property bool override_first_clicked: false;
+
+    property var lastRcOverrideTimestamp;
+    property var activeOverrideID;
+
+    property var gcsID;
 
     Timer {
         id: breachCooldownTimer
@@ -334,6 +340,50 @@ Item {
             console.log(_activeVehicle.batteries.columnCount())
             console.log(_activeVehicle.batteries.get(1).voltage.rawValue)*/
             //console.log(_activeVehicle.batteries.index(1,0).voltage.rawValue)
+            gcsID = QGroundControl.mavlinkSystemID.valueOf(); //tem que ficar atualizando. tem jeito melhor pra fazer mas isso é pequisa futura e o desempenho ta satisfatório pra agora
+            console.log("ID DA GCS: ",gcsID);
+
+            let allMessages = _activeVehicle.formattedMessages;
+                let lines = allMessages.split("<br/>").filter(line => line.trim() !== "");
+
+                if (lines.length > 0) {
+                    let lastLine = lines[lines.length - 1].replace(/<[^>]*>/g, "");
+
+                    // 1. Regex para capturar o Tempo e o ID (Grupo 5)
+                    // Note o [ID: (\d+)] no final para pegar o número
+                    let match = lastLine.match(/\[(\d{2}):(\d{2}):(\d{2})\.(\d{3})\].*RC Override: Ativo \[ID: (\d+)\]/);
+
+                    if (match) {
+                        // Se entramos aqui, a ÚLTIMA mensagem é um "Ativo"
+                        let msgTime = new Date();
+                        msgTime.setHours(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]), parseInt(match[4]));
+
+                        // Atualizamos o timestamp de controle com o tempo da MENSAGEM
+                        lastRcOverrideTimestamp = msgTime.getTime();
+                        activeOverrideID = parseInt(match[5]);
+                        overrideActive = true;
+                    }
+                    else if (lastLine.includes("RC Override") && !lastLine.includes("Ativo")) {
+                        // Se a última mensagem for explicitamente de desativação
+                        overrideActive = false;
+                        activeOverrideID = -1;
+
+                    }
+                }
+
+                // 2. Lógica de Expiração (independente de qual seja a última mensagem)
+                if (overrideActive) {
+                    let now = new Date().getTime();
+                    let diffMs = now - lastRcOverrideTimestamp;
+
+                    // Se passou de 7.5 segundos desde a última mensagem de "Ativo" encontrada
+                    if (diffMs > 7500) {
+                        overrideActive = false;
+                        activeOverrideID = -1;
+                        console.log("RC Override expirou por tempo (7.5s)");
+                    }
+                }
+
 
             if(_GD60){
 
@@ -358,9 +408,27 @@ Item {
             _satCount = _activeVehicle.gps.count.rawValue
             _satPDOP = _activeVehicle.gps.lock.rawValue
 
+            var breach_val = breachDetection()
+            if (breach_val.level > -1 && canShowBreachAlert) {
+                console.log("VIOLACAO DE ESPAÇO AEREO NÍVEL ", breach_val.level + 1)
+
+                if (breach_val.level === 0) {
+                    popUp_breachAlert = "Invasão do Volume de Contingência!"
+                    _breachAlertColor = "Yellow"
+                }
+                if (breach_val.level === 1) {
+                    popUp_breachAlert = "Invasão do Volume de Ground Risk Buffer!"
+                    _breachAlertColor = "Orange"
+                }
+
+                breachAlertPopup.open()
+                breachAlertPopup.visible = true
+                canShowBreachAlert = false
+                breachCooldownTimer.start()
+            }
 
             // console.log(_activeVehicle.rcRSSI.valueOf())
-            _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue//_activeVehicle.batteries.index(0,1).voltage.rawValue
+           // _gasolina = //_activeVehicle.batteries.index(0,1).voltage.rawValue
 
             if(_activeVehicle.rcRSSI != 0){
                 _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
@@ -375,7 +443,7 @@ Item {
                     _rcQuality_mean = _rcQuality_mean.toFixed(0)
                     _rcQuality_ARRAY.shift();
                 }
-                console.log("RCQUALITY: ",_rcQuality, " MEDIA: ",_rcQuality_mean, " ARRAY: ", _rcQuality_ARRAY)
+                //console.log("RCQUALITY: ",_rcQuality, " MEDIA: ",_rcQuality_mean, " ARRAY: ", _rcQuality_ARRAY)
             }
             horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
             minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
@@ -396,23 +464,7 @@ Item {
             console.log("  poly first WE coord -> ",_geoFenceController.polygons.get(0).path[1])
             console.log("  vehicle pos -> ", _activeVehicle.coordinate.toString())*/
 
-            var breach_val = breachDetection()
-            if (breach_val.level > -1 && canShowBreachAlert) {
-                console.log("VIOLACAO DE ESPAÇO AEREO NÍVEL ", breach_val.level + 1)
 
-                if (breach_val.level === 0) {
-                    popUp_breachAlert = "Invasão do Volume de Contingência!"
-                    _breachAlertColor = "Yellow"
-                }
-                if (breach_val.level === 1) {
-                    popUp_breachAlert = "Invasão do Volume de Ground Risk Buffer!"
-                    _breachAlertColor = "Orange"
-                }
-
-                // breachAlertPopup.open()
-                canShowBreachAlert = false
-                breachCooldownTimer.start()
-            }
 
 
             if(_GD60){
@@ -440,7 +492,7 @@ Item {
 
 
 
-            if(_current_generator_ARRAY.length === 20){ //sabendo que recebemos um dado novo a cada 0.1 segundos, (ver c/ Erich)
+            if(_current_generator_ARRAY.length >= 20){ //sabendo que recebemos um dado novo a cada 0.1 segundos, (ver c/ Erich)
                 _returnFunctionArray = generatorAlert(_current_battery_ARRAY, _current_generator_ARRAY, oldGeneratorMediamValue);//executa função
                 flagAlertaGerador = _returnFunctionArray[0]; //atualiza flag geral com valor booleano retornado da função
                 oldGeneratorMediamValue = _returnFunctionArray[1]; //atualiza valor de média
@@ -478,6 +530,8 @@ Item {
                 aceleracao_rotor_4_ARRAY.shift();
                 aceleracao_rotor_5_ARRAY.shift();
                 aceleracao_rotor_6_ARRAY.shift();
+
+
             }
         }
     }
@@ -752,6 +806,7 @@ Item {
                     height: parent.height * 2 / 3
                     active: false  // set true when you want to load it
                     visible: true
+                    property var gasolina: _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue
 
                     sourceComponent: Component {
                         QGCColoredImage {
@@ -760,7 +815,7 @@ Item {
                             anchors.margins: 0
                             source: "/qmlimages/GasCan.svg"
                             fillMode: Image.PreserveAspectFit
-                            color:  _gasolina > 50 ? "green" : (_gasolina > 20 ? "orange" : "red")
+                            color:  gasolina > 50 ? "green" : (gasolina > 20 ? "orange" : "red")
                             visible: true
                         }
                     }
@@ -793,7 +848,7 @@ Item {
                     anchors.fill: textBoxGasolinePercentage
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
-                    text: _gasolina + "%"
+                    text: gasolina + "%"
                     font.bold: true
                     color: "white"
                     visible: textBoxGasolinePercentage.visible
@@ -841,7 +896,7 @@ Item {
 
 
 
-                Rectangle{
+                /*Rectangle{
                     //anchors.fill:parent
                     id: generatorCurrentBar
                     anchors.left: generatorFunctionalityIcon.right
@@ -875,7 +930,7 @@ Item {
                         border.width:1
                         border.color:"black"
                     }
-                }
+                }*/
 
                 Rectangle{
                     id: textBoxGeneratorInfo
@@ -913,7 +968,7 @@ Item {
                 QGCColoredImage {
                     id: satteliteInformationIcon
                     anchors.top:        parent.top
-                    anchors.left:       _GD60? generatorFunctionalityIcon.right :generatorCurrentBar.right
+                    anchors.left:       _GD60? generatorFunctionalityIcon.right :generatorFunctionalityIcon.right
                     anchors.leftMargin: _toolsMargin
                     anchors.topMargin:  _toolsMargin*2
                     width:              height
@@ -1585,7 +1640,7 @@ Item {
 
                             Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
+                            color:                  _activeVehicle.rangeFinderDist.value.toFixed(2) >120 ? "red": "white"
                             text:                   "Alt. LIDAR"
                             font.pixelSize:         _androidBuild ?  26 : 24
                             font.bold: true
@@ -1594,7 +1649,7 @@ Item {
 
                             Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
+                            color:                  _activeVehicle.rangeFinderDist.value.toFixed(2) >120 ? "red": "white"
                             text:                   _activeVehicle.rangeFinderDist.value.toFixed(2) + "m" //altitudeRelative.value*10)/10 + "m"
                             font.pixelSize:         _androidBuild ?  26 : 24
                             font.bold: true
@@ -1620,7 +1675,7 @@ Item {
 
                             Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
+                            color:                  "white"
                             text:                   "Alt. AMSL"
                             font.pixelSize:         _androidBuild ?  26 : 24
                             font.bold: true
@@ -1629,7 +1684,7 @@ Item {
 
                             Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
+                            color:                  "white"
                             text:                   Math.round(_activeVehicle.altitudeAMSL.value*10)/10 + "m"
                             font.pixelSize:         _androidBuild ?  26 : 24
                             font.bold: true
@@ -2003,14 +2058,14 @@ Item {
                 anchors.fill: parent
                 color: _breachAlertColor
                 border.color: "black"
-                visible: false
+                visible: parent.open()
 
                 Text {
                     anchors.centerIn: parent
                     text: popUp_breachAlert
                     font.bold: true
-                    visible: false
-                    // font.pixelSize: _androidBuild? 8 : 14
+                    visible: parent.visible
+                     font.pixelSize: _androidBuild? 16 : 20
                 }
             }
         }
@@ -2109,11 +2164,10 @@ Item {
 
         Rectangle {
                     id: btnOverride
-                    property bool overriding: false
                     width: parent.width*0.15
                     height: parent.height*0.1
                     radius: 5
-                    color: overrideActive ? "red" : "green"  // cor dinâmica
+                    color: overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "red":"grey") : "green"  // cor dinâmica. Ativado mas
                     border.color: "black"
                     border.width: 1
                     //anchors.horizontalCenter:  parent.horizontalCenter
@@ -2124,7 +2178,7 @@ Item {
                     // texto centralizado
                     Text {
                         anchors.centerIn: parent
-                        text: overrideActive? "Stop Override":"Override RC"
+                        text:  overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "Stop Override": "Active by:"+activeOverrideID):"Override RC"
                         color: "white"
                         font.bold: true
                     }
@@ -2132,13 +2186,17 @@ Item {
                     // efeito de clique
                     MouseArea {
                             anchors.fill: parent
-                            hoverEnabled: true
+                            hoverEnabled: (activeOverrideID===-1 || activeOverrideID===gcsID)
                            //cursorShape: Qt.PointingHandCursor
 
                             onClicked: {
                                 // botão apenas abre popup
-                                confirmOverridePopup.wantsToEnable = !overrideActive
-                                confirmOverridePopup.open()
+                                if (activeOverrideID === -1 || activeOverrideID === gcsID) {
+                                        confirmOverridePopup.wantsToEnable = !overrideActive
+                                        confirmOverridePopup.open()
+                                    } else {
+                                        console.log("Clique bloqueado: Outro ID tem o controle:", activeOverrideID)
+                                    }
                             }
                         }
                 }

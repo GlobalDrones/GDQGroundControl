@@ -438,8 +438,70 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         //if(retorno!="") return retorno;
     }
 
+
+
+
     //_mavlink->_status.buffer_overrun
     _overrideFuture = QtConcurrent::run([=]() {
+
+
+        // -------- IP LOCAL via Qt --------
+        QString localIp = "unknown";
+
+        const auto interfaces = QNetworkInterface::allAddresses();
+        for (const QHostAddress& addr : interfaces) {
+            if (addr.protocol() == QAbstractSocket::IPv4Protocol &&
+                !addr.isLoopback()) {
+                localIp = addr.toString();
+                break;
+            }
+        }
+        uint32_t ip_u32 = 0;
+
+        QStringList parts = localIp.split(".");
+        if (parts.size() == 4) {
+            ip_u32 =
+                (parts[0].toUInt() << 24) |
+                (parts[1].toUInt() << 16) |
+                (parts[2].toUInt() << 8)  |
+                (parts[3].toUInt());
+        }
+
+        // Reinterpretar bits como float
+        float ip_as_float;
+        static_assert(sizeof(float) == sizeof(uint32_t), "float != uint32");
+        std::memcpy(&ip_as_float, &ip_u32, sizeof(float));
+        // --------------------------------
+
+
+
+        mavlink_message_t _overrideMsg;
+        mavlink_named_value_float_t _overrideValue;
+
+        _overrideValue.time_boot_ms = static_cast<uint32_t>(
+            QDateTime::currentMSecsSinceEpoch() & 0xFFFFFFFF
+            );
+
+        strncpy(_overrideValue.name, "RC_OVERRIDE", sizeof(_overrideValue.name));
+
+        // Aqui vai o IP codificado nos bits
+        _overrideValue.value = ip_as_float;
+
+        mavlink_msg_named_value_float_encode(
+            42,
+            MAV_COMP_ID_ONBOARD_COMPUTER,
+            &_overrideMsg,
+            &_overrideValue
+            );
+
+
+        SharedLinkInterfacePtr sharedLink = vehicleLinkManager()->primaryLink().lock();
+        if(sharedLink){
+            sendMessageOnLinkThreadSafe(sharedLink.get(), _overrideMsg);
+            qDebug() << "SENDING NAMED_VALUE_FLOAT:" <<_overrideValue.name << _overrideValue.value << localIp;
+        }
+        else{
+            qDebug() << "SEM SHAREDLINK PRA NAMED_VALUE_FLOAT";}
 
         const char* dev = "/dev/ttyHS3"; // Porta de comunicação
 
@@ -1486,6 +1548,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
         default:
+            qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
             break;
         }
         break;
