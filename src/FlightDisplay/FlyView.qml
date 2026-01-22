@@ -328,6 +328,30 @@ Item {
     }
 
     Timer{
+        id: gasolineValuesUpdater
+        interval: 100
+        running: true
+        repeat: true
+
+        onTriggered:{
+            _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.value
+            horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
+            minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
+            segundos_restantes = (7200 * (_gasolina/100))%60
+
+
+
+            if(horas_restantes<10) {horas_restantes_string = "0"+horas_restantes.toString()}
+            else {horas_restantes_string = horas_restantes.toString()}
+            if(minutos_restantes < 10){ minutos_restantes_string = "0" +minutos_restantes.toString()}
+            else {minutos_restantes_string = minutos_restantes.toString()}
+            if(segundos_restantes <10) {segundos_restantes_string = "0" + segundos_restantes.toString()}
+            else {segundos_restantes_string = segundos_restantes.toString()}
+
+        }
+    }
+
+    Timer{
         id: propertyValuesUpdater
         interval: 100
         running: true
@@ -428,8 +452,8 @@ Item {
             }
 
             // console.log(_activeVehicle.rcRSSI.valueOf())
-           // _gasolina = //_activeVehicle.batteries.index(0,1).voltage.rawValue
-
+            //_gasolina = _activeVehicle.batteries.index(0,1).voltage.rawValue
+            //console.log("Gasolina: ",_activeVehicle.batteries.get(_gasolineIndex).percentRemaining,"|",)
             if(_activeVehicle.rcRSSI != 0){
                 _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
                 _rcQuality_ARRAY.push(_rcQuality)
@@ -445,18 +469,6 @@ Item {
                 }
                 //console.log("RCQUALITY: ",_rcQuality, " MEDIA: ",_rcQuality_mean, " ARRAY: ", _rcQuality_ARRAY)
             }
-            horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
-            minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
-            segundos_restantes = (7200 * (_gasolina/100))%60
-
-
-
-            if(horas_restantes<10) {horas_restantes_string = "0"+horas_restantes.toString()}
-            else {horas_restantes_string = horas_restantes.toString()}
-            if(minutos_restantes < 10){ minutos_restantes_string = "0" +minutos_restantes.toString()}
-            else {minutos_restantes_string = minutos_restantes.toString()}
-            if(segundos_restantes <10) {segundos_restantes_string = "0" + segundos_restantes.toString()}
-            else {segundos_restantes_string = segundos_restantes.toString()}
 
             /*console.log("poly count: ",_geoFenceController.polygons.count.toString())
             console.log("  poly 0 -> ",_geoFenceController.polygons.get(0).path)
@@ -656,7 +668,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _pct_bateria_1 > 9? _pct_bateria_1+"%": "0"+_pct_bateria_1+"%"
-                            font.pixelSize:       _androidBuild ?  21 : 21//ScreenTools.smallFontPixelHeight
+                            //font.pixelSize:       _androidBuild ?  21 : 21//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             visible: textBoxBatteryInfo_1.visible
                             font.bold: true
                         }
@@ -666,7 +679,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _tensao_bateria_1 + " V"
-                            font.pixelSize:         _androidBuild ?  21 : 21///ScreenTools.smallFontPixelHeight
+                            //font.pixelSize:         _androidBuild ?  21 : 21///ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             visible: textBoxBatteryInfo_1.visible
                             font.bold: true
                         }
@@ -676,7 +690,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _current_bateria_1 + " A"
-                            font.pixelSize:         _androidBuild ?  21 : 21///ScreenTools.smallFontPixelHeight
+                            //font.pixelSize:         _androidBuild ?  21 : 21///ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             visible: textBoxBatteryInfo_1.visible
                             font.bold: true
                         }
@@ -684,129 +699,21 @@ Item {
                     }
                 }
 
-                QGCColoredImage {
-                    id: batteryPercentageIcon_2
-                    anchors.top:        parent.top
-                    anchors.left:       textBoxBatteryInfo_1.right
-                    anchors.margins:    _toolsMargin
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/Battery.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              "white"
-                    visible: _GD60//true
-                }
-
-                Rectangle{
-                    id: batteryPercentageBar_2
-                    anchors.top: batteryPercentageIcon_2.top
-                    anchors.left: batteryPercentageIcon_2.left
-                    //anchors.margins: _toolsMargin
-                    width: batteryPercentageIcon_2.width
-                    height: batteryPercentageIcon_2.height
-                    color: "transparent"//batMouseArea.containsMouse? "green": "red"
-                    visible: false
-                    Rectangle{
-                        y: parent.height*0.1
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*0.85 //fixo pra não ultrapassar o desenho
-                        color: (_pct_bateria_2) > 50 ? "green" : ((_pct_bateria_2) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria_1
-                    }
-                    Rectangle{ //BARRA DE ALTURA DINAMICA PRA INDICAR O NÍVEL DE bateria -> HEIGHT = 1-bateria%
-
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*(0.15 + 0.85*(1-_pct_bateria_2/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
-                        color: qgcPal.toolbarBackground
-                    }
-
-                }
-
-                OpacityMask{
-                    anchors.fill: batteryPercentageBar_2
-                    source: batteryPercentageBar_2
-                    maskSource: batteryPercentageIcon_2
-                    invert: true
-                    MouseArea{
-                        id: batMouseArea_2
-                        anchors.fill: parent
-                        hoverEnabled : true
-
-                    }
-                }
-                Rectangle{
-                    id: textBoxBatteryInfo_2
-                    anchors.verticalCenter: batteryPercentageIcon_2 .verticalCenter
-                    //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
-                    anchors.left: batteryPercentageIcon_2.right
-                    anchors.rightMargin: _toolsMargin
-                    height: batteryPercentageIcon_2.height*0.7
-                    width: batteryPercentageIcon_2.width*0.7
-                    visible: _GD60//true//batMouseArea_1.containsMouse? true: false
-                    color: "transparent"// desktop version "black"
-                    border.width: 0
-                    border.color: "transparent"// desktop version "lightgray"
-                    Component.onCompleted: gasolineIconLoader.active = true
-
-
-                    ColumnLayout {
-                        id:                     batteryInfoColumn_2
-                        anchors.top: textBoxBatteryInfo_2.top
-                        anchors.horizontalCenter: textBoxBatteryInfo_2.horizontalCenter
-                        spacing:                0
-                        visible: _GD60//true//textBoxBatteryInfo_1.visible
-
-                        Text {
-                            id: textBoxBatteryInfo_2PCT
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _pct_bateria_2 > 9? _pct_bateria_2+"%": "0"+_pct_bateria_2+"%"
-                            font.pixelSize:       _androidBuild ?  26 : 21//ScreenTools.smallFontPixelHeight
-                            visible: _GD60//textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-                        Text {
-                            id: textBoxBatteryInfo_2TENSION
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _tensao_bateria_2 + " V"
-                            font.pixelSize:         _androidBuild ?  26 : 21///ScreenTools.smallFontPixelHeight
-                            visible: _GD60//textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-                        Text {
-                            id: textBoxBatteryInfo_2CURRENT
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _current_bateria_2 + " A"
-                            font.pixelSize:         _androidBuild ?  26 : 21///ScreenTools.smallFontPixelHeight
-                            visible: _GD60//textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-
-                    }
-                }
 
                 //gasolina
                 Loader {
                     id: gasolineIconLoader
                     anchors.top: parent.top
-                    anchors.left: _GD60 ? textBoxBatteryInfo_2.right :textBoxBatteryInfo_1.right
+                    anchors.left: textBoxBatteryInfo_1.right
                     anchors.rightMargin: _toolsMargin
-                    anchors.leftMargin: _toolsMargin*2
+                    anchors.leftMargin: _toolsMargin*4
                     anchors.topMargin: _toolsMargin
                     asynchronous: false
                     width: height
                     height: parent.height * 2 / 3
                     active: false  // set true when you want to load it
                     visible: true
-                    property var gasolina: _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue
+
 
                     sourceComponent: Component {
                         QGCColoredImage {
@@ -815,7 +722,7 @@ Item {
                             anchors.margins: 0
                             source: "/qmlimages/GasCan.svg"
                             fillMode: Image.PreserveAspectFit
-                            color:  gasolina > 50 ? "green" : (gasolina > 20 ? "orange" : "red")
+                            color:  _gasolina > 50 ? "green" : (_gasolina > 20 ? "orange" : "red")
                             visible: true
                         }
                     }
@@ -848,7 +755,7 @@ Item {
                     anchors.fill: textBoxGasolinePercentage
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
-                    text: gasolina + "%"
+                    text: _gasolina + "%"
                     font.bold: true
                     color: "white"
                     visible: textBoxGasolinePercentage.visible
@@ -895,43 +802,6 @@ Item {
                 }
 
 
-
-                /*Rectangle{
-                    //anchors.fill:parent
-                    id: generatorCurrentBar
-                    anchors.left: generatorFunctionalityIcon.right
-                    anchors.top: parent.top
-                    anchors.leftMargin: _toolsMargin*2
-                    anchors.topMargin:  _toolsMargin*2
-                    width:height/3
-                    height: parent.height*2/3
-                    color:"green"
-                    visible: _GD60? false:true
-                    //z:1000000
-                    Rectangle{
-                        anchors.top:generatorCurrentBar.top
-                        anchors.left:generatorCurrentBar.left
-                        width:generatorCurrentBar.width
-                        height: _current_generator >= 0 ?  generatorCurrentBar.height * (1-(_current_generator/maxGeneratorCurrent)): generatorCurrentBar.height
-                        color:"black"
-                    }
-                    Rectangle{
-                        anchors.fill:parent
-                        border.width:2
-                        border.color: "lightgray"
-                        color:"transparent"
-                    }
-                    Rectangle{
-                        anchors.horizontalCenter: generatorCurrentBar.horizontalCenter
-                        width: generatorCurrentBar.width + _toolsMargin
-                        height: generatorCurrentBar.height/20
-                        y: generatorCurrentBar.height*(oldGeneratorMediamValue/20)/maxGeneratorCurrent
-                        color: "white"
-                        border.width:1
-                        border.color:"black"
-                    }
-                }*/
-
                 Rectangle{
                     id: textBoxGeneratorInfo
                     anchors.verticalCenter: generatorFunctionalityIcon.verticalCenter
@@ -955,6 +825,7 @@ Item {
                         verticalAlignment:      Text.AlignVCenter
                         color:                  "White"
                         text:                   _current_generator + "A"
+                        font.pointSize: 12
                         font.bold: true
                         //font.pointSize:         ScreenTools.mediumFontPixelHeight
                     }
@@ -1025,7 +896,8 @@ Item {
                         color:                  "White"
                         text:                   "Count: " + _satCount
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  26 : 24
+                        //font.pixelSize:         _androidBuild ?  26 : 24
+                        font.pointSize: 15
                     }
                     Text {
                         Layout.alignment:       Text.AlignHCenter
@@ -1033,7 +905,8 @@ Item {
                         color:                  "White"
                         text:                   "PDOP: "+ _satPDOP
                         font.bold: true
-                        font.pixelSize:         _androidBuild ?  26 : 24
+                        //font.pixelSize:         _androidBuild ?  26 : 24
+                        font.pointSize: 15
                         //font.pointSize:         ScreenTools.mediumFontPixelHeight
                     }
 
@@ -1044,7 +917,7 @@ Item {
                     id: rcInformationIcon
                     anchors.top:        parent.top
                     anchors.left:       textBoxSatteliteInfo.right
-                    anchors.leftMargin: _toolsMargin
+                    anchors.leftMargin: _toolsMargin*3
                     anchors.topMargin:  _toolsMargin*2
                     width:              height
                     height:             parent.height*2/3
@@ -1356,130 +1229,6 @@ Item {
                     }
 
                 }
-
-                // Dial Accelerometer
-                Item{
-                    id: centralRotor_1_Accell
-                    anchors.left: rotorsTempArea.right
-                    anchors.top: parent.top
-                    anchors.margins:    _toolsMargin*2
-                    height: parent.height*2/3
-                    width: height
-                    visible: _GD60? true:false
-                    Canvas { //border of
-                        anchors.fill: parent
-                        id: rotor1Arc
-                        onPaint: {
-                            var ctx = getContext("2d")
-                            ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal1/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                        }
-                    }
-                    /*MouseArea { // Torna o  interativa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            console.log("Click Test");
-                        }
-                        onContainsMouseChanged: {
-                            _selected_rotor_1 = !_selected_rotor_1
-                        }
-                    }*/
-                    DropShadow {
-                        anchors.fill: parent
-                        source: rotor1Arc
-                        color: "yellow" // Semi-transparent black shadow
-                        radius: 8
-                        samples:17
-                        spread: 0.4
-                        verticalOffset: 0
-                        horizontalOffset: 0
-                        visible: _selected_rotor_1
-                    }
-                    //Component.onCompleted: requestPaint()
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _rpm_horizontal1
-                        color:"green"
-                        font.bold: true
-                    }
-                }
-
-                Item{
-                    id: centralRotor_2_Accell
-                    anchors.left: centralRotor_1_Accell.right
-                    anchors.top: parent.top
-                    anchors.margins:    _toolsMargin*2
-                    height: parent.height*2/3
-                    width: height
-                    visible: _GD60? true:false
-                    Canvas { //border of
-                        anchors.fill: parent
-                        id: rotor2Arc
-                        onPaint: {
-                            var ctx = getContext("2d")
-                            ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal2/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                        }
-                    }
-                    /*MouseArea { // Torna o  interativa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            console.log("Click Test");
-                        }
-                        onContainsMouseChanged: {
-                            _selected_rotor_1 = !_selected_rotor_1
-                        }
-                    }*/
-                    DropShadow {
-                        anchors.fill: parent
-                        source: rotor2Arc
-                        color: "yellow" // Semi-transparent black shadow
-                        radius: 8
-                        samples:17
-                        spread: 0.4
-                        verticalOffset: 0
-                        horizontalOffset: 0
-                        visible: _selected_rotor_1
-                    }
-                    //Component.onCompleted: requestPaint()
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _rpm_horizontal2
-                        color:"green"
-                        font.bold: true
-                    }
-                }
-
-
-
             }
 
         }
@@ -1535,7 +1284,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Est. Time"
-                            font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                         Text {
@@ -1544,7 +1294,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   horas_restantes_string+":"+minutos_restantes_string+":"+segundos_restantes_string
-                            font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                     }
@@ -1570,7 +1321,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Dist. Home"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                         Text {
@@ -1579,7 +1331,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _activeVehicle.distanceToHome.value === "NaN"? 0 : _activeVehicle.distanceToHome.value.toFixed(2)+"m"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                     }
@@ -1606,7 +1359,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Dist. WP"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                         Text {
@@ -1615,7 +1369,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   _activeVehicle.distanceToNextWP.value == "NaN"? 0 : _activeVehicle.distanceToNextWP.value+"m"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                     }
@@ -1642,7 +1397,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  _activeVehicle.rangeFinderDist.value.toFixed(2) >120 ? "red": "white"
                             text:                   "Alt. LIDAR"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                         Text {
@@ -1651,7 +1407,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  _activeVehicle.rangeFinderDist.value.toFixed(2) >120 ? "red": "white"
                             text:                   _activeVehicle.rangeFinderDist.value.toFixed(2) + "m" //altitudeRelative.value*10)/10 + "m"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                     }
@@ -1677,7 +1434,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "white"
                             text:                   "Alt. AMSL"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                         Text {
@@ -1686,7 +1444,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "white"
                             text:                   Math.round(_activeVehicle.altitudeAMSL.value*10)/10 + "m"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                     }
@@ -1712,7 +1471,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Hor. speed"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                         Text {
@@ -1721,7 +1481,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  Math.round(_activeVehicle.airSpeed.value*10)/10 < 17? "White" : "Red"
                             text:                   Math.round(_activeVehicle.airSpeed.value*10)/10 +"m/s"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                     }
@@ -1747,7 +1508,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   "Vert. speed"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                         Text {
@@ -1756,7 +1518,8 @@ Item {
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
                             text:                   Math.round(_activeVehicle.climbRate.value*10)/10+"m/s"
-                            font.pixelSize:         _androidBuild ?  26 : 24
+                            //font.pixelSize:         _androidBuild ?  26 : 24//ScreenTools.smallFontPixelHeight
+                            font.pointSize: 14
                             font.bold: true
                         }
                     }
