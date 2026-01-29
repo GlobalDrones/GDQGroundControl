@@ -360,6 +360,11 @@ Item {
         onDisplayPreFlightChecklist: mainWindow.showPopupDialogFromComponent(
                                          preFlightChecklistPopup)
 
+        onModoEngenheiroToggle:{
+            visible_custom_telemetry = !visible_custom_telemetry
+            //console.log("[a] visible_custom_telemetry ativado pelo engenheiroToggle: ", visible_custom_telemetry)
+        }
+
         property real leftInset: x + width
     }
 

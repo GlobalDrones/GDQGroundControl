@@ -358,7 +358,7 @@ Item {
             _altitudeAMSL = _activeVehicle.altitudeAMSL.value
             _flightTime = (_activeVehicle.flightTimeCustom.value).toFixed(0)
 
-            widgetLayer.visible_custom_telemetry= false
+            //widgetLayer.visible_custom_telemetry= false
         }
     }
 
