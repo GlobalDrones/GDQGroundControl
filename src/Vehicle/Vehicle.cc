@@ -370,10 +370,7 @@ void Vehicle::stopRCOverride() {
 
     _overrideRunning = false;
 
-    // Opcional: aguardar a thread terminar antes de prosseguir
 
-
-    _overrideRunning = false;
 }
 #ifndef WIN32
 QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ //override.
@@ -475,33 +472,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
 
 
-        mavlink_message_t _overrideMsg;
-        mavlink_named_value_float_t _overrideValue;
 
-        _overrideValue.time_boot_ms = static_cast<uint32_t>(
-            QDateTime::currentMSecsSinceEpoch() & 0xFFFFFFFF
-            );
-
-        strncpy(_overrideValue.name, "RC_OVERRIDE", sizeof(_overrideValue.name));
-
-        // Aqui vai o IP codificado nos bits
-        _overrideValue.value = ip_as_float;
-
-        mavlink_msg_named_value_float_encode(
-            42,
-            MAV_COMP_ID_ONBOARD_COMPUTER,
-            &_overrideMsg,
-            &_overrideValue
-            );
-
-
-        SharedLinkInterfacePtr sharedLink = vehicleLinkManager()->primaryLink().lock();
-        if(sharedLink){
-            sendMessageOnLinkThreadSafe(sharedLink.get(), _overrideMsg);
-            qDebug() << "SENDING NAMED_VALUE_FLOAT:" <<_overrideValue.name << _overrideValue.value << localIp;
-        }
-        else{
-            qDebug() << "SEM SHAREDLINK PRA NAMED_VALUE_FLOAT";}
 
         const char* dev = "/dev/ttyHS3"; // Porta de comunicação
 
@@ -535,6 +506,22 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             qWarning() << "Erro tcsetattr:" << strerror(errno);
             close(fd);
             return;
+        }
+
+        uint8_t enable_stream[] = {
+            0x55, 0x66,             // Header
+            0x01,                   // CTRL
+            0x00, 0x00, 0x00,       // Seq/Reserved (3 bytes conforme seu código)
+            0x42,                   // CMD_ID
+            0x05,                   // Payload (20Hz)
+            0x1E, 0x52              // CRC16 para Freq 0x05
+        };
+
+        // enviar 3 vezes
+        for (int i = 0; i < 3; i++) {
+            write(fd, enable_stream, sizeof(enable_stream));
+            tcdrain(fd);
+            usleep(20000); // 20ms
         }
 
         qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud.";
@@ -587,10 +574,19 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
 
         bool needs_send = true;
+        _overrideRunning = true;
         while (_overrideRunning) {
+           // qDebug("[DEBUG LOOP DA THREAD]");
             // LER DADOS DA SERIAL
             int n = read(fd, buf, sizeof(buf));
+            //if(n>0){
+            //QString hex;
+            //for (int i = 0; i < n; i++) {
+            //    hex += QString("%1 ").arg(buf[i], 2, 16, QLatin1Char('0'));
 
+            //}
+            //hex += QString(" | N = %1").arg(n);
+            //qDebug() << "[SERIAL HEX]" << hex;}
 
             // LÓGICA DE EXTRAÇÃO E ENVIO MAVLINK
             // Verifica se o pacote tem o tamanho mínimo e o magic byte correto (0x42)
@@ -808,7 +804,41 @@ QString Vehicle::validateRCChannels(const QVariantList &arrayRC)
         return "Erro tcgetattr:";
     }
 
-    qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud.";
+    setJoystickEnabled(false);
+    _joystickManager->activeJoystick()->terminate();
+
+    // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
+    mavlink_rc_channels_override_t rc_reset;
+
+    // Define TODOS os 18 canais para 65535 (IGNORAR)
+    rc_reset.chan1_raw  = 65535; rc_reset.chan2_raw  = 65535;
+    rc_reset.chan3_raw  = 65535; rc_reset.chan4_raw  = 65535;
+    rc_reset.chan5_raw  = 65535; rc_reset.chan6_raw  = 65535;
+    rc_reset.chan7_raw  = 65535; rc_reset.chan8_raw  = 65535;
+    rc_reset.chan9_raw  = 65535; rc_reset.chan10_raw = 65535;
+    rc_reset.chan11_raw = 65535; rc_reset.chan12_raw = 65535;
+    rc_reset.chan13_raw = 65535; rc_reset.chan14_raw = 65535;
+    rc_reset.chan15_raw = 65535; rc_reset.chan16_raw = 65535;
+    rc_reset.chan17_raw = 65535; rc_reset.chan18_raw = 65535;
+
+    rc_reset.target_system      = id();
+    rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+    mavlink_message_t msg_out;
+    mavlink_msg_rc_channels_override_encode(
+        _mavlink->getSystemId(),
+        _mavlink->getComponentId(),
+        &msg_out,
+        &rc_reset
+        );
+
+
+    // Envia o comando de reset 3 vezes para garantir a entrega
+    sendMessageMultiple(msg_out);
+
+    qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
+
+    qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud. ValidateRC Func";
 
 
     unsigned char buf[256];

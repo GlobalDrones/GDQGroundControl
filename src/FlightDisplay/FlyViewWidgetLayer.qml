@@ -56,6 +56,7 @@ Item {
     property var siyi: SiYi
     property SiYiCamera camera: siyi.camera
     property int iconLeftMargin: toolStrip.width + toolStrip.anchors.leftMargin
+    property bool visible_custom_telemetry: false
 
     QGCToolInsets {
         id: _totalToolInsets
@@ -259,7 +260,7 @@ Item {
         anchors.margins: _toolsMargin
         anchors.bottom:parent.bottom
         anchors.right:instrumentPanel.left
-        visible: true //!SiYi.hideWidgets
+        visible: visible_custom_telemetry //!SiYi.hideWidgets
 
 
         /*// States for custom layout support
