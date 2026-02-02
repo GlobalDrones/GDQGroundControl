@@ -259,7 +259,7 @@ Item {
         x: recalcXPosition()
         anchors.margins: _toolsMargin
         anchors.bottom:parent.bottom
-        anchors.right:instrumentPanel.left
+        anchors.right:instrumentPanel.right
         visible: visible_custom_telemetry //!SiYi.hideWidgets
 
 

@@ -17,7 +17,7 @@ ToolStripActionList {
 
     signal displayPreFlightChecklist
     signal modoEngenheiroToggle
-    property bool modoEngenheiro: false
+    property bool _modoEngenheiroChecked: false
     model: [
         ToolStripAction {
             text:           qsTr("Plan")
@@ -29,10 +29,12 @@ ToolStripActionList {
             text: qsTr("+Info")
             iconSource: "/qmlimages/Gears.svg"
             onTriggered: {
-                _root.modoEngenheiro = !_root.modoEngenheiro
                 //console.log("[A] modoEngenheiro_ActionList:",_root.modoEngenheiro)
                 modoEngenheiroToggle() //trigger do sinal
+                _modoEngenheiroChecked: !_modoEngenheiroChecked
             }
+
+            checked: _modoEngenheiroChecked
         }
         //GuidedActionTakeoff { },
         //GuidedActionLand { },
