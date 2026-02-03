@@ -56,7 +56,7 @@
 #include "EventHandler.h"
 #include "Actuators/Actuators.h"
 #include "Autotune.h"
-
+#include "SiYi/SiYiCrcApi.h"
 #ifdef QT_DEBUG
 #include "MockLink.h"
 #endif
@@ -67,6 +67,16 @@
 #include <fcntl.h>
 #include <errno.h>
 #endif
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <unistd.h>     // close()
+#include <fcntl.h>      // fcntl(), O_NONBLOCK
+#include <errno.h>      // errno
+#include <cstring>     // strerror(), memcpy()
+
 
 
 #define ABS_DIFF(a, b) ((a > b) ? (a - b) : (b - a))
@@ -398,7 +408,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
     setJoystickEnabled(false);
     _joystickManager->activeJoystick()->terminate();
-
+/*
     // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
     mavlink_rc_channels_override_t rc_reset;
 
@@ -429,7 +439,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
     sendMessageMultiple(msg_out);
 
     qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
-
+*/
     if(!force_override){ //Faz a verificação de RC_Channel se não esta tentando forçar o override
         QString retorno = validateRCChannels(arrayRC);
         //if(retorno!="") return retorno;
@@ -442,95 +452,93 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
     _overrideFuture = QtConcurrent::run([=]() {
 
 
-        // -------- IP LOCAL via Qt --------
-        QString localIp = "unknown";
+        // ================= UDP CONFIG =================
+        int sock = socket(AF_INET6, SOCK_DGRAM, 0);
+        int off = 0;
+        setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
 
-        const auto interfaces = QNetworkInterface::allAddresses();
-        for (const QHostAddress& addr : interfaces) {
-            if (addr.protocol() == QAbstractSocket::IPv4Protocol &&
-                !addr.isLoopback()) {
-                localIp = addr.toString();
-                break;
-            }
-        }
-        uint32_t ip_u32 = 0;
-
-        QStringList parts = localIp.split(".");
-        if (parts.size() == 4) {
-            ip_u32 =
-                (parts[0].toUInt() << 24) |
-                (parts[1].toUInt() << 16) |
-                (parts[2].toUInt() << 8)  |
-                (parts[3].toUInt());
-        }
-
-        // Reinterpretar bits como float
-        float ip_as_float;
-        static_assert(sizeof(float) == sizeof(uint32_t), "float != uint32");
-        std::memcpy(&ip_as_float, &ip_u32, sizeof(float));
-        // --------------------------------
-
-
-
-
-
-        const char* dev = "/dev/ttyHS3"; // Porta de comunicação
-
-        // Abrir para leitura E ESCRITA (O_RDWR)
-        int fd = open(dev, O_RDWR | O_NOCTTY);
-
-        if (fd < 0) {
-            qWarning() << "Não foi possível abrir" << dev << "erro:" << strerror(errno);
+        if (sock < 0) {
+            qWarning() << "Erro criando socket UDP:" << strerror(errno);
             return;
         }
 
-        struct termios tty;
-        if (tcgetattr(fd, &tty) != 0) {
-            qWarning() << "Erro tcgetattr:" << strerror(errno);
-            close(fd);
+        // Porta LOCAL (qualquer uma != 19856)
+        sockaddr_in6 local{};
+        local.sin6_family = AF_INET6;
+        local.sin6_addr   = in6addr_any;
+        local.sin6_port   = htons(0); // porta automática
+
+
+        if (bind(sock, (sockaddr*)&local, sizeof(local)) < 0) {
+            qWarning() << "Erro no bind UDP:" << strerror(errno);
+            close(sock);
             return;
         }
 
-        // Configuração da porta: 115200 baud, Raw, 8N1
-        cfmakeraw(&tty);
-        cfsetispeed(&tty, B115200);
-        cfsetospeed(&tty, B115200);
-        tty.c_cflag |= (CREAD | CLOCAL | CS8); // CREAD, CLOCAL, CS8
-        tty.c_cflag &= ~(CSTOPB | CRTSCTS);     // ~CSTOPB, ~CRTSCTS
+        // Endereço do UniRC7 (SERVER)
+        sockaddr_in6 unirc{};
+        unirc.sin6_family = AF_INET6;
+        unirc.sin6_port   = htons(19856);
 
-        // Configurações de tempo limite (VMIN=0, VTIME=0 para leitura não bloqueante)
-        tty.c_cc[VMIN] = 0;
-        tty.c_cc[VTIME] = 0;
+        // IPv4 mapeado
+        inet_pton(AF_INET6, "::ffff:192.168.144.20", &unirc.sin6_addr);
 
-        if (tcsetattr(fd, TCSANOW, &tty) != 0) {
-            qWarning() << "Erro tcsetattr:" << strerror(errno);
-            close(fd);
+
+
+        // "Conecta" o UDP (fixa peer)
+        if (::connect(sock, (sockaddr*)&unirc, sizeof(unirc)) < 0) {
+            qWarning() << "Erro no connect UDP:" << strerror(errno);
+            close(sock);
             return;
         }
 
-        uint8_t enable_stream[] = {
-            0x55, 0x66,             // Header
-            0x01,                   // CTRL
-            0x00, 0x00, 0x00,       // Seq/Reserved (3 bytes conforme seu código)
-            0x42,                   // CMD_ID
-            0x05,                   // Payload (20Hz)
-            0x1E, 0x52              // CRC16 para Freq 0x05
-        };
+        // Socket não bloqueante
+        fcntl(sock, F_SETFL, O_NONBLOCK);
 
-        // enviar 3 vezes
+        SiYiCrcApi crcAPI;
+        // ================= FECHA STREAM =================
+        /*QByteArray closeCmd = crcAPI.make_remote_channel_cmd(
+            0x01, // CLOSE
+            0x00  // freq = 0
+            );
+
         for (int i = 0; i < 3; i++) {
-            write(fd, enable_stream, sizeof(enable_stream));
-            tcdrain(fd);
-            usleep(20000); // 20ms
+            send(sock, closeCmd.data(), closeCmd.size(), 0);
+            usleep(20000);
         }
 
-        qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud.";
+        qWarning() << "[SIYI] RemoteChannelData CLOSED";
+
+        usleep(100000); // 100 ms de folga (importante)*/
+
+        QByteArray openCmd = crcAPI.make_remote_channel_cmd(
+            0x00, // OPEN
+            0x02  // 4 Hz (use 0x05 pra 20Hz depois)
+            );
+
+        for (int i = 0; i < 3; i++) {
+            send(sock, openCmd.data(), openCmd.size(), 0);
+            usleep(20000);
+        }
+
+        sockaddr_in check{};
+        socklen_t len = sizeof(check);
+        getsockname(sock, (sockaddr*)&check, &len);
+
+        qWarning() << "[SIYI] UDP local port:" << ntohs(check.sin_port);
+        qWarning() << "[SIYI] RemoteChannelData OPENED";
+
+
+
+        qWarning() << ">>> ***UDP UniRC7 inicializado (192.168.144.20:19856)";
 
         // --- CONFIGURAÇÃO MAVLINK ---
         mavlink_message_t msg;
         mavlink_rc_channels_override_t channels_override;
 
         unsigned char buf[256];
+        sockaddr_in from{};
+        socklen_t fromLen = sizeof(from);
 
         // Inicializa todos os canais para IGNORAR (UINT16_MAX = 65535)
         channels_override.chan1_raw  = 65535; channels_override.chan2_raw  = 65535;
@@ -552,7 +560,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             0.0, 0.0, 0.0, 0.0, 0.0
             );
 
-        qWarning() << "Iniciando loop de leitura serial e envio MAVLink RC_CHANNELS_OVERRIDE...";
+        qWarning() << "***Iniciando loop de leitura serial e envio MAVLink RC_CHANNELS_OVERRIDE...";
 
         // =================================================================
         // VARIÁVEIS DE ESTADO (DIRTY FLAG) PARA OTIMIZAÇÃO
@@ -576,9 +584,41 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         bool needs_send = true;
         _overrideRunning = true;
         while (_overrideRunning) {
-           // qDebug("[DEBUG LOOP DA THREAD]");
+            qDebug("[DEBUG LOOP DA THREAD]");
             // LER DADOS DA SERIAL
-            int n = read(fd, buf, sizeof(buf));
+
+
+           int n = recvfrom(
+               sock,
+               buf,
+               sizeof(buf),
+               0,
+               (sockaddr*)&from,
+               &fromLen
+               );
+
+           if (n > 0) {
+               QString hex;
+               for (int i = 0; i < n; i++) {
+                   hex += QString("%1 ")
+                   .arg(buf[i], 2, 16, QLatin1Char('0'));
+               }
+               qWarning() << "[UDP RX]" << hex;
+           }
+           else if (n == 0) {
+               qWarning() << "[UDP RX] datagrama vazio (0 bytes)";
+           }
+           else { // n < 0
+               if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                   // normal em socket não-bloqueante
+               } else {
+                   qWarning() << "[UDP RX ERROR]" << strerror(errno);
+               }
+           }
+
+
+
+
             //if(n>0){
             //QString hex;
             //for (int i = 0; i < n; i++) {
@@ -750,10 +790,10 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio) deletar para teste depois
             QThread::msleep(1);
         }
-
-        close(fd);
+        close(sock);
 
     });
+
     return "";
 }
 
