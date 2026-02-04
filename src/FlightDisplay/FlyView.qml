@@ -344,8 +344,7 @@ Item {
             minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
             segundos_restantes = (7200 * (_gasolina/100))%60
 
-
-
+            //console.log("TESTERPMFLYVIEW: ",_activeVehicle._GD_GeneratorRPM.rawValue.toFixed(0))
 
             if(horas_restantes<10) {horas_restantes_string = "0"+horas_restantes.toString()}
             else {horas_restantes_string = horas_restantes.toString()}
@@ -792,7 +791,7 @@ Item {
                             Layout.alignment:       Text.AlignHCenter
                             verticalAlignment:      Text.AlignVCenter
                             color:                  "White"
-                            text:                   _motor_rpm.toFixed(0)
+                            text:                   _activeVehicle._GD_GeneratorRPM.rawValue.toFixed(0).toString()
                             font.bold: true
                             font.pixelSize:         (_GD60? 15:20)
                         }
@@ -877,18 +876,20 @@ Item {
                             onTriggered: {
 
                                 if (!_GD60){
-                                    accellRotorModel.set(0, { aceleracao: _aceleracao_rotor_1/3850 });
-                                    accellRotorModel.set(1, { aceleracao: _aceleracao_rotor_2/3850 });
-                                    accellRotorModel.set(2, { aceleracao: _aceleracao_rotor_3/3850 });
-                                    accellRotorModel.set(3, { aceleracao: _aceleracao_rotor_4/3850 });
-                                    accellRotorModel.set(4, { aceleracao: _aceleracao_rotor_5/3850 });
-                                    accellRotorModel.set(5, { aceleracao: _aceleracao_rotor_6/3850 });}
+                                    accellRotorModel.set(0, { aceleracao: _activeVehicle._GD_RPM1.rawValue.toFixed(0)/3850 });
+                                    accellRotorModel.set(1, { aceleracao: _activeVehicle._GD_RPM2.rawValue.toFixed(0)/3850 });
+                                    accellRotorModel.set(2, { aceleracao: _activeVehicle._GD_RPM3.rawValue.toFixed(0)/3850 });
+                                    accellRotorModel.set(3, { aceleracao: _activeVehicle._GD_RPM4.rawValue.toFixed(0)/3850 });
+                                    accellRotorModel.set(4, { aceleracao: _activeVehicle._GD_RPM5.rawValue.toFixed(0)/3850 });
+                                    accellRotorModel.set(5, { aceleracao: _activeVehicle._GD_RPM6.rawValue.toFixed(0)/3850 });}
+
                                 else{
                                     accellRotorModel.set(0, { aceleracao: _aceleracao_rotor_1/5000 });
                                     accellRotorModel.set(1, { aceleracao: _aceleracao_rotor_2/5000 });
                                     accellRotorModel.set(2, { aceleracao: _aceleracao_rotor_3/5000 });
                                     accellRotorModel.set(3, { aceleracao: _aceleracao_rotor_4/5000 });;
                                 }
+
                             }
                         }
 
@@ -1078,7 +1079,7 @@ Item {
                         anchors.left: _GD60? centralRotor_2_Accell.right : rotorsTempArea.right
                         anchors.margins: _toolsMargin * 1.5
                         property int _borderWidth: 2
-                        property int _fontSize: 11//_androidBuild ?  15 : 20
+                        property int _fontSize: 10//_androidBuild ?  15 : 20
 
                         // JavaScript function to format numbers with leading zeros
                         // (You can place this function elsewhere, like in a separate .js file, for reusability)
@@ -1873,6 +1874,7 @@ Item {
 
                                             onClicked: {
                                                 //array_valores_rc
+
                                                 var arrayInt = array_valores_rc.map(v => Number(v) | 0)
                                                 if (!overrideActive) {
                                                     //if(!override_first_clicked && _activeVehicle.firmwareMajorVersion.toString() == "255"){

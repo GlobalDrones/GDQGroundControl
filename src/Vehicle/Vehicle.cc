@@ -116,6 +116,13 @@ const char* Vehicle::_flightTimeFactName =          "flightTime";
 const char* Vehicle::_gd60_Sensor1FactName =         "gd60_sensor1";
 const char* Vehicle::_gd60_Sensor2FactName =         "gd60_sensor2";
 const char* Vehicle::_gd60_Sensor3FactName =         "gd60_sensor3";
+const char* Vehicle::_GD_RPM1FactName=               "_GD_RPM1";
+const char* Vehicle::_GD_RPM2FactName=               "_GD_RPM2";
+const char* Vehicle::_GD_RPM3FactName=               "_GD_RPM3";
+const char* Vehicle::_GD_RPM4FactName=               "_GD_RPM4";
+const char* Vehicle::_GD_RPM5FactName=               "_GD_RPM5";
+const char* Vehicle::_GD_RPM6FactName=               "_GD_RPM6";
+const char* Vehicle::_GD_GeneratorRPMFactName=       "_GD_GeneratorRPM";
 const char* Vehicle::_distanceToHomeFactName =      "distanceToHome";
 const char* Vehicle::_missionItemIndexFactName =    "missionItemIndex";
 const char* Vehicle::_headingToNextWPFactName =     "headingToNextWP";
@@ -340,6 +347,13 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _gd60_Sensor1Fact                      (0, _gd60_Sensor1FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor2Fact                      (0, _gd60_Sensor2FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor3Fact                      (0, _gd60_Sensor3FactName,      FactMetaData::valueTypeFloat)
+    , _GD_RPM1Fact                           (0, _GD_RPM1FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM2Fact                           (0, _GD_RPM2FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM3Fact                           (0, _GD_RPM3FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM4Fact                           (0, _GD_RPM4FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM5Fact                           (0, _GD_RPM5FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM6Fact                           (0, _GD_RPM6FactName,           FactMetaData::valueTypeInt16)
+    , _GD_GeneratorRPMFact                   (0, _GD_GeneratorRPMFactName,   FactMetaData::valueTypeInt16)
     , _distanceToHomeFact                    (0, _distanceToHomeFactName,    FactMetaData::valueTypeDouble)
     , _missionItemIndexFact                  (0, _missionItemIndexFactName,  FactMetaData::valueTypeUint16)
     , _headingToNextWPFact                   (0, _headingToNextWPFactName,   FactMetaData::valueTypeDouble)
@@ -506,7 +520,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
         QByteArray openCmd = crcAPI.make_remote_channel_cmd(
             0x00, // OPEN
-            0x02  // 4 Hz (use 0x05 pra 20Hz depois)
+            0x05  // 4 Hz (use 0x05 pra 20Hz depois)
             );
 
         for (int i = 0; i < 3; i++) {
@@ -569,12 +583,13 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         // const int SAFETY_SEND_INTERVAL_MS = 100; // 10 Hz (Envio garantido)
 
         // Taxa de loop (para não saturar a CPU). Deve ser o alvo de envio (50 Hz = 20 ms).
-        const int MIN_LOOP_MS = 10;
+        const int MIN_LOOP_MS = 50;
         const int MIN_STEP_VALUE = 50;
         // =================================================================
 
 
         bool needs_send = true;
+        int  count_no_rcv=0;
         _overrideRunning = true;
         while (_overrideRunning) {
             qDebug("[DEBUG LOOP DA THREAD]");
@@ -771,6 +786,15 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                 // O loop deve rodar em alta frequência para processar dados seriais rapidamente
                 // mas a pausa do envio é controlada pela lógica acima.
                 // QThread::msleep(MIN_LOOP_MS); // Removido daqui, pois a pausa já está no final do loop principal ou no 'n <= 0'.
+            }
+            else{
+                count_no_rcv++;
+                if(count_no_rcv>=4){ //200ms sem receber dados na porta serial -> reenviar start da porta
+                    for (int i = 0; i < 3; i++) {
+                        sendto(sock, openCmd.data(), openCmd.size(), 0, (sockaddr*)&unirc, sizeof(unirc));
+                        usleep(20000);
+                    }
+                }
             }
 
             // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio) deletar para teste depois
@@ -1185,6 +1209,13 @@ void Vehicle::_commonInit()
     _addFact(&_gd60_Sensor1Fact,        _gd60_Sensor1FactName);
     _addFact(&_gd60_Sensor2Fact,        _gd60_Sensor2FactName);
     _addFact(&_gd60_Sensor3Fact,        _gd60_Sensor3FactName);
+    _addFact(&_GD_RPM1Fact,             _GD_RPM1FactName);
+    _addFact(&_GD_RPM2Fact,             _GD_RPM2FactName);
+    _addFact(&_GD_RPM3Fact,             _GD_RPM3FactName);
+    _addFact(&_GD_RPM4Fact,             _GD_RPM4FactName);
+    _addFact(&_GD_RPM5Fact,             _GD_RPM5FactName);
+    _addFact(&_GD_RPM6Fact,             _GD_RPM6FactName);
+    _addFact(&_GD_GeneratorRPMFact,         _GD_GeneratorRPMFactName);
     _addFact(&_distanceToHomeFact,      _distanceToHomeFactName);
     _addFact(&_missionItemIndexFact,    _missionItemIndexFactName);
     _addFact(&_headingToNextWPFact,     _headingToNextWPFactName);
@@ -1226,6 +1257,13 @@ void Vehicle::_commonInit()
     _gd60_Sensor1Fact.setRawValue(0);
     _gd60_Sensor2Fact.setRawValue(0);
     _gd60_Sensor3Fact.setRawValue(0);
+    _GD_RPM1Fact.setRawValue(0);
+    _GD_RPM2Fact.setRawValue(0);
+    _GD_RPM3Fact.setRawValue(0);
+    _GD_RPM4Fact.setRawValue(0);
+    _GD_RPM5Fact.setRawValue(0);
+    _GD_RPM6Fact.setRawValue(0);
+    _GD_GeneratorRPMFact.setRawValue(0);
     _flightTimeFact.setRawValue(0);
     _flightTimeUpdater.setInterval(1000);
     _flightTimeUpdater.setSingleShot(false);
@@ -1574,6 +1612,34 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         break;
     }
 
+    case MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4:
+    {
+        mavlink_esc_telemetry_1_to_4_t msg_et14;
+        mavlink_msg_esc_telemetry_1_to_4_decode(&message, &msg_et14);
+        _GD_RPM1Fact.setRawValue(msg_et14.rpm[0]);
+        _GD_RPM2Fact.setRawValue(msg_et14.rpm[1]);
+        _GD_RPM3Fact.setRawValue(msg_et14.rpm[2]);
+        _GD_RPM4Fact.setRawValue(msg_et14.rpm[3]);
+
+        break;
+    }
+    case MAVLINK_MSG_ID_ESC_TELEMETRY_5_TO_8:
+    {
+        mavlink_esc_telemetry_5_to_8_t msg_et58;
+        mavlink_msg_esc_telemetry_5_to_8_decode(&message, &msg_et58);
+        _GD_RPM5Fact.setRawValue(msg_et58.rpm[0]);
+        _GD_RPM6Fact.setRawValue(msg_et58.rpm[1]);
+
+        break;
+    }
+    case MAVLINK_MSG_ID_RPM:
+    {
+        mavlink_rpm_t msg_rpm;
+        mavlink_msg_rpm_decode(&message, &msg_rpm);
+        _GD_GeneratorRPMFact.setRawValue(msg_rpm.rpm1);
+        break;
+    }
+
     case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
     {
         enum TempID {
@@ -1604,7 +1670,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
         default:
-            qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
+            //qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
             break;
         }
         break;
