@@ -135,18 +135,15 @@ const uint16_t crc16_tab[256]= {
 
 uint16_t CRC16_cal(uint8_t *ptr, uint32_t len, uint16_t crc_init)
 {
-    uint16_t crc, oldcrc16;
-    uint8_t temp;
-    crc = crc_init;
-    while (len--!=0)
+    uint16_t crc = crc_init;
+    while (len-- != 0)
     {
-        temp=(crc>>8)&0xff;
-        oldcrc16=crc16_tab[*ptr^temp];
-        crc=(crc<<8)^oldcrc16;
+        // Esta lógica de tabela equivale ao loop bit-a-bit do Python
+        uint8_t temp = (crc >> 8) & 0xff;
+        crc = (crc << 8) ^ crc16_tab[*ptr ^ temp];
         ptr++;
     }
-    //crc=~crc; //??
-    return(crc);
+    return crc;
 }
 uint8_t crc_check_16bites(uint8_t* pbuf, uint32_t len,uint32_t* p_result)
 {
@@ -156,30 +153,68 @@ uint8_t crc_check_16bites(uint8_t* pbuf, uint32_t len,uint32_t* p_result)
     return 2;
 }
 
+#include "SiYiCrcApi.h"
+
+
+
+// Implementação direta do loop Python: crc16_ccitt_init0
+uint16_t calculate_crc16_python_style(const QByteArray &data)
+{
+    uint16_t crc = 0x0000; // init = 0
+    uint16_t poly = 0x1021;
+
+    for (int i = 0; i < data.size(); ++i) {
+        uint8_t b = static_cast<uint8_t>(data.at(i));
+        crc ^= (static_cast<uint16_t>(b) << 8);
+        for (int j = 0; j < 8; ++j) {
+            if (crc & 0x8000) {
+                crc = ((crc << 1) ^ poly) & 0xFFFF;
+            } else {
+                crc = (crc << 1) & 0xFFFF;
+            }
+        }
+    }
+    return crc & 0xFFFF;
+}
+
 QByteArray SiYiCrcApi::make_remote_channel_cmd(uint8_t cmd_type, uint8_t freq)
 {
-    QByteArray pkt;
+    QByteArray header;
 
-    pkt.append(char(0x55));
-    pkt.append(char(0x66));
-    pkt.append(char(0x01));        // LEN
-    pkt.append(char(cmd_type));    // 0x00 = open | 0x01 = close
-    pkt.append(char(0x00));        // SEQ_L
-    pkt.append(char(0x00));        // SEQ_H
-    pkt.append(char(0x00));        // RESERVED
-    pkt.append(char(0x42));        // CMD_ID
-    pkt.append(char(freq));        // freq
+    // STX (b"\x55\x66")
+    header.append(0x55);
+    header.append(0x66);
 
-    uint16_t crc = CRC16_cal(
-        reinterpret_cast<uint8_t*>(pkt.data()),
-        pkt.size(),
-        0
-        );
+    // ctrl = 0x01 (como no send_cmd do Python)
+    header.append(0x01);
 
+    // payload no seu Python é b"\x02" (len = 1) ou b"\x00" (len = 1)
+    uint16_t data_len = 1;
 
-    pkt.append(char((crc >> 8) & 0xFF)); // CRC_H
-    pkt.append(char(crc & 0xFF));        // CRC_L
+    // struct.pack("<H", data_len) -> Little Endian
+    header.append(static_cast<char>(data_len & 0xFF));
+    header.append(static_cast<char>((data_len >> 8) & 0xFF));
 
-    return pkt;
-};
+    // struct.pack("<H", seq) -> Little Endian
+    header.append(static_cast<char>(_nextSeq & 0xFF));
+    header.append(static_cast<char>((_nextSeq >> 8) & 0xFF));
 
+    // cmd_id = 0x42
+    header.append(0x42);
+
+    // payload (freq ou status)
+    header.append(static_cast<char>(freq));
+
+    // Incrementa seq exatamente como: seq_ref[0] = (seq + 1) & 0xFFFF
+    _nextSeq = (_nextSeq + 1) & 0xFFFF;
+
+    // Calcula CRC sobre o pacote completo (Header + Payload)
+    uint16_t crc = calculate_crc16_python_style(header);
+
+    // Adiciona CRC no final: struct.pack("<H", crc) -> Little Endian
+    QByteArray full_pkt = header;
+    full_pkt.append(static_cast<char>(crc & 0xFF));
+    full_pkt.append(static_cast<char>((crc >> 8) & 0xFF));
+
+    return full_pkt;
+}

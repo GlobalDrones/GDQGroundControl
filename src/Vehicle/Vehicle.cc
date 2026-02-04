@@ -408,7 +408,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
     setJoystickEnabled(false);
     _joystickManager->activeJoystick()->terminate();
-/*
+
     // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
     mavlink_rc_channels_override_t rc_reset;
 
@@ -439,7 +439,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
     sendMessageMultiple(msg_out);
 
     qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
-*/
+
     if(!force_override){ //Faz a verificação de RC_Channel se não esta tentando forçar o override
         QString retorno = validateRCChannels(arrayRC);
         //if(retorno!="") return retorno;
@@ -453,9 +453,11 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
 
         // ================= UDP CONFIG =================
-        int sock = socket(AF_INET6, SOCK_DGRAM, 0);
-        int off = 0;
-        setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+        int sock = socket(AF_INET, SOCK_DGRAM, 0);
+        if (sock < 0) {
+            qWarning() << "Erro criando socket UDP (IPv4):" << strerror(errno);
+            return;
+        }
 
         if (sock < 0) {
             qWarning() << "Erro criando socket UDP:" << strerror(errno);
@@ -463,11 +465,10 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         }
 
         // Porta LOCAL (qualquer uma != 19856)
-        sockaddr_in6 local{};
-        local.sin6_family = AF_INET6;
-        local.sin6_addr   = in6addr_any;
-        local.sin6_port   = htons(0); // porta automática
-
+        sockaddr_in local{};
+        local.sin_family = AF_INET;
+        local.sin_addr.s_addr = INADDR_ANY; // 0.0.0.0
+        local.sin_port = htons(19857);      // Porta 19857 igual ao LOCAL_PORT do Python
 
         if (bind(sock, (sockaddr*)&local, sizeof(local)) < 0) {
             qWarning() << "Erro no bind UDP:" << strerror(errno);
@@ -476,24 +477,16 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         }
 
         // Endereço do UniRC7 (SERVER)
-        sockaddr_in6 unirc{};
-        unirc.sin6_family = AF_INET6;
-        unirc.sin6_port   = htons(19856);
+        sockaddr_in unirc{};
+        unirc.sin_family = AF_INET;
+        unirc.sin_port = htons(19856);
+        inet_pton(AF_INET, "192.168.144.20", &unirc.sin_addr);
 
-        // IPv4 mapeado
-        inet_pton(AF_INET6, "::ffff:192.168.144.20", &unirc.sin6_addr);
-
-
-
-        // "Conecta" o UDP (fixa peer)
-        if (::connect(sock, (sockaddr*)&unirc, sizeof(unirc)) < 0) {
-            qWarning() << "Erro no connect UDP:" << strerror(errno);
-            close(sock);
-            return;
-        }
-
-        // Socket não bloqueante
+        // 4. Modo Não-Bloqueante (Para o loop while não travar esperando dados)
         fcntl(sock, F_SETFL, O_NONBLOCK);
+
+        qWarning() << "Socket UDP IPv4 pronto. Escutando em 0.0.0.0:19857 e enviando para 192.168.144.20:19856";
+
 
         SiYiCrcApi crcAPI;
         // ================= FECHA STREAM =================
@@ -517,7 +510,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             );
 
         for (int i = 0; i < 3; i++) {
-            send(sock, openCmd.data(), openCmd.size(), 0);
+            sendto(sock, openCmd.data(), openCmd.size(), 0, (sockaddr*)&unirc, sizeof(unirc));
             usleep(20000);
         }
 
@@ -588,15 +581,8 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             // LER DADOS DA SERIAL
 
 
-           int n = recvfrom(
-               sock,
-               buf,
-               sizeof(buf),
-               0,
-               (sockaddr*)&from,
-               &fromLen
-               );
 
+           int n = recvfrom(sock, buf, sizeof(buf), 0, (sockaddr*)&from, &fromLen);
            if (n > 0) {
                QString hex;
                for (int i = 0; i < n; i++) {
