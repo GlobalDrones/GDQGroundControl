@@ -1638,11 +1638,12 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     }
 
     case MAVLINK_MSG_ID_SYSTEM_TIME:
+    {
         mavlink_system_time_t msg_systime;
         mavlink_msg_system_time_decode(&message, &msg_systime);
         _flightTimeFact.setRawValue(msg_systime.time_boot_ms/1000);//em segundos
         break;
-
+    }
     case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
     {
         enum TempID {

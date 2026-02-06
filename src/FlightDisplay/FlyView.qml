@@ -1136,10 +1136,17 @@ Item {
                                     border.color:"white"
                                     Text {
                                         anchors.centerIn: parent
-                                        // Converter _flightTime (segundos) para milissegundos
-                                        property var date: new Date(0, 0, 1, 0, 0, _flightTime)
-                                        // Formatar e exibir o texto
-                                        text: "Flightime: " + Qt.formatTime(date, "hh:mm:ss")
+                                        text: {
+                                            var totalSeconds = _activeVehicle.flightTimeCustom.rawValue
+                                            var hours = Math.floor(totalSeconds / 3600)
+                                            var minutes = Math.floor((totalSeconds % 3600) / 60)
+                                            var seconds = Math.floor(totalSeconds % 60)
+
+                                            // Formata para garantir dois dígitos (00:00:00)
+                                            return "Flighttime: " + (hours > 0 ? (hours < 10 ? "0" + hours : hours) + ":" : "00:") +
+                                                   (minutes < 10 ? "0" + minutes : minutes) + ":" +
+                                                   (seconds < 10 ? "0" + seconds : seconds)
+                                        }
                                         //text: "Flightime: " + _flightTime
                                         font.bold: true
                                         font.pointSize: _dataBox._fontSize
