@@ -343,7 +343,7 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _altitudeTuningSetpointFact            (0, _altitudeTuningSetpointFactName, FactMetaData::valueTypeDouble)
     , _xTrackErrorFact                       (0, _xTrackErrorFactName,       FactMetaData::valueTypeDouble)
     , _flightDistanceFact                    (0, _flightDistanceFactName,    FactMetaData::valueTypeDouble)
-    , _flightTimeFact                        (0, _flightTimeFactName,        FactMetaData::valueTypeElapsedTimeInSeconds)
+    , _flightTimeFact                        (0, _flightTimeFactName,        FactMetaData::valueTypeUint32)
     , _gd60_Sensor1Fact                      (0, _gd60_Sensor1FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor2Fact                      (0, _gd60_Sensor2FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor3Fact                      (0, _gd60_Sensor3FactName,      FactMetaData::valueTypeFloat)
@@ -1264,10 +1264,7 @@ void Vehicle::_commonInit()
     _GD_RPM5Fact.setRawValue(0);
     _GD_RPM6Fact.setRawValue(0);
     _GD_GeneratorRPMFact.setRawValue(0);
-    _flightTimeFact.setRawValue(0);
-    _flightTimeUpdater.setInterval(1000);
-    _flightTimeUpdater.setSingleShot(false);
-    connect(&_flightTimeUpdater, &QTimer::timeout, this, &Vehicle::_updateFlightTime);
+
 
     // Set video stream to udp if running ArduSub and Video is disabled
     if (sub() && _settingsManager->videoSettings()->videoSource()->rawValue() == VideoSettings::videoDisabled) {
@@ -1639,6 +1636,12 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         _GD_GeneratorRPMFact.setRawValue(msg_rpm.rpm1);
         break;
     }
+
+    case MAVLINK_MSG_ID_SYSTEM_TIME:
+        mavlink_system_time_t msg_systime;
+        mavlink_msg_system_time_decode(&message, &msg_systime);
+        _flightTimeFact.setRawValue(msg_systime.time_boot_ms/1000);//em segundos
+        break;
 
     case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
     {
@@ -2430,13 +2433,13 @@ void Vehicle::_updateArmed(bool armed)
         // We are transitioning to the armed state, begin tracking trajectory points for the map
         if (_armed) {
             _trajectoryPoints->start();
-            _flightTimerStart();
+            //_flightTimerStart();
             _clearCameraTriggerPoints();
             // Reset battery warning
             _lowestBatteryChargeStateAnnouncedMap.clear();
         } else {
             _trajectoryPoints->stop();
-            _flightTimerStop();
+            //_flightTimerStop();
             // Also handle Video Streaming
             if(qgcApp()->toolbox()->videoManager()->videoReceiver()) {
                 if(_settingsManager->videoSettings()->disableWhenDisarmed()->rawValue().toBool()) {
