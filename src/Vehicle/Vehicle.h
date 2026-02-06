@@ -107,8 +107,9 @@ public:
             JoystickManager*        joystickManager);
 
     // Pass these into the offline constructor to create an offline vehicle which tracks the offline vehicle settings
-    static const MAV_AUTOPILOT    MAV_AUTOPILOT_TRACK = static_cast<MAV_AUTOPILOT>(-1);
-    static const MAV_TYPE         MAV_TYPE_TRACK = static_cast<MAV_TYPE>(-1);
+    static constexpr MAV_AUTOPILOT MAV_AUTOPILOT_TRACK = MAV_AUTOPILOT_INVALID;
+    static constexpr MAV_TYPE      MAV_TYPE_TRACK      = MAV_TYPE_GCS;
+
 
     // The following is used to create a disconnected Vehicle for use while offline editing.
     Vehicle(MAV_AUTOPILOT           firmwareType,
@@ -308,6 +309,15 @@ public:
     Q_PROPERTY(Fact* gd60_Sensor1       READ gd60_Sensor1       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor2       READ gd60_Sensor2       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor3       READ gd60_Sensor3       CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM1           READ _GD_RPM1           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM2           READ _GD_RPM2           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM3           READ _GD_RPM3           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM4           READ _GD_RPM4           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM5           READ _GD_RPM5           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM6           READ _GD_RPM6           CONSTANT)
+    Q_PROPERTY(Fact* _GD_GeneratorRPM   READ _GD_GeneratorRPM   CONSTANT)
+
+
 
     Q_PROPERTY(FactGroup*           gps             READ gpsFactGroup               CONSTANT)
     Q_PROPERTY(FactGroup*           gps2            READ gps2FactGroup              CONSTANT)
@@ -533,8 +543,9 @@ public:
     void requestDataStream(MAV_DATA_STREAM stream, uint16_t rate, bool sendMultiple = true);
 
     /// Start the Overwritting thread for RC channels with controller serial input
-    Q_INVOKABLE void overwriteRC(void);
+    Q_INVOKABLE QString overwriteRC(const QVariantList &arrayRC, bool force_override);
     Q_INVOKABLE void stopRCOverride(void);
+    Q_INVOKABLE QString validateRCChannels(const QVariantList &arrayRC);
 
 
     // The follow method are used to turn on/off the tracking of settings updates for firmware/vehicle type on offline vehicles.
@@ -664,6 +675,13 @@ public:
     Fact* gd60_Sensor1                      () { return &_gd60_Sensor1Fact;}
     Fact* gd60_Sensor2                      () { return &_gd60_Sensor2Fact;}
     Fact* gd60_Sensor3                      () { return &_gd60_Sensor3Fact;}
+    Fact* _GD_RPM1                          () { return &_GD_RPM1Fact;}
+    Fact* _GD_RPM2                          () { return &_GD_RPM2Fact;}
+    Fact* _GD_RPM3                          () { return &_GD_RPM3Fact;}
+    Fact* _GD_RPM4                          () { return &_GD_RPM4Fact;}
+    Fact* _GD_RPM5                          () { return &_GD_RPM5Fact;}
+    Fact* _GD_RPM6                          () { return &_GD_RPM6Fact;}
+    Fact* _GD_GeneratorRPM                  () {return &_GD_GeneratorRPMFact;}
 
     FactGroup* gpsFactGroup                 () { return &_gpsFactGroup; }
     FactGroup* gps2FactGroup                () { return &_gps2FactGroup; }
@@ -1320,6 +1338,13 @@ private:
     Fact _gd60_Sensor1Fact;
     Fact _gd60_Sensor2Fact;
     Fact _gd60_Sensor3Fact;
+    Fact _GD_RPM1Fact;
+    Fact _GD_RPM2Fact;
+    Fact _GD_RPM3Fact;
+    Fact _GD_RPM4Fact;
+    Fact _GD_RPM5Fact;
+    Fact _GD_RPM6Fact;
+    Fact _GD_GeneratorRPMFact;
     Fact _distanceToHomeFact;
     Fact _missionItemIndexFact;
     Fact _headingToNextWPFact;
@@ -1377,6 +1402,13 @@ private:
     static const char* _gd60_Sensor1FactName;
     static const char* _gd60_Sensor2FactName;
     static const char* _gd60_Sensor3FactName;
+    static const char* _GD_RPM1FactName;
+    static const char* _GD_RPM2FactName;
+    static const char* _GD_RPM3FactName;
+    static const char* _GD_RPM4FactName;
+    static const char* _GD_RPM5FactName;
+    static const char* _GD_RPM6FactName;
+    static const char* _GD_GeneratorRPMFactName;
     static const char* _distanceToHomeFactName;
     static const char* _missionItemIndexFactName;
     static const char* _headingToNextWPFactName;

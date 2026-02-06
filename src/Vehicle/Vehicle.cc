@@ -56,7 +56,7 @@
 #include "EventHandler.h"
 #include "Actuators/Actuators.h"
 #include "Autotune.h"
-
+#include "SiYi/SiYiCrcApi.h"
 #ifdef QT_DEBUG
 #include "MockLink.h"
 #endif
@@ -67,6 +67,16 @@
 #include <fcntl.h>
 #include <errno.h>
 #endif
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <unistd.h>     // close()
+#include <fcntl.h>      // fcntl(), O_NONBLOCK
+#include <errno.h>      // errno
+#include <cstring>     // strerror(), memcpy()
+
 
 
 #define ABS_DIFF(a, b) ((a > b) ? (a - b) : (b - a))
@@ -106,6 +116,13 @@ const char* Vehicle::_flightTimeFactName =          "flightTime";
 const char* Vehicle::_gd60_Sensor1FactName =         "gd60_sensor1";
 const char* Vehicle::_gd60_Sensor2FactName =         "gd60_sensor2";
 const char* Vehicle::_gd60_Sensor3FactName =         "gd60_sensor3";
+const char* Vehicle::_GD_RPM1FactName=               "_GD_RPM1";
+const char* Vehicle::_GD_RPM2FactName=               "_GD_RPM2";
+const char* Vehicle::_GD_RPM3FactName=               "_GD_RPM3";
+const char* Vehicle::_GD_RPM4FactName=               "_GD_RPM4";
+const char* Vehicle::_GD_RPM5FactName=               "_GD_RPM5";
+const char* Vehicle::_GD_RPM6FactName=               "_GD_RPM6";
+const char* Vehicle::_GD_GeneratorRPMFactName=       "_GD_GeneratorRPM";
 const char* Vehicle::_distanceToHomeFactName =      "distanceToHome";
 const char* Vehicle::_missionItemIndexFactName =    "missionItemIndex";
 const char* Vehicle::_headingToNextWPFactName =     "headingToNextWP";
@@ -326,10 +343,17 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _altitudeTuningSetpointFact            (0, _altitudeTuningSetpointFactName, FactMetaData::valueTypeDouble)
     , _xTrackErrorFact                       (0, _xTrackErrorFactName,       FactMetaData::valueTypeDouble)
     , _flightDistanceFact                    (0, _flightDistanceFactName,    FactMetaData::valueTypeDouble)
-    , _flightTimeFact                        (0, _flightTimeFactName,        FactMetaData::valueTypeElapsedTimeInSeconds)
+    , _flightTimeFact                        (0, _flightTimeFactName,        FactMetaData::valueTypeUint32)
     , _gd60_Sensor1Fact                      (0, _gd60_Sensor1FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor2Fact                      (0, _gd60_Sensor2FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor3Fact                      (0, _gd60_Sensor3FactName,      FactMetaData::valueTypeFloat)
+    , _GD_RPM1Fact                           (0, _GD_RPM1FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM2Fact                           (0, _GD_RPM2FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM3Fact                           (0, _GD_RPM3FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM4Fact                           (0, _GD_RPM4FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM5Fact                           (0, _GD_RPM5FactName,           FactMetaData::valueTypeInt16)
+    , _GD_RPM6Fact                           (0, _GD_RPM6FactName,           FactMetaData::valueTypeInt16)
+    , _GD_GeneratorRPMFact                   (0, _GD_GeneratorRPMFactName,   FactMetaData::valueTypeInt16)
     , _distanceToHomeFact                    (0, _distanceToHomeFactName,    FactMetaData::valueTypeDouble)
     , _missionItemIndexFact                  (0, _missionItemIndexFactName,  FactMetaData::valueTypeUint16)
     , _headingToNextWPFact                   (0, _headingToNextWPFactName,   FactMetaData::valueTypeDouble)
@@ -370,13 +394,11 @@ void Vehicle::stopRCOverride() {
 
     _overrideRunning = false;
 
-    // Opcional: aguardar a thread terminar antes de prosseguir
 
-
-    _overrideRunning = false;
 }
-void Vehicle::overwriteRC(){ //override.
-    #ifndef WIN32
+#ifndef WIN32
+QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ //override.
+
     // para testar no folder do ardupilot/Tools/autotest: python3 sim_vehicle.py -v copter --no-mavproxy -A "--serial0=udpclient:192.168.1.114:14550"
     // 192.168.1.114:14550 <- IP e Porta que o controle ta escutando.
     // OU
@@ -387,7 +409,13 @@ void Vehicle::overwriteRC(){ //override.
     // =========================================================================
     if (_overrideRunning) {
         qWarning() << "Override já ativo";
-        return;
+        return "Override já ativo";
+    }
+
+    int rc[16];
+
+    for (int i = 0; i < 16; ++i) {
+        rc[i] = arrayRC[i].toInt();
     }
 
     _overrideRunning = true;
@@ -420,54 +448,104 @@ void Vehicle::overwriteRC(){ //override.
         &rc_reset
         );
 
+
     // Envia o comando de reset 3 vezes para garantir a entrega
     sendMessageMultiple(msg_out);
 
     qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
+
+    if(!force_override){ //Faz a verificação de RC_Channel se não esta tentando forçar o override
+        QString retorno = validateRCChannels(arrayRC);
+        //if(retorno!="") return retorno;
+    }
+
+
+
+
     //_mavlink->_status.buffer_overrun
     _overrideFuture = QtConcurrent::run([=]() {
 
-        const char* dev = "/dev/ttyHS3"; // Porta de comunicação
 
-        // Abrir para leitura E ESCRITA (O_RDWR)
-        int fd = open(dev, O_RDWR | O_NOCTTY);
-
-        if (fd < 0) {
-            qWarning() << "Não foi possível abrir" << dev << "erro:" << strerror(errno);
+        // ================= UDP CONFIG =================
+        int sock = socket(AF_INET, SOCK_DGRAM, 0);
+        if (sock < 0) {
+            qWarning() << "Erro criando socket UDP (IPv4):" << strerror(errno);
             return;
         }
 
-        struct termios tty;
-        if (tcgetattr(fd, &tty) != 0) {
-            qWarning() << "Erro tcgetattr:" << strerror(errno);
-            close(fd);
+        if (sock < 0) {
+            qWarning() << "Erro criando socket UDP:" << strerror(errno);
             return;
         }
 
-        // Configuração da porta: 115200 baud, Raw, 8N1
-        cfmakeraw(&tty);
-        cfsetispeed(&tty, B115200);
-        cfsetospeed(&tty, B115200);
-        tty.c_cflag |= (CREAD | CLOCAL | CS8); // CREAD, CLOCAL, CS8
-        tty.c_cflag &= ~(CSTOPB | CRTSCTS);     // ~CSTOPB, ~CRTSCTS
+        // Porta LOCAL (qualquer uma != 19856)
+        sockaddr_in local{};
+        local.sin_family = AF_INET;
+        local.sin_addr.s_addr = INADDR_ANY; // 0.0.0.0
+        local.sin_port = htons(19857);      // Porta 19857 igual ao LOCAL_PORT do Python
 
-        // Configurações de tempo limite (VMIN=0, VTIME=0 para leitura não bloqueante)
-        tty.c_cc[VMIN] = 0;
-        tty.c_cc[VTIME] = 0;
-
-        if (tcsetattr(fd, TCSANOW, &tty) != 0) {
-            qWarning() << "Erro tcsetattr:" << strerror(errno);
-            close(fd);
+        if (bind(sock, (sockaddr*)&local, sizeof(local)) < 0) {
+            qWarning() << "Erro no bind UDP:" << strerror(errno);
+            close(sock);
             return;
         }
 
-        qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud.";
+        // Endereço do UniRC7 (SERVER)
+        sockaddr_in unirc{};
+        unirc.sin_family = AF_INET;
+        unirc.sin_port = htons(19856);
+        inet_pton(AF_INET, "192.168.144.20", &unirc.sin_addr);
+
+        // 4. Modo Não-Bloqueante (Para o loop while não travar esperando dados)
+        fcntl(sock, F_SETFL, O_NONBLOCK);
+
+        qWarning() << "Socket UDP IPv4 pronto. Escutando em 0.0.0.0:19857 e enviando para 192.168.144.20:19856";
+
+
+        SiYiCrcApi crcAPI;
+        // ================= FECHA STREAM =================
+        /*QByteArray closeCmd = crcAPI.make_remote_channel_cmd(
+            0x01, // CLOSE
+            0x00  // freq = 0
+            );
+
+        for (int i = 0; i < 3; i++) {
+            send(sock, closeCmd.data(), closeCmd.size(), 0);
+            usleep(20000);
+        }
+
+        qWarning() << "[SIYI] RemoteChannelData CLOSED";
+
+        usleep(100000); // 100 ms de folga (importante)*/
+
+        QByteArray openCmd = crcAPI.make_remote_channel_cmd(
+            0x00, // OPEN
+            0x05  // 4 Hz (use 0x05 pra 20Hz depois)
+            );
+
+        for (int i = 0; i < 3; i++) {
+            sendto(sock, openCmd.data(), openCmd.size(), 0, (sockaddr*)&unirc, sizeof(unirc));
+            usleep(20000);
+        }
+
+        sockaddr_in check{};
+        socklen_t len = sizeof(check);
+        getsockname(sock, (sockaddr*)&check, &len);
+
+        qWarning() << "[SIYI] UDP local port:" << ntohs(check.sin_port);
+        qWarning() << "[SIYI] RemoteChannelData OPENED";
+
+
+
+        qWarning() << ">>> ***UDP UniRC7 inicializado (192.168.144.20:19856)";
 
         // --- CONFIGURAÇÃO MAVLINK ---
         mavlink_message_t msg;
         mavlink_rc_channels_override_t channels_override;
 
         unsigned char buf[256];
+        sockaddr_in from{};
+        socklen_t fromLen = sizeof(from);
 
         // Inicializa todos os canais para IGNORAR (UINT16_MAX = 65535)
         channels_override.chan1_raw  = 65535; channels_override.chan2_raw  = 65535;
@@ -489,7 +567,7 @@ void Vehicle::overwriteRC(){ //override.
             0.0, 0.0, 0.0, 0.0, 0.0
             );
 
-        qWarning() << "Iniciando loop de leitura serial e envio MAVLink RC_CHANNELS_OVERRIDE...";
+        qWarning() << "***Iniciando loop de leitura serial e envio MAVLink RC_CHANNELS_OVERRIDE...";
 
         // =================================================================
         // VARIÁVEIS DE ESTADO (DIRTY FLAG) PARA OTIMIZAÇÃO
@@ -505,14 +583,51 @@ void Vehicle::overwriteRC(){ //override.
         // const int SAFETY_SEND_INTERVAL_MS = 100; // 10 Hz (Envio garantido)
 
         // Taxa de loop (para não saturar a CPU). Deve ser o alvo de envio (50 Hz = 20 ms).
-        const int MIN_LOOP_MS = 10;
+        const int MIN_LOOP_MS = 50;
         const int MIN_STEP_VALUE = 50;
         // =================================================================
-        bool needs_send = true;
-        while (_overrideRunning) {
-            // LER DADOS DA SERIAL
-            int n = read(fd, buf, sizeof(buf));
 
+
+        bool needs_send = true;
+        int  count_no_rcv=0;
+        _overrideRunning = true;
+        while (_overrideRunning) {
+            qDebug("[DEBUG LOOP DA THREAD]");
+            // LER DADOS DA SERIAL
+
+
+
+            int n = recvfrom(sock, buf, sizeof(buf), 0, (sockaddr*)&from, &fromLen);
+            if (n > 0) {
+                QString hex;
+                for (int i = 0; i < n; i++) {
+                    hex += QString("%1 ")
+                    .arg(buf[i], 2, 16, QLatin1Char('0'));
+                }
+                qWarning() << "[UDP RX]" << hex;
+            }
+            else if (n == 0) {
+                qWarning() << "[UDP RX] datagrama vazio (0 bytes)";
+            }
+            else { // n < 0
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    // normal em socket não-bloqueante
+                } else {
+                    qWarning() << "[UDP RX ERROR]" << strerror(errno);
+                }
+            }
+
+
+
+
+            //if(n>0){
+            //QString hex;
+            //for (int i = 0; i < n; i++) {
+            //    hex += QString("%1 ").arg(buf[i], 2, 16, QLatin1Char('0'));
+
+            //}
+            //hex += QString(" | N = %1").arg(n);
+            //qDebug() << "[SERIAL HEX]" << hex;}
 
             // LÓGICA DE EXTRAÇÃO E ENVIO MAVLINK
             // Verifica se o pacote tem o tamanho mínimo e o magic byte correto (0x42)
@@ -672,17 +787,335 @@ void Vehicle::overwriteRC(){ //override.
                 // mas a pausa do envio é controlada pela lógica acima.
                 // QThread::msleep(MIN_LOOP_MS); // Removido daqui, pois a pausa já está no final do loop principal ou no 'n <= 0'.
             }
+            else{
+                count_no_rcv++;
+                if(count_no_rcv>=4){ //200ms sem receber dados na porta serial -> reenviar start da porta
+                    for (int i = 0; i < 3; i++) {
+                        sendto(sock, openCmd.data(), openCmd.size(), 0, (sockaddr*)&unirc, sizeof(unirc));
+                        usleep(20000);
+                    }
+                }
+            }
 
             // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio) deletar para teste depois
             QThread::msleep(1);
         }
-
-        close(fd);
+        close(sock);
 
     });
-#endif
+
+    return "";
 }
 
+QString Vehicle::validateRCChannels(const QVariantList &arrayRC)
+{
+
+    int rc[16];
+
+    for (int i = 0; i < 16; ++i) {
+        rc[i] = arrayRC[i].toInt();
+    }
+    // Número de canais esperados
+    constexpr int kNumChannels = 16;
+    constexpr int kFirstChannelOffset = 8;
+    constexpr int kBytesPerChannel = 2;
+
+    const char* dev = "/dev/ttyHS3"; // Porta de comunicação
+
+    // Abrir para leitura E ESCRITA (O_RDWR)
+    int fd = open(dev, O_RDWR | O_NOCTTY);
+
+    if (fd < 0) {
+        qWarning() << "Não foi possível abrir" << dev << "erro:" << strerror(errno);
+        return "erro ao abrir socket";
+    }
+
+    struct termios tty;
+    if (tcgetattr(fd, &tty) != 0) {
+        qWarning() << "Erro tcgetattr:" << strerror(errno);
+        close(fd);
+        return "Erro tcgetattr:";
+    }
+
+    // Configuração da porta: 115200 baud, Raw, 8N1
+    cfmakeraw(&tty);
+    cfsetispeed(&tty, B115200);
+    cfsetospeed(&tty, B115200);
+    tty.c_cflag |= (CREAD | CLOCAL | CS8); // CREAD, CLOCAL, CS8
+    tty.c_cflag &= ~(CSTOPB | CRTSCTS);     // ~CSTOPB, ~CRTSCTS
+
+    // Configurações de tempo limite (VMIN=0, VTIME=0 para leitura não bloqueante)
+    tty.c_cc[VMIN] = 0;
+    tty.c_cc[VTIME] = 0;
+
+    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+        qWarning() << "Erro tcsetattr:" << strerror(errno);
+        close(fd);
+        return "Erro tcgetattr:";
+    }
+
+    setJoystickEnabled(false);
+    _joystickManager->activeJoystick()->terminate();
+
+    // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
+    mavlink_rc_channels_override_t rc_reset;
+
+    // Define TODOS os 18 canais para 65535 (IGNORAR)
+    rc_reset.chan1_raw  = 65535; rc_reset.chan2_raw  = 65535;
+    rc_reset.chan3_raw  = 65535; rc_reset.chan4_raw  = 65535;
+    rc_reset.chan5_raw  = 65535; rc_reset.chan6_raw  = 65535;
+    rc_reset.chan7_raw  = 65535; rc_reset.chan8_raw  = 65535;
+    rc_reset.chan9_raw  = 65535; rc_reset.chan10_raw = 65535;
+    rc_reset.chan11_raw = 65535; rc_reset.chan12_raw = 65535;
+    rc_reset.chan13_raw = 65535; rc_reset.chan14_raw = 65535;
+    rc_reset.chan15_raw = 65535; rc_reset.chan16_raw = 65535;
+    rc_reset.chan17_raw = 65535; rc_reset.chan18_raw = 65535;
+
+    rc_reset.target_system      = id();
+    rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+    mavlink_message_t msg_out;
+    mavlink_msg_rc_channels_override_encode(
+        _mavlink->getSystemId(),
+        _mavlink->getComponentId(),
+        &msg_out,
+        &rc_reset
+        );
+
+
+    // Envia o comando de reset 3 vezes para garantir a entrega
+    sendMessageMultiple(msg_out);
+
+    qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
+
+    qWarning() << ">>> UART /dev/ttyHS3 inicializada para leitura e escrita 115200 baud. ValidateRC Func";
+
+
+    unsigned char buf[256];
+
+    // Buffer para os canais
+    uint16_t raw_channels[kNumChannels] = {0};
+    while (true) {
+        int n = read(fd, buf, sizeof(buf));
+
+        if (n > 30 && buf[7] == 0x42) {
+
+            QString erro;   // UMA única QString
+            bool first = true;
+
+            for (int ch = 0; ch < kNumChannels; ++ch) {
+                int offset = kFirstChannelOffset + ch * kBytesPerChannel;
+
+                raw_channels[ch] =
+                    static_cast<uint16_t>(buf[offset]) |
+                    (static_cast<uint16_t>(buf[offset + 1]) << 8);
+
+                int diff = std::abs(raw_channels[ch] - rc[ch]);
+
+                qDebug() << "Raw[" << ch << "]:" << raw_channels[ch]
+                         << "| RC_CHAN[" << ch << "]:" << rc[ch]
+                         << "| diff:" << diff;
+
+                if (diff > 50) {
+                    if (!first)
+                        erro += ", ";
+
+                    erro += QString("%1")
+                                .arg(ch + 1);
+
+                    first = false;
+                }
+            }
+
+            if (!erro.isEmpty()) {
+                return "RC divergente nos canais: " + erro;
+            }
+
+            qDebug() << "Posição dos valores RC validada";
+            return QString(); // OK → string vazia
+        }
+    }
+}
+#else
+QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override) { //override compilavel para windows
+
+    if (_overrideRunning) {
+        qWarning() << "Override já ativo";
+        return;
+    }
+
+    _overrideRunning = true;
+
+    setJoystickEnabled(false);
+    _joystickManager->activeJoystick()->terminate();
+
+    // =========================================================
+    // RESET RC OVERRIDE
+    // =========================================================
+    mavlink_rc_channels_override_t rc_reset {};
+    rc_reset.target_system    = id();
+    rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+    for (int i = 0; i < 18; ++i)
+        ((uint16_t*)&rc_reset)[i] = 65535;
+
+    mavlink_message_t msg_out;
+    mavlink_msg_rc_channels_override_encode(
+        _mavlink->getSystemId(),
+        _mavlink->getComponentId(),
+        &msg_out,
+        &rc_reset
+        );
+
+    sendMessageMultiple(msg_out);
+
+    qWarning() << "RC Override reset enviado.";
+
+    // =========================================================
+    // THREAD SERIAL + MAVLINK
+    // =========================================================
+    _overrideFuture = QtConcurrent::run([=]() {
+
+        unsigned char buf[256];
+
+        // =====================================================
+        // WINDOWS (WIN32)
+        // =====================================================
+        const char* dev = "COM3"; // AJUSTE AQUI
+
+        HANDLE hSerial = CreateFileA(
+            dev,
+            GENERIC_READ | GENERIC_WRITE,
+            0,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr
+            );
+
+        if (hSerial == INVALID_HANDLE_VALUE) {
+            qWarning() << "Falha ao abrir" << dev;
+            return;
+        }
+
+        DCB dcb {};
+        dcb.DCBlength = sizeof(DCB);
+
+        if (!GetCommState(hSerial, &dcb)) {
+            qWarning() << "GetCommState falhou";
+            CloseHandle(hSerial);
+            return;
+        }
+
+        dcb.BaudRate = CBR_115200;
+        dcb.ByteSize = 8;
+        dcb.Parity   = NOPARITY;
+        dcb.StopBits = ONESTOPBIT;
+        dcb.fBinary  = TRUE;
+        dcb.fDtrControl = DTR_CONTROL_DISABLE;
+        dcb.fRtsControl = RTS_CONTROL_DISABLE;
+
+        if (!SetCommState(hSerial, &dcb)) {
+            qWarning() << "SetCommState falhou";
+            CloseHandle(hSerial);
+            return;
+        }
+
+        COMMTIMEOUTS timeouts {};
+        timeouts.ReadIntervalTimeout        = 1;
+        timeouts.ReadTotalTimeoutConstant   = 1;
+        timeouts.ReadTotalTimeoutMultiplier = 0;
+        SetCommTimeouts(hSerial, &timeouts);
+
+        qWarning() << ">>> Serial WIN32 inicializada:" << dev;
+
+
+        // =====================================================
+        // MAVLINK STATE
+        // =====================================================
+        mavlink_message_t msg;
+        mavlink_rc_channels_override_t channels_override {};
+        mavlink_rc_channels_override_t previous_channels {};
+
+        channels_override.target_system    = id();
+        channels_override.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+        for (int i = 0; i < 18; ++i)
+            ((uint16_t*)&channels_override)[i] = 65535;
+
+        previous_channels = channels_override;
+
+        const int MIN_STEP_VALUE = 50;
+
+
+
+        // =====================================================
+        // LOOP PRINCIPAL
+        // =====================================================
+        while (_overrideRunning) {
+
+            int n = 0;
+
+
+            DWORD bytesRead = 0;
+            if (!ReadFile(hSerial, buf, sizeof(buf), &bytesRead, nullptr)) {
+                QThread::msleep(1);
+                continue;
+            }
+            n = (int)bytesRead;
+
+
+            if (n > 30 && buf[7] == 0x42) {
+
+                for (int i = 0; i < 16; ++i) {
+                    ((uint16_t*)&channels_override)[i] =
+                        (uint16_t)buf[8 + i * 2] |
+                        ((uint16_t)buf[9 + i * 2] << 8);
+                }
+
+                bool values_changed = false;
+                for (int i = 0; i < 16; ++i) {
+                    if (ABS_DIFF(
+                            ((uint16_t*)&channels_override)[i],
+                            ((uint16_t*)&previous_channels)[i]
+                            ) >= MIN_STEP_VALUE) {
+                        values_changed = true;
+                        break;
+                    }
+                }
+
+                if (values_changed && _mavlink) {
+
+                    mavlink_msg_rc_channels_override_encode(
+                        _mavlink->getSystemId(),
+                        _mavlink->getComponentId(),
+                        &msg,
+                        &channels_override
+                        );
+
+                    sendMessageOnLinkThreadSafe(
+                        vehicleLinkManager()->primaryLink().lock().get(),
+                        msg
+                        );
+
+                    previous_channels = channels_override;
+                }
+            }
+
+            QThread::msleep(1);
+        }
+
+        // =====================================================
+        // CLEANUP
+        // =====================================================
+
+        CloseHandle(hSerial);
+
+    });
+}
+
+
+#endif
 void Vehicle::trackFirmwareVehicleTypeChanges(void)
 {
     connect(_settingsManager->appSettings()->offlineEditingFirmwareClass(), &Fact::rawValueChanged, this, &Vehicle::_offlineFirmwareTypeSettingChanged);
@@ -776,6 +1209,13 @@ void Vehicle::_commonInit()
     _addFact(&_gd60_Sensor1Fact,        _gd60_Sensor1FactName);
     _addFact(&_gd60_Sensor2Fact,        _gd60_Sensor2FactName);
     _addFact(&_gd60_Sensor3Fact,        _gd60_Sensor3FactName);
+    _addFact(&_GD_RPM1Fact,             _GD_RPM1FactName);
+    _addFact(&_GD_RPM2Fact,             _GD_RPM2FactName);
+    _addFact(&_GD_RPM3Fact,             _GD_RPM3FactName);
+    _addFact(&_GD_RPM4Fact,             _GD_RPM4FactName);
+    _addFact(&_GD_RPM5Fact,             _GD_RPM5FactName);
+    _addFact(&_GD_RPM6Fact,             _GD_RPM6FactName);
+    _addFact(&_GD_GeneratorRPMFact,         _GD_GeneratorRPMFactName);
     _addFact(&_distanceToHomeFact,      _distanceToHomeFactName);
     _addFact(&_missionItemIndexFact,    _missionItemIndexFactName);
     _addFact(&_headingToNextWPFact,     _headingToNextWPFactName);
@@ -817,10 +1257,14 @@ void Vehicle::_commonInit()
     _gd60_Sensor1Fact.setRawValue(0);
     _gd60_Sensor2Fact.setRawValue(0);
     _gd60_Sensor3Fact.setRawValue(0);
-    _flightTimeFact.setRawValue(0);
-    _flightTimeUpdater.setInterval(1000);
-    _flightTimeUpdater.setSingleShot(false);
-    connect(&_flightTimeUpdater, &QTimer::timeout, this, &Vehicle::_updateFlightTime);
+    _GD_RPM1Fact.setRawValue(0);
+    _GD_RPM2Fact.setRawValue(0);
+    _GD_RPM3Fact.setRawValue(0);
+    _GD_RPM4Fact.setRawValue(0);
+    _GD_RPM5Fact.setRawValue(0);
+    _GD_RPM6Fact.setRawValue(0);
+    _GD_GeneratorRPMFact.setRawValue(0);
+
 
     // Set video stream to udp if running ArduSub and Video is disabled
     if (sub() && _settingsManager->videoSettings()->videoSource()->rawValue() == VideoSettings::videoDisabled) {
@@ -1165,6 +1609,41 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         break;
     }
 
+    case MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4:
+    {
+        mavlink_esc_telemetry_1_to_4_t msg_et14;
+        mavlink_msg_esc_telemetry_1_to_4_decode(&message, &msg_et14);
+        _GD_RPM1Fact.setRawValue(msg_et14.rpm[0]);
+        _GD_RPM2Fact.setRawValue(msg_et14.rpm[1]);
+        _GD_RPM3Fact.setRawValue(msg_et14.rpm[2]);
+        _GD_RPM4Fact.setRawValue(msg_et14.rpm[3]);
+
+        break;
+    }
+    case MAVLINK_MSG_ID_ESC_TELEMETRY_5_TO_8:
+    {
+        mavlink_esc_telemetry_5_to_8_t msg_et58;
+        mavlink_msg_esc_telemetry_5_to_8_decode(&message, &msg_et58);
+        _GD_RPM5Fact.setRawValue(msg_et58.rpm[0]);
+        _GD_RPM6Fact.setRawValue(msg_et58.rpm[1]);
+
+        break;
+    }
+    case MAVLINK_MSG_ID_RPM:
+    {
+        mavlink_rpm_t msg_rpm;
+        mavlink_msg_rpm_decode(&message, &msg_rpm);
+        _GD_GeneratorRPMFact.setRawValue(msg_rpm.rpm1);
+        break;
+    }
+
+    case MAVLINK_MSG_ID_SYSTEM_TIME:
+    {
+        mavlink_system_time_t msg_systime;
+        mavlink_msg_system_time_decode(&message, &msg_systime);
+        _flightTimeFact.setRawValue(msg_systime.time_boot_ms/1000);//em segundos
+        break;
+    }
     case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
     {
         enum TempID {
@@ -1183,7 +1662,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
 
         switch(id) {
         case TEMP1:
-           // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
+            // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
         case TEMP2:
@@ -1195,6 +1674,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
         default:
+            //qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
             break;
         }
         break;
@@ -1379,10 +1859,14 @@ void Vehicle::_handleStatusText(mavlink_message_t& message)
     uint8_t compId = message.compid;
 
     b.resize(MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN+1);
-    strncpy(b.data(), statustext.text, MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN);
+    snprintf(b.data(),
+             MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN,
+             "%s",
+             statustext.text);
     b[b.length()-1] = '\0';
     messageText = QString(b);
     bool includesNullTerminator = messageText.length() < MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN;
+    qDebug() << "STATUSTEXT:" << messageText;
 
     if (_chunkedStatusTextInfoMap.contains(compId) && _chunkedStatusTextInfoMap[compId].chunkId != statustext.id) {
         // We have an incomplete chunked status still pending
@@ -1397,6 +1881,8 @@ void Vehicle::_handleStatusText(mavlink_message_t& message)
         chunkedInfo.severity = statustext.severity;
         chunkedInfo.rgMessageChunks.append(messageText);
         _chunkedStatusTextInfoMap[compId] = chunkedInfo;
+
+
     } else {
         if (_chunkedStatusTextInfoMap.contains(compId)) {
             // A chunk sequence is in progress
@@ -1948,13 +2434,13 @@ void Vehicle::_updateArmed(bool armed)
         // We are transitioning to the armed state, begin tracking trajectory points for the map
         if (_armed) {
             _trajectoryPoints->start();
-            _flightTimerStart();
+            //_flightTimerStart();
             _clearCameraTriggerPoints();
             // Reset battery warning
             _lowestBatteryChargeStateAnnouncedMap.clear();
         } else {
             _trajectoryPoints->stop();
-            _flightTimerStop();
+            //_flightTimerStop();
             // Also handle Video Streaming
             if(qgcApp()->toolbox()->videoManager()->videoReceiver()) {
                 if(_settingsManager->videoSettings()->disableWhenDisarmed()->rawValue().toBool()) {
@@ -2321,8 +2807,6 @@ void Vehicle::_handleRCChannels(mavlink_message_t& message)
 #else
 #pragma GCC diagnostic pop
 #endif
-#else
-#pragma warning(pop, 0)
 #endif
 
 bool Vehicle::sendMessageOnLinkThreadSafe(LinkInterface* link, mavlink_message_t message)
@@ -3612,6 +4096,7 @@ void Vehicle::_handleCommandAck(mavlink_message_t& message)
     // advance PID tuning setup/teardown
     if (ack.command == MAV_CMD_SET_MESSAGE_INTERVAL) {
         _mavlinkStreamConfig.gotSetMessageIntervalAck();
+        qDebug()<<"MESSAGE_INTERVAL RECEBIDO";
     }
 }
 
