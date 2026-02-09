@@ -46,7 +46,6 @@ Item {
 
     // Properties of UTM adapter
     property bool utmspSendActTrigger: false
-
     PlanMasterController {
         id:                     _planController
         flyView:                true
@@ -853,20 +852,18 @@ Item {
                         // Popula o modelo com valores dinamicamente
                         Component.onCompleted: {
                             if (_GD60){
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_1)/5000 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_2)/5000 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_3)/5000 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_4)/5000 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_5)/5000 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_6)/5000 });
+                                accellRotorModel.append({ aceleracao: 0 });
+                                accellRotorModel.append({ aceleracao: 0 });
+                                accellRotorModel.append({ aceleracao: 0 });
+                                accellRotorModel.append({ aceleracao: 0 });
                             }
                             else{
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_1)/3850 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_2)/3850 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_3)/3850 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_4)/3850 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_5)/3850 });
-                                accellRotorModel.append({ aceleracao: (_aceleracao_rotor_6)/3850 });
+                                accellRotorModel.append({ aceleracao: 0 });
+                                accellRotorModel.append({ aceleracao: 0 });
+                                accellRotorModel.append({ aceleracao: 0 });
+                                accellRotorModel.append({ aceleracao: 0 });
+                                accellRotorModel.append({ aceleracao: 0 });
+                                accellRotorModel.append({ aceleracao: 0 });
                             }
 
                         }
@@ -884,10 +881,10 @@ Item {
                                     accellRotorModel.set(5, { aceleracao: _activeVehicle._GD_RPM6.rawValue.toFixed(0)/3850 });}
 
                                 else{
-                                    accellRotorModel.set(0, { aceleracao: _aceleracao_rotor_1/5000 });
-                                    accellRotorModel.set(1, { aceleracao: _aceleracao_rotor_2/5000 });
-                                    accellRotorModel.set(2, { aceleracao: _aceleracao_rotor_3/5000 });
-                                    accellRotorModel.set(3, { aceleracao: _aceleracao_rotor_4/5000 });;
+                                    accellRotorModel.set(0, { aceleracao: _activeVehicle._GD_RPM1.rawValue.toFixed(0)/5000 });
+                                    accellRotorModel.set(1, { aceleracao: _activeVehicle._GD_RPM2.rawValue.toFixed(0)/5000 });
+                                    accellRotorModel.set(2, { aceleracao: _activeVehicle._GD_RPM3.rawValue.toFixed(0)/5000 });
+                                    accellRotorModel.set(3, { aceleracao: _activeVehicle._GD_RPM4.rawValue.toFixed(0)/5000 });;
                                 }
 
                             }

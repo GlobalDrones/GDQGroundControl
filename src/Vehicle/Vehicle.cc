@@ -2761,10 +2761,9 @@ void Vehicle::_handleRadioStatus(mavlink_message_t& message)
 void Vehicle::_handleRCChannels(mavlink_message_t& message)
 {
     mavlink_rc_channels_t channels;
-
     mavlink_msg_rc_channels_decode(&message, &channels);
 
-    uint16_t* _rgChannelvalues[cMaxRcChannels] = {
+    uint16_t* rgChannelValues[cMaxRcChannels] = {
         &channels.chan1_raw,
         &channels.chan2_raw,
         &channels.chan3_raw,
@@ -2784,21 +2783,35 @@ void Vehicle::_handleRCChannels(mavlink_message_t& message)
         &channels.chan17_raw,
         &channels.chan18_raw,
     };
-    int pwmValues[cMaxRcChannels];
 
-    for (int i=0; i<cMaxRcChannels; i++) {
-        uint16_t channelValue = *_rgChannelvalues[i];
+    int pwmValues[cMaxRcChannels];
+    QVariantList newRcChannels;
+    newRcChannels.reserve(cMaxRcChannels);
+
+    for (int i = 0; i < cMaxRcChannels; i++) {
+        int value = -1;
 
         if (i < channels.chancount) {
-            pwmValues[i] = channelValue == UINT16_MAX ? -1 : channelValue;
-        } else {
-            pwmValues[i] = -1;
+            uint16_t raw = *rgChannelValues[i];
+            value = (raw == UINT16_MAX) ? -1 : int(raw);
         }
+
+        pwmValues[i] = value;
+        newRcChannels.append(value);
     }
 
+    // 🔹 espelho para QML
+    if (_gd_rcchannels != newRcChannels) {
+        _gd_rcchannels = newRcChannels;
+        emit gd_rcchannelsChanged();
+    }
+
+    // 🔹 API original — não mexe
     emit remoteControlRSSIChanged(channels.rssi);
     emit rcChannelsChanged(channels.chancount, pwmValues);
 }
+
+
 
 // Pop warnings ignoring for mavlink headers for both GCC/Clang and MSVC
 #ifdef __GNUC__
