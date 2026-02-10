@@ -51,6 +51,7 @@ AnalyzePage {
         id: controller
     }
 
+    /* //Parte legado do código, manter comentado apenas como referência caso algo surja que só possa ser acessado dessa forma (dúvido muito)
     Timer {
             interval: 500; running: false; repeat: true
             onTriggered: { //IMPORTANTE: O INDICE DO CURSYSTEM.SELECTED MUDA. TEM QUE FAZER UMA FUNÇÃO PRA VASCULHAR.
@@ -74,7 +75,7 @@ AnalyzePage {
             }
 
         }
-
+    */
 
     Component {
         id:  headerComponent

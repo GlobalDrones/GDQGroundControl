@@ -18,12 +18,16 @@ ToolStrip {
     title:  qsTr("Fly")
 
     signal displayPreFlightChecklist
-
+    signal modoEngenheiroToggle
     FlyViewToolStripActionList {
         id: flyViewToolStripActionList
 
         onDisplayPreFlightChecklist: _root.displayPreFlightChecklist()
+        onModoEngenheiroToggle: _root.modoEngenheiroToggle()
     }
+
+
+
 
     model: flyViewToolStripActionList.model
 }

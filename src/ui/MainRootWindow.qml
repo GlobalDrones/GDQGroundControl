@@ -45,7 +45,7 @@ ApplicationWindow {
         firstRunPromptManager.nextPrompt()
     }
 
-    Timer {
+    /*Timer { //Código legado, mantendo como referência futura caso necessário (duvido)
         interval: 500; running: true; repeat: true
         onTriggered: {
            // if (!flyView._GD60){
@@ -81,7 +81,7 @@ ApplicationWindow {
                 height:1
                 z: mainWindow.z - 1
             }
-        }
+        }*/
 
     QtObject {
         id: firstRunPromptManager

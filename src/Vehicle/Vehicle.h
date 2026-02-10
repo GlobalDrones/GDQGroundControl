@@ -257,6 +257,7 @@ public:
     Q_PROPERTY(bool                 requiresGpsFix              READ requiresGpsFix                                                 NOTIFY requiresGpsFixChanged)
     Q_PROPERTY(double               loadProgress                READ loadProgress                                                   NOTIFY loadProgressChanged)
     Q_PROPERTY(bool                 initialConnectComplete      READ isInitialConnectComplete                                       NOTIFY initialConnectComplete)
+    Q_PROPERTY(QVariantList         gd_rcchannels               READ gd_rcchannels                                                  NOTIFY gd_rcchannelsChanged)
 
     // The following properties relate to Orbit status
     Q_PROPERTY(bool             orbitActive     READ orbitActive        NOTIFY orbitActiveChanged)
@@ -795,6 +796,9 @@ public:
     quint64 vehicleUID() const { return _uid; }
     QString vehicleUIDStr();
 
+
+    QVariantList gd_rcchannels() const { return _gd_rcchannels; }
+
     bool soloFirmware() const { return _soloFirmware; }
     void setSoloFirmware(bool soloFirmware);
 
@@ -826,6 +830,7 @@ public:
     const QVariantList&         toolIndicators      ();
     const QVariantList&         modeIndicators      ();
     const QVariantList&         staticCameraList    () const;
+
 
     bool capabilitiesKnown      () const { return _capabilityBitsKnown; }
     uint64_t capabilityBits     () const { return _capabilityBits; }    // Change signalled by capabilityBitsChanged
@@ -931,6 +936,7 @@ signals:
     void readyToFlyChanged              (bool readyToFy);
     void allSensorsHealthyChanged       (bool allSensorsHealthy);
     void requiresGpsFixChanged          ();
+    void gd_rcchannelsChanged();
 
     void firmwareVersionChanged         ();
     void firmwareCustomVersionChanged   ();
@@ -1072,6 +1078,11 @@ private:
     int     _id;                    ///< Mavlink system id
     int     _defaultComponentId;
     bool    _offlineEditingVehicle = false; ///< true: This Vehicle is a "disconnected" vehicle for ui use while offline editing
+
+
+
+    QVariantList _gd_rcchannels;
+
 
     MAV_AUTOPILOT       _firmwareType;
     MAV_TYPE            _vehicleType;
