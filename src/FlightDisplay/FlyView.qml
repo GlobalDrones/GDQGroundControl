@@ -1130,12 +1130,12 @@ Item {
                     Timer{//Atualiza os valores periodicamente [TODO: mudar interval depois]
                         interval: 100; running: true; repeat: true
                         onTriggered: {
-                            accellRotorModel.set(0, { aceleracao: _activeVehicle._GD_RPM1.rawValue.toFixed(0)/3850 });
-                            accellRotorModel.set(1, { aceleracao: _activeVehicle._GD_RPM2.rawValue.toFixed(0)/3850 });
-                            accellRotorModel.set(2, { aceleracao: _activeVehicle._GD_RPM3.rawValue.toFixed(0)/3850 });
-                            accellRotorModel.set(3, { aceleracao: _activeVehicle._GD_RPM4.rawValue.toFixed(0)/3850 });
-                            accellRotorModel.set(4, { aceleracao: _activeVehicle._GD_RPM5.rawValue.toFixed(0)/3850 });
-                            accellRotorModel.set(5, { aceleracao: _activeVehicle._GD_RPM6.rawValue.toFixed(0)/3850 });
+                            accellRotorModel.set(0, { aceleracao: _activeVehicle._GD_RPM1.rawValue.toFixed(0)/3200 });
+                            accellRotorModel.set(1, { aceleracao: _activeVehicle._GD_RPM2.rawValue.toFixed(0)/3200 });
+                            accellRotorModel.set(2, { aceleracao: _activeVehicle._GD_RPM3.rawValue.toFixed(0)/3200 });
+                            accellRotorModel.set(3, { aceleracao: _activeVehicle._GD_RPM4.rawValue.toFixed(0)/3200 });
+                            accellRotorModel.set(4, { aceleracao: _activeVehicle._GD_RPM5.rawValue.toFixed(0)/3200 });
+                            accellRotorModel.set(5, { aceleracao: _activeVehicle._GD_RPM6.rawValue.toFixed(0)/3200 });
                             console.log(_activeVehicle._GD_RPM1.rawValue.toFixed(0))
                         }
                     }
