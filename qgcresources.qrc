@@ -106,5 +106,6 @@
     </qresource>
     <qresource prefix="/">
         <file>src/FlightDisplay/FlyViewBottomViewArea.qml</file>
+        <file>src/FlightDisplay/FlyViewLateralViewArea.qml</file>
     </qresource>
 </RCC>
