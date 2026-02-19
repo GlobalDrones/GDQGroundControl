@@ -60,6 +60,16 @@ Item {
     property real medAceleracaoRotor5
     property real medAceleracaoRotor6
 
+    Binding{
+        target: bottomDataArea
+        property: "_gasolina"
+        value: {
+            if (!activeVehicle) return 0
+            if (activeVehicle.batteries.count <= 0) return 0
+            return activeVehicle.batteries.get(_gasolineIndex).percentRemaining.value
+        }
+    }
+
     property string batteryVoltageText: ""
     Binding {
         target: bottomDataArea

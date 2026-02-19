@@ -329,33 +329,6 @@ Item {
 
     }
 
-    Timer{
-        id: gasolineValuesUpdater
-        interval: 100
-        running: true
-        repeat: true
-
-        onTriggered:{
-            //console.log( "Firmware Detectado:", _activeVehicle.firmwareTypeString ,"major:", _activeVehicle.firmwareMajorVersion.toString() , _activeVehicle.firmwareMinorVersion.toString())
-            _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.value
-            horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
-            minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
-            segundos_restantes = (7200 * (_gasolina/100))%60
-
-            //console.log("TESTERPMFLYVIEW: ",_activeVehicle._GD_GeneratorRPM.rawValue.toFixed(0))
-
-            if(horas_restantes<10) {horas_restantes_string = "0"+horas_restantes.toString()}
-            else {horas_restantes_string = horas_restantes.toString()}
-            if(minutos_restantes < 10){ minutos_restantes_string = "0" +minutos_restantes.toString()}
-            else {minutos_restantes_string = minutos_restantes.toString()}
-            if(segundos_restantes <10) {segundos_restantes_string = "0" + segundos_restantes.toString()}
-            else {segundos_restantes_string = segundos_restantes.toString()}
-
-
-
-            //widgetLayer.visible_custom_telemetry= false
-        }
-    }
 
     Timer{
         id: propertyValuesUpdater
@@ -445,7 +418,7 @@ Item {
             }
 
             // console.log(_activeVehicle.rcRSSI.valueOf())
-            //_gasolina = _activeVehicle.batteries.index(0,1).voltage.rawValue
+
             //console.log("Gasolina: ",_activeVehicle.batteries.get(_gasolineIndex).percentRemaining,"|",)
             if(_activeVehicle.rcRSSI != 0){
                 _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
@@ -547,7 +520,7 @@ Item {
         width: parent.width
         height: parent.height - mainViewHeight
         toolsMargin: _toolsMargin
-        _gasolina: _gasolina
+
         _motor_temp: _motor_temp
        // activeVehicle: _activeVehicle
         _androidBuild: _androidBuild
