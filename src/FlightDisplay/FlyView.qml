@@ -38,7 +38,6 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: false
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
@@ -68,7 +67,7 @@ Item {
     property real   _rightPanelWidth:       ScreenTools.defaultFontPixelWidth * 30
     property var    _mapControl:            mapControl
 
-    property real  mainViewHeight: _GD60? parent.height*0.845:parent.height*5/6
+    property real  mainViewHeight: parent.height*5/6
     property real  mainViewWidth : parent.width - (parent.height - mainViewHeight) //garantir simetria
     property bool _cameraExchangeActive : false
     property var _pct_bateria_1: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
@@ -82,10 +81,10 @@ Item {
     property var _current_generator: 0
     property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage (P/ GD25)
 
-    property int _battery1Index: _GD60? 0:0
-    property int _battery2Index: _GD60? 1:0
-    property int _gasolineIndex: _GD60? 0:1
-    property int _generatorIndex: _GD60? 0:2
+    property int _battery1Index: 0
+    property int _battery2Index: 0
+    property int _gasolineIndex: 1
+    property int _generatorIndex: 2
 
 
     property int _satCount: 0
@@ -418,24 +417,10 @@ Item {
                     }
                 }
 
-
-            if(_GD60){
-
-                _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 20)/5.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
-                _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
-                _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
-
-                _pct_bateria_2 = ((((_activeVehicle.batteries.get(_battery2Index).voltage.rawValue).toFixed(2) - 47.6)/13.3)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
-                _tensao_bateria_2 = (_activeVehicle.batteries.get(_battery2Index).voltage.rawValue).toFixed(2)
-                _current_bateria_2 = (_activeVehicle.batteries.get(_battery2Index).current.rawValue).toFixed(2)
-
-
-            }
-            else{
                 _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 42)/8.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
                 _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
                 _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
-            }
+
 
 
 
@@ -489,20 +474,13 @@ Item {
 
 
 
-            if(_GD60){
-                _aceleracao_rotor_1 = _aceleracao_rotor_1
-                _aceleracao_rotor_2 = _aceleracao_rotor_2
-                _aceleracao_rotor_3 = _aceleracao_rotor_3
-                _aceleracao_rotor_4 = _aceleracao_rotor_4
-            }
-            else{
                 aceleracao_rotor_1_ARRAY.push(_aceleracao_rotor_1)
                 aceleracao_rotor_2_ARRAY.push(_aceleracao_rotor_2)
                 aceleracao_rotor_3_ARRAY.push(_aceleracao_rotor_3)
                 aceleracao_rotor_4_ARRAY.push(_aceleracao_rotor_4)
                 aceleracao_rotor_5_ARRAY.push(_aceleracao_rotor_5)
                 aceleracao_rotor_6_ARRAY.push(_aceleracao_rotor_6)
-            }
+
             _current_generator_ARRAY.push(_current_generator)
 
             // console.log("maxvel: ",_maxVel)
@@ -582,10 +560,6 @@ Item {
                     width : parent.width
                     height: parent.height
 
-
-
-
-
                     Rectangle {
                         id: gradientBar
                         anchors.fill: parent
@@ -595,7 +569,6 @@ Item {
                             GradientStop { position: 1.0; color:  toolbar._mainStatusBGColor} // Bottom color
                         }
                     }
-
 
                     Rectangle{
                         id: textBoxBatteryInfo_2
@@ -612,45 +585,6 @@ Item {
                         Component.onCompleted: gasolineIconLoader.active = true
 
 
-                        ColumnLayout {
-                            id:                     batteryInfoColumn_2
-                            anchors.top: textBoxBatteryInfo_2.top
-                            anchors.horizontalCenter: textBoxBatteryInfo_2.horizontalCenter
-                            spacing:                0
-                            visible: _GD60//true//textBoxBatteryInfo_1.visible
-
-                            Text {
-                                id: textBoxBatteryInfo_2PCT
-                                Layout.alignment:       Text.AlignHCenter
-                                verticalAlignment:      Text.AlignVCenter
-                                color:                  "White"
-                                text:                   _pct_bateria_2 > 9? _pct_bateria_2+"%": "0"+_pct_bateria_2+"%"
-                                font.pixelSize:       _androidBuild ?  13 : 21//ScreenTools.smallFontPixelHeight
-                                visible: _GD60//textBoxBatteryInfo_1.visible
-                                font.bold: true
-                            }
-                            Text {
-                                id: textBoxBatteryInfo_2TENSION
-                                Layout.alignment:       Text.AlignHCenter
-                                verticalAlignment:      Text.AlignVCenter
-                                color:                  "White"
-                                text:                   _tensao_bateria_2 + " V"
-                                font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
-                                visible: _GD60//textBoxBatteryInfo_1.visible
-                                font.bold: true
-                            }
-                            Text {
-                                id: textBoxBatteryInfo_2CURRENT
-                                Layout.alignment:       Text.AlignHCenter
-                                verticalAlignment:      Text.AlignVCenter
-                                color:                  "White"
-                                text:                   _current_bateria_2 + " A"
-                                font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
-                                visible: _GD60//textBoxBatteryInfo_1.visible
-                                font.bold: true
-                            }
-
-                        }
                     }
 
                     //gasolina
@@ -726,7 +660,7 @@ Item {
                         source: "/qmlimages/MotorTemp.svg"
                         fillMode: Image.PreserveAspectFit
                         color: "white"
-                        visible: _GD60? false:true
+                        visible:true
                     }
                     QGCColoredImage {
                         id: motorTemperatureInformationIcon2
@@ -756,7 +690,7 @@ Item {
                     MouseArea{
                         id:motorTempMouseArea
                         anchors.fill: motorTemperatureInformationIcon
-                        hoverEnabled: !_GD60
+                        hoverEnabled: true
                         onClicked: {
                             if (_androidBuild) {
                                 textBoxMotorTempInfo.visible = !textBoxMotorTempInfo.visible;
@@ -776,7 +710,7 @@ Item {
                             color:                  "White"
                             text:                   _motor_temp.toString()+"°C"
                             font.bold: true
-                            font.pixelSize:         (_GD60? 15:20)
+                            font.pixelSize:         20
                         }
                         Text {
                             Layout.alignment:       Text.AlignHCenter
@@ -784,7 +718,7 @@ Item {
                             color:                  "White"
                             text:                   "RPM: "
                             font.bold: true
-                            font.pixelSize:         (_GD60? 15:20)
+                            font.pixelSize:         20
                         }
                         Text {
                             Layout.alignment:       Text.AlignHCenter
@@ -792,26 +726,7 @@ Item {
                             color:                  "White"
                             text:                   _activeVehicle._GD_GeneratorRPM.rawValue.toFixed(0).toString()
                             font.bold: true
-                            font.pixelSize:         (_GD60? 15:20)
-                        }
-                        Text {
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _motor_temp.toString()+"°C"
-                            font.bold: true
-                            font.pixelSize:         (_GD60? 15:20)
-                            visible: _GD60? true:false
-                        }
-
-                        Text {
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "RPM: "+_motor_rpm.toFixed(0)
-                            font.bold: true
-                            font.pixelSize:         (_GD60? 15:20)
-                            visible: _GD60? true:false
+                            font.pixelSize:         20
                         }
                     }
 
@@ -820,7 +735,7 @@ Item {
                     Rectangle {
                         id: rotorsTempArea
                         anchors.top: parent.top
-                        anchors.left: _GD60? textBoxGasolinePercentage.right : motorTempInfoColumn.right
+                        anchors.left: motorTempInfoColumn.right
                         anchors.margins: _toolsMargin * 1.5
                         width: height * 2
                         height: parent.height*2/3
@@ -851,20 +766,14 @@ Item {
 
                         // Popula o modelo com valores dinamicamente
                         Component.onCompleted: {
-                            if (_GD60){
-                                accellRotorModel.append({ aceleracao: 0 });
-                                accellRotorModel.append({ aceleracao: 0 });
-                                accellRotorModel.append({ aceleracao: 0 });
-                                accellRotorModel.append({ aceleracao: 0 });
-                            }
-                            else{
+
                                 accellRotorModel.append({ aceleracao: 0 });
                                 accellRotorModel.append({ aceleracao: 0 });
                                 accellRotorModel.append({ aceleracao: 0 });
                                 accellRotorModel.append({ aceleracao: 0 });
                                 accellRotorModel.append({ aceleracao: 0 });
                                 accellRotorModel.append({ aceleracao: 0 });
-                            }
+
 
                         }
 
@@ -872,20 +781,14 @@ Item {
                             interval: 100; running: true; repeat: true
                             onTriggered: {
 
-                                if (!_GD60){
                                     accellRotorModel.set(0, { aceleracao: _activeVehicle._GD_RPM1.rawValue.toFixed(0)/3850 });
                                     accellRotorModel.set(1, { aceleracao: _activeVehicle._GD_RPM2.rawValue.toFixed(0)/3850 });
                                     accellRotorModel.set(2, { aceleracao: _activeVehicle._GD_RPM3.rawValue.toFixed(0)/3850 });
                                     accellRotorModel.set(3, { aceleracao: _activeVehicle._GD_RPM4.rawValue.toFixed(0)/3850 });
                                     accellRotorModel.set(4, { aceleracao: _activeVehicle._GD_RPM5.rawValue.toFixed(0)/3850 });
-                                    accellRotorModel.set(5, { aceleracao: _activeVehicle._GD_RPM6.rawValue.toFixed(0)/3850 });}
+                                    accellRotorModel.set(5, { aceleracao: _activeVehicle._GD_RPM6.rawValue.toFixed(0)/3850 });
 
-                                else{
-                                    accellRotorModel.set(0, { aceleracao: _activeVehicle._GD_RPM1.rawValue.toFixed(0)/5000 });
-                                    accellRotorModel.set(1, { aceleracao: _activeVehicle._GD_RPM2.rawValue.toFixed(0)/5000 });
-                                    accellRotorModel.set(2, { aceleracao: _activeVehicle._GD_RPM3.rawValue.toFixed(0)/5000 });
-                                    accellRotorModel.set(3, { aceleracao: _activeVehicle._GD_RPM4.rawValue.toFixed(0)/5000 });;
-                                }
+
 
                             }
                         }
@@ -894,9 +797,9 @@ Item {
                             model: accellRotorModel
 
                             Rectangle {
-                                width: _GD60? parent.width /4 : parent.width / 6
+                                width: parent.width / 6
                                 height: model.aceleracao* parent.height // Altura proporcional à aceleracao
-                                x: _GD60? index * parent.width / 4 : index * parent.width / 6 // Posiciona horizontalmente
+                                x: index * parent.width / 6 // Posiciona horizontalmente
                                 anchors.bottom: parent.bottom
                                 z: parent.z + 10
                                 color: "green"
@@ -922,14 +825,13 @@ Item {
                                     }
 
                                     onContainsMouseChanged: {
-                                        if(!_GD60){
                                             if(index == 0){_selected_rotor_1 = !_selected_rotor_1 }
                                             else if(index == 1){_selected_rotor_2 = !_selected_rotor_2 }
                                             else if(index == 2){_selected_rotor_3 = !_selected_rotor_3 }
                                             else if(index == 3){_selected_rotor_4 = !_selected_rotor_4 }
                                             else if(index == 4){_selected_rotor_5 = !_selected_rotor_5 }
                                             else if(index == 5){_selected_rotor_6 = !_selected_rotor_6 }
-                                        }
+
                                     }
                                 }
 
@@ -963,117 +865,13 @@ Item {
 
                     }
 
-                    Item{
-                        id: centralRotor_1_Accell
-                        anchors.left: rotorsTempArea.right
-                        anchors.top: parent.top
-                        anchors.margins:    _toolsMargin*2
-                        height: parent.height*2/3
-                        width: height
-                        visible: _GD60? true:false
-                        Canvas { //border of
-                            anchors.fill: parent
-                            id: rotor1Arc
-                            onPaint: {
-                                var ctx = getContext("2d")
-                                ctx.clearRect(0, 0, width, height)
-                                ctx.strokeStyle = "gray" // Arc color
-                                ctx.lineWidth = 8
-                                ctx.beginPath()
-                                var radius = Math.min(width, height) / 2.5
-                                ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                                //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                                ctx.stroke()
-                                ctx.strokeStyle = "green"//"gray" // Arc color
-                                ctx.lineWidth = 8
-                                ctx.beginPath()
-                                ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal1/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                                //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                                ctx.stroke()
-                            }
-                        }
-
-                        DropShadow {
-                            anchors.fill: parent
-                            source: rotor1Arc
-                            color: "yellow" // Semi-transparent black shadow
-                            radius: 8
-                            samples:17
-                            spread: 0.4
-                            verticalOffset: 0
-                            horizontalOffset: 0
-                            visible: _selected_rotor_1
-                        }
-                        //Component.onCompleted: requestPaint()
-                        Text{
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: _rpm_horizontal1
-                            color:"green"
-                            font.bold: true
-                        }
-                    }
-
-                    Item{
-                        id: centralRotor_2_Accell
-                        anchors.left: centralRotor_1_Accell.right
-                        anchors.top: parent.top
-                        anchors.margins:    _toolsMargin*2
-                        height: parent.height*2/3
-                        width: height
-                        visible: _GD60? true:false
-                        Canvas { //border of
-                            anchors.fill: parent
-                            id: rotor2Arc
-                            onPaint: {
-                                var ctx = getContext("2d")
-                                ctx.clearRect(0, 0, width, height)
-                                ctx.strokeStyle = "gray" // Arc color
-                                ctx.lineWidth = 8
-                                ctx.beginPath()
-                                var radius = Math.min(width, height) / 2.5
-                                ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                                //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                                ctx.stroke()
-                                ctx.strokeStyle = "green"//"gray" // Arc color
-                                ctx.lineWidth = 8
-                                ctx.beginPath()
-                                ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal2/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                                //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                                ctx.stroke()
-                            }
-                        }
-
-                        DropShadow {
-                            anchors.fill: parent
-                            source: rotor2Arc
-                            color: "yellow" // Semi-transparent black shadow
-                            radius: 8
-                            samples:17
-                            spread: 0.4
-                            verticalOffset: 0
-                            horizontalOffset: 0
-                            visible: _selected_rotor_1
-                        }
-                        //Component.onCompleted: requestPaint()
-                        Text{
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: _rpm_horizontal2
-                            color:"green"
-                            font.bold: true
-                        }
-                    }
-
-
-
 
                     Item {
                         id: _dataBox
                         height: parent.height * 2/3
                         width: parent.width*0.45
                         anchors.top: parent.top
-                        anchors.left: _GD60? centralRotor_2_Accell.right : rotorsTempArea.right
+                        anchors.left: rotorsTempArea.right
                         anchors.margins: _toolsMargin * 1.5
                         property int _borderWidth: 2
                         property int _fontSize: 10//_androidBuild ?  15 : 20
