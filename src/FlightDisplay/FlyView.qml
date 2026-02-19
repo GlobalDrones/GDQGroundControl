@@ -351,9 +351,7 @@ Item {
             if(segundos_restantes <10) {segundos_restantes_string = "0" + segundos_restantes.toString()}
             else {segundos_restantes_string = segundos_restantes.toString()}
 
-            _groundSpeed = _activeVehicle.groundSpeed.value.toFixed(1)
-            _altitudeAMSL = _activeVehicle.altitudeAMSL.value
-            _flightTime = (_activeVehicle.flightTimeCustom.value).toFixed(0)
+
 
             //widgetLayer.visible_custom_telemetry= false
         }
@@ -540,487 +538,21 @@ Item {
     //**************************************************************************************************//
     //                          BOTTOM VIEW AREA                                                        //
     //**************************************************************************************************//
-    Loader{
-            id: bottomDataLoader
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            width: parent.width
-            height: parent.height - mainViewHeight
-            active: true  // or false if you want to delay loading
-            asynchronous: true
-            onLoaded: {let now = new Date();
-                console.log("bottomDataArea LOADED at " + now.toLocaleTimeString());}
+    FlyViewBottomViewArea {
+        id: bottomArea
 
-            sourceComponent: Component {
-                id: bottomDataComponent
-                Item {
-                    id: bottomDataArea
-                    anchors.bottom : parent.bottom
-                    anchors.left : parent.left
-                    width : parent.width
-                    height: parent.height
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
 
-                    Rectangle {
-                        id: gradientBar
-                        anchors.fill: parent
+        width: parent.width
+        height: parent.height - mainViewHeight
+        toolsMargin: _toolsMargin
+        _gasolina: _gasolina
+        _motor_temp: _motor_temp
+       // activeVehicle: _activeVehicle
+        _androidBuild: _androidBuild
 
-                        gradient: Gradient {
-                            GradientStop { position: 0.7; color:  qgcPal.toolbarBackground} // Top color
-                            GradientStop { position: 1.0; color:  toolbar._mainStatusBGColor} // Bottom color
-                        }
-                    }
-
-                    Rectangle{
-                        id: textBoxBatteryInfo_2
-                        anchors.verticalCenter: batteryPercentageIcon_2 .verticalCenter
-                        //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
-                        anchors.left: batteryPercentageIcon_2.right
-                        anchors.rightMargin: _toolsMargin
-                        height: batteryPercentageIcon_2.height*0.7
-                        width: batteryPercentageIcon_2.width*0.7
-                        visible: false//true//batMouseArea_1.containsMouse? true: false
-                        color: "transparent"// desktop version "black"
-                        border.width: 0
-                        border.color: "transparent"// desktop version "lightgray"
-                        Component.onCompleted: gasolineIconLoader.active = true
-
-
-                    }
-
-                    //gasolina
-                    Loader {
-                        id: gasolineIconLoader
-                        anchors.top: parent.top
-                        anchors.left:parent.left
-                        anchors.rightMargin: _toolsMargin
-                        anchors.leftMargin: _toolsMargin*2
-                        anchors.topMargin: _toolsMargin
-                        asynchronous: false
-                        width: height
-                        height: parent.height * 2 / 3
-                        active: false  // set true when you want to load it
-                        visible: true
-
-                        sourceComponent: Component {
-                            QGCColoredImage {
-                                id: gasolinePercentageIcon
-                                anchors.fill: parent
-                                anchors.margins: 0
-                                source: "/qmlimages/GasCan.svg"
-                                fillMode: Image.PreserveAspectFit
-                                color:  _gasolina > 50 ? "green" : (_gasolina > 20 ? "orange" : "red")
-                                visible: true
-                            }
-                        }
-                    }
-
-                    DropShadow {
-                        anchors.fill: gasolineIconLoader
-                        source: gasolineIconLoader.item
-                        color: "#80000000" // Semi-transparent black shadow
-                        radius: 8
-                        samples:17
-                        spread: 0
-                        verticalOffset: 5
-                        horizontalOffset: 5
-                    }
-
-                    Rectangle{
-                        id: textBoxGasolinePercentage
-                        anchors.verticalCenter: gasolineIconLoader.verticalCenter
-                        anchors.horizontalCenter: gasolineIconLoader.horizontalCenter
-                        height: gasolineIconLoader.height/3
-                        width: gasolineIconLoader.width
-                        visible: visible//gasMouseArea.containsMouse? true: false
-                        color: "black"
-                        border.width: 1
-                        border.color: "lightgray"
-
-                    }
-                    Text{
-                        anchors.fill: textBoxGasolinePercentage
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        text: _gasolina + "%"
-                        font.bold: true
-                        color: "white"
-                        visible: textBoxGasolinePercentage.visible
-                    }
-
-
-                    //Temperatura Gerador
-                    QGCColoredImage {
-                        id: motorTemperatureInformationIcon
-                        anchors.top: parent.top
-                        anchors.left: textBoxGasolinePercentage.right
-                        anchors.leftMargin: _toolsMargin * 2   // Adjust this for desired spacing
-                        anchors.topMargin: _toolsMargin * 2
-                        width: height
-                        height: parent.height * 2/3
-                        source: "/qmlimages/MotorTemp.svg"
-                        fillMode: Image.PreserveAspectFit
-                        color: "white"
-                        visible:true
-                    }
-                    QGCColoredImage {
-                        id: motorTemperatureInformationIcon2
-                        anchors.top: parent.top
-                        anchors.left: textBoxGasolinePercentage.right
-                        anchors.leftMargin: _toolsMargin * 2  // Slight spacing between both temp icons
-                        anchors.topMargin: _toolsMargin * 2
-                        width: height
-                        height: parent.height * 2/3
-                        source: "/qmlimages/MotorTermometer.png"
-                        fillMode: Image.PreserveAspectFit
-                        color: _motor_temp > 110 ? (_motor_temp > 150 ? (_motor_temp >= 200 ? "red" : "orange") : "yellow") : "white"
-                        visible: motorTemperatureInformationIcon.visible
-                    }
-
-                    Rectangle{
-                        id: textBoxMotorTempInfo
-                        anchors.verticalCenter: motorTemperatureInformationIcon.verticalCenter
-                        anchors.horizontalCenter: motorTemperatureInformationIcon.horizontalCenter
-                        height: motorTemperatureInformationIcon.height*1.2
-                        width: motorTemperatureInformationIcon.width
-                        visible:  _androidBuild || motorTemperatureInformationIcon.visible ? false : motorTempMouseArea.containsMouse//motorTempMouseArea.containsMouse? true: false
-                        color: "black"
-                        border.width: 1
-                        border.color: "lightgray"
-                    }
-                    MouseArea{
-                        id:motorTempMouseArea
-                        anchors.fill: motorTemperatureInformationIcon
-                        hoverEnabled: true
-                        onClicked: {
-                            if (_androidBuild) {
-                                textBoxMotorTempInfo.visible = !textBoxMotorTempInfo.visible;
-                            }
-                        }
-                    }
-                    ColumnLayout {
-                        id: motorTempInfoColumn
-                        anchors.fill: textBoxMotorTempInfo
-                        spacing:                0
-                        visible: textBoxMotorTempInfo.visible
-
-
-                        Text {
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _motor_temp.toString()+"°C"
-                            font.bold: true
-                            font.pixelSize:         20
-                        }
-                        Text {
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "RPM: "
-                            font.bold: true
-                            font.pixelSize:         20
-                        }
-                        Text {
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _activeVehicle._GD_GeneratorRPM.rawValue.toFixed(0).toString()
-                            font.bold: true
-                            font.pixelSize:         20
-                        }
-                    }
-
-
-
-                    Rectangle {
-                        id: rotorsTempArea
-                        anchors.top: parent.top
-                        anchors.left: motorTempInfoColumn.right
-                        anchors.margins: _toolsMargin * 1.5
-                        width: height * 2
-                        height: parent.height*2/3
-                        color: "black" // Background color
-
-                        // Borda com aparência de aço
-                        Rectangle {
-                            anchors.fill: parent
-                            color: "transparent"
-                            border.width: 2
-                            z: parent.z+13
-                            border.color: "lightgray" // Cor base da borda
-                        }
-                        Rectangle {
-                            anchors.fill: parent
-                            z: -1
-                            color: "black"
-                            opacity: 0.3
-                            scale: 1.05
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.horizontalCenter: parent.horizontalCenter
-                        }
-
-                        // Modelo dinâmico com tensões das células
-                        ListModel {
-                            id: accellRotorModel
-                        }
-
-                        // Popula o modelo com valores dinamicamente
-                        Component.onCompleted: {
-
-                                accellRotorModel.append({ aceleracao: 0 });
-                                accellRotorModel.append({ aceleracao: 0 });
-                                accellRotorModel.append({ aceleracao: 0 });
-                                accellRotorModel.append({ aceleracao: 0 });
-                                accellRotorModel.append({ aceleracao: 0 });
-                                accellRotorModel.append({ aceleracao: 0 });
-
-
-                        }
-
-                        Timer{//Atualiza os valores periodicamente [TODO: mudar interval depois]
-                            interval: 100; running: true; repeat: true
-                            onTriggered: {
-
-                                    accellRotorModel.set(0, { aceleracao: _activeVehicle._GD_RPM1.rawValue.toFixed(0)/3850 });
-                                    accellRotorModel.set(1, { aceleracao: _activeVehicle._GD_RPM2.rawValue.toFixed(0)/3850 });
-                                    accellRotorModel.set(2, { aceleracao: _activeVehicle._GD_RPM3.rawValue.toFixed(0)/3850 });
-                                    accellRotorModel.set(3, { aceleracao: _activeVehicle._GD_RPM4.rawValue.toFixed(0)/3850 });
-                                    accellRotorModel.set(4, { aceleracao: _activeVehicle._GD_RPM5.rawValue.toFixed(0)/3850 });
-                                    accellRotorModel.set(5, { aceleracao: _activeVehicle._GD_RPM6.rawValue.toFixed(0)/3850 });
-
-
-
-                            }
-                        }
-
-                        Repeater {
-                            model: accellRotorModel
-
-                            Rectangle {
-                                width: parent.width / 6
-                                height: model.aceleracao* parent.height // Altura proporcional à aceleracao
-                                x: index * parent.width / 6 // Posiciona horizontalmente
-                                anchors.bottom: parent.bottom
-                                z: parent.z + 10
-                                color: "green"
-                                border.color: {
-                                    if(index == 0 && _selected_rotor_1) return "yellow"
-                                    else if (index == 1 && _selected_rotor_2) return "yellow"
-                                    else if (index == 2 && _selected_rotor_3) return "yellow"
-                                    else if (index == 3 && _selected_rotor_4) return "yellow"
-                                    else if (index == 4 && _selected_rotor_5) return "yellow"
-                                    else if (index == 5 && _selected_rotor_6) return "yellow"
-                                    else return "black"
-                                }
-                                border.width: 3//index === 0 && motor1_selected ? 3 : 1
-                                MouseArea { // Torna a barra interativa
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        console.log("Célula", index + 1, "tensão:", model.tensao);
-                                        console.log(_activeVehicle)
-                                        console.log(_activeVehicle.batteries.count)
-                                        console.log(_activeVehicle.batteries.get(0).percentRemaining.valueString)
-
-                                    }
-
-                                    onContainsMouseChanged: {
-                                            if(index == 0){_selected_rotor_1 = !_selected_rotor_1 }
-                                            else if(index == 1){_selected_rotor_2 = !_selected_rotor_2 }
-                                            else if(index == 2){_selected_rotor_3 = !_selected_rotor_3 }
-                                            else if(index == 3){_selected_rotor_4 = !_selected_rotor_4 }
-                                            else if(index == 4){_selected_rotor_5 = !_selected_rotor_5 }
-                                            else if(index == 5){_selected_rotor_6 = !_selected_rotor_6 }
-
-                                    }
-                                }
-
-                            }
-
-
-
-                        }
-
-                        Repeater{
-                            model: accellRotorModel
-                            Rectangle{
-                                width: parent.width/6
-                                height: parent.height/20
-                                y: {
-                                    if(index == 0) return parent.height*((medAceleracaoRotor1)/4000)
-                                    else if (index == 1) return parent.height*((medAceleracaoRotor2)/4000)
-                                    else if (index == 2) return parent.height*((medAceleracaoRotor3)/4000)
-                                    else if (index == 3) return parent.height*((medAceleracaoRotor4)/4000)
-                                    else if (index == 4) return parent.height*((medAceleracaoRotor5)/4000)
-                                    else if (index == 5) return parent.height*((medAceleracaoRotor6)/4000)
-                                }
-                                x: index*parent.width/6
-                                z:1000
-                                color: "white"
-                                border.color:"black"
-                                border.width:0.5
-                                visible: false
-                            }
-                        }
-
-                    }
-
-
-                    Item {
-                        id: _dataBox
-                        height: parent.height * 2/3
-                        width: parent.width*0.45
-                        anchors.top: parent.top
-                        anchors.left: rotorsTempArea.right
-                        anchors.margins: _toolsMargin * 1.5
-                        property int _borderWidth: 2
-                        property int _fontSize: 10//_androidBuild ?  15 : 20
-
-                        // JavaScript function to format numbers with leading zeros
-                        // (You can place this function elsewhere, like in a separate .js file, for reusability)
-                        function formatNumber(value, desiredLength) {
-                            return value.toString().padStart(desiredLength, '0');
-                        }
-
-                        Column {
-                            width: parent.width
-                            height: parent.height
-
-                            Row {
-                                width: parent.width
-                                height: parent.height / 2
-
-                                // First row of rectangles
-                                Rectangle {
-                                    width: parent.width/3
-                                    height: parent.height
-                                    color: "transparent"
-                                    border.width: _borderWidth
-                                    border.color:"white"
-                                    Text {
-                                        id: text1
-                                        anchors.centerIn: parent
-                                        // Assuming data is 1234, and you want 5 total digits (one leading zero)
-                                        text: "Battery Voltage: " + _dataBox.formatNumber(_tensao_bateria_1, 2)+"V"
-                                        font.bold: true
-                                        font.pointSize: _dataBox._fontSize
-                                        color: "white"
-                                    }
-                                }
-                                Rectangle {
-                                    width: parent.width/3
-                                    height: parent.height
-                                    color: "transparent"
-                                    border.width: _borderWidth
-                                    border.color:"white"
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Generator Current " + _dataBox.formatNumber(_current_generator, 2)+"A"
-                                        font.bold: true
-                                        font.pointSize: _dataBox._fontSize
-                                        color: "white"
-                                    }
-
-                                }
-                                Rectangle {
-                                    width: parent.width/3
-                                    height: parent.height
-                                    color: "transparent"
-                                    border.width: _borderWidth
-                                    border.color:"white"
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: {
-                                            var totalSeconds = _activeVehicle.flightTimeCustom.rawValue
-                                            var hours = Math.floor(totalSeconds / 3600)
-                                            var minutes = Math.floor((totalSeconds % 3600) / 60)
-                                            var seconds = Math.floor(totalSeconds % 60)
-
-                                            // Formata para garantir dois dígitos (00:00:00)
-                                            return "Flighttime: " + (hours > 0 ? (hours < 10 ? "0" + hours : hours) + ":" : "00:") +
-                                                   (minutes < 10 ? "0" + minutes : minutes) + ":" +
-                                                   (seconds < 10 ? "0" + seconds : seconds)
-                                        }
-                                        //text: "Flightime: " + _flightTime
-                                        font.bold: true
-                                        font.pointSize: _dataBox._fontSize
-                                        color: "white"
-                                    }
-                                }
-                            }
-
-                            Row {
-                                width: parent.width
-                                height: parent.height / 2
-
-                                // Second row of rectangles
-                                Rectangle {
-                                    width: parent.width/3
-                                    height: parent.height
-                                    color: "transparent"
-                                    border.width: _borderWidth
-                                    border.color:"white"
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Battery Current " + _dataBox.formatNumber(_current_bateria_1, 2)
-                                        font.bold: true
-                                        font.pointSize: _dataBox._fontSize
-                                        color: "white"
-                                    }
-                                }
-                                Rectangle {
-                                    width: parent.width/3
-                                    height: parent.height
-                                    color: "transparent"
-                                    border.width: _borderWidth
-                                    border.color:"white"
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Ground Speed: " + _dataBox.formatNumber(_groundSpeed, 2)+"m/s"
-                                        font.bold: true
-                                        font.pointSize: _dataBox._fontSize
-                                        color: "white"
-                                    }
-                                }
-                                Rectangle {
-                                    width: parent.width/3
-                                    height: parent.height
-                                    color: "transparent"
-                                    border.width: _borderWidth
-                                    border.color:"white"
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Altitude AMSL: " + _dataBox.formatNumber(_altitudeAMSL, 2)+"m"
-                                        font.bold: true
-                                        font.pointSize: _dataBox._fontSize
-                                        color: "white"
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Item{
-                        width: parent.width*0.35
-                        //height: parent.height *2/3
-                        anchors.top: parent.top
-                        //anchors.bottom: parent.bottom
-                        anchors.left: _dataBox.right
-
-
-                        Loader {
-                            width:  parent.width/2
-                            source: "qrc:/qml/QGCInstrumentWidget.qml"
-
-                        }
-                    }
-
-
-                }
-
-            }
-        }
+    }
 
 
     //**************************************************************************************************//
@@ -1029,7 +561,7 @@ Item {
     Loader{
         id: lateralDataLoader
         anchors.right : parent.right
-        anchors.bottom : bottomDataLoader.top
+        anchors.bottom : bottomArea.top
         anchors.top:toolbarsize.bottom
         width : parent.width - mainViewWidth
         height: mainViewHeight
@@ -1038,7 +570,7 @@ Item {
         onLoaded:{
             let now = new Date();
             console.log("lateralDataArea LOADED at " + now.toLocaleTimeString());
-            //bottomDataLoader.active = true;
+            //bottomArea.active = true;
         }
 
         sourceComponent: Component {
@@ -1046,7 +578,7 @@ Item {
             Item {
                 id: lateralDataArea
                 anchors.fill: parent
-                property real sectionHeight: (parent.height - bottomDataLoader.height) / 6
+                property real sectionHeight: (parent.height - bottomArea.height) / 6
                 Rectangle {
                     anchors.fill: parent
                     color:qgcPal.toolbarBackground
@@ -1352,11 +884,11 @@ Item {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: lateralDataLoader.left
-        anchors.bottom: bottomDataLoader.top
+        anchors.bottom: bottomArea.top
 
         Component.onCompleted:{
             let now = new Date();
-            console.log("mainViewArea LOADED at " + now.toLocaleTimeString());lateralDataLoader.active = true; bottomDataLoader.active = true;}
+            console.log("mainViewArea LOADED at " + now.toLocaleTimeString());lateralDataLoader.active = true; bottomArea.active = true;}
 
         QGCToolInsets {
             id: _toolInsets
