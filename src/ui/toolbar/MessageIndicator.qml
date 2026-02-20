@@ -25,6 +25,7 @@ Item {
     width:          height
     anchors.top:    parent.top
     anchors.bottom: parent.bottom
+    visible: true
 
     property bool showIndicator: true
 
@@ -49,15 +50,7 @@ Item {
         return qgcPal.colorGrey
     }
 
-    Image {
-        id:                 criticalMessageIcon
-        anchors.fill:       parent
-        source:             "/qmlimages/Yield.svg"
-        sourceSize.height:  height
-        fillMode:           Image.PreserveAspectFit
-        cache:              false
-        visible:            _activeVehicle && _activeVehicle.messageCount > 0 && _isMessageImportant
-    }
+
 
     QGCColoredImage {
         anchors.fill:       parent
@@ -66,6 +59,16 @@ Item {
         fillMode:           Image.PreserveAspectFit
         color:              getMessageColor()
         visible:            !criticalMessageIcon.visible
+    }
+
+    Image {
+        id:                 criticalMessageIcon
+        anchors.fill:       parent
+        source:             "/qmlimages/Yield.svg"
+        sourceSize.height:  height
+        fillMode:           Image.PreserveAspectFit
+        cache:              false
+        visible:            _activeVehicle && _activeVehicle.messageCount > 0 && _isMessageImportant
     }
 
     MouseArea {

@@ -38,7 +38,6 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 Item {
     id: _root
 
-    property bool _GD60: false
 
     // These should only be used by MainRootWindow
     property var planController:    _planController
@@ -46,7 +45,6 @@ Item {
 
     // Properties of UTM adapter
     property bool utmspSendActTrigger: false
-
     PlanMasterController {
         id:                     _planController
         flyView:                true
@@ -69,36 +67,13 @@ Item {
     property real   _rightPanelWidth:       ScreenTools.defaultFontPixelWidth * 30
     property var    _mapControl:            mapControl
 
-    property real  mainViewHeight: _GD60? parent.height*0.845:parent.height*5/6
+    property real  mainViewHeight: parent.height*5/6
     property real  mainViewWidth : parent.width - (parent.height - mainViewHeight) //garantir simetria
     property bool _cameraExchangeActive : false
-    property var _pct_bateria_1: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
-    property var _tensao_bateria_1:  0 //modificado em MainWindow
-    property var _current_bateria_1:  0
 
-    property var _pct_bateria_2: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
-    property var _tensao_bateria_2:  0 //modificado em MainWindow
-    property var _current_bateria_2:  0
-
-    property var _current_generator: 0
-    property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage (P/ GD25)
-
-    property int _battery1Index: _GD60? 0:0
-    property int _battery2Index: _GD60? 1:0
-    property int _gasolineIndex: _GD60? 0:1
-    property int _generatorIndex: _GD60? 0:2
-
-
-    property int _satCount: 0
-    property int _satPDOP: 0
-    property var _rcQuality: 0
-    property var _rcQuality_ARRAY: []
-    property var _rcQuality_mean: 0
-    property var _current_battery_ARRAY: []
-    property var _current_generator_ARRAY: []
     property var _returnFunctionArray: []
     property bool flagAlertaGerador: false
-    property real oldGeneratorMediamValue: 0
+    property var oldGeneratorMediamValue: 0
     property int  maxGeneratorCurrent: 120
     property var  _distanceToHome:     _activeVehicle.distanceToHome.rawValue.toFixed(2)
     property var  _distanceToWP: _activeVehicle.distanceToNextWP.rawValue.toFixed(2)
@@ -145,19 +120,12 @@ Item {
     property bool _selected_rotor_5: false
     property bool _selected_rotor_6: false
 
-    property real _motor_temp: 30
+    property bool overrideActive: false
     property real _motor_rpm: 3000
 
     property int _rpm_horizontal1: 0
     property int _rpm_horizontal2: 0
 
-    property int horas_restantes:0
-    property int minutos_restantes:0
-    property int segundos_restantes:0
-
-    property string horas_restantes_string:"00"
-    property string minutos_restantes_string:"00"
-    property string segundos_restantes_string:"00"
 
     property bool _androidBuild: (Qt.platform.os === "ios" || Qt.platform.os === "android")
 
@@ -175,6 +143,17 @@ Item {
     property string _breachAlertColor
 
     property bool canShowBreachAlert: true
+    property var array_valores_rc: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    property bool override_first_clicked: false;
+
+    property var lastRcOverrideTimestamp;
+    property var activeOverrideID: -1;
+
+    property var gcsID: -1;
+
+    property real _groundSpeed: 0
+    property real _altitudeAMSL: 0
+    property int _flightTime:0
 
     Timer {
         id: breachCooldownTimer
@@ -290,6 +269,7 @@ Item {
         return {breach:!inside, level:level_breach};
     }
 
+    //Bom incluir isso aqui, mas preciso de um log que presta pra testar então foda-se por enquanto
     function generatorAlert(batValues, gerValues, oldGerMed){ //TODO: incluir condicional tensão da bateria < 44V
         var medBat = 0;
         var medGer = 0;
@@ -319,6 +299,7 @@ Item {
 
     }
 
+
     Timer{
         id: propertyValuesUpdater
         interval: 100
@@ -326,73 +307,52 @@ Item {
         repeat: true
 
         onTriggered:{
-            /*console.log("TESTING BATTERY ACCESS")
-            console.log(_activeVehicle.batteries.count)
-            console.log(_activeVehicle.batteries.get(0).voltage.rawValue)
-            console.log(_activeVehicle.batteries.columnCount())
-            console.log(_activeVehicle.batteries.get(1).voltage.rawValue)*/
-            //console.log(_activeVehicle.batteries.index(1,0).voltage.rawValue)
+            gcsID = QGroundControl.mavlinkSystemID.valueOf(); //tem que ficar atualizando. tem jeito melhor pra fazer mas isso é pequisa futura e o desempenho ta satisfatório pra agora
+            //console.log("ID DA GCS: ",gcsID);
+            if(_activeVehicle.firmwareMajorVersion.toString() == "255"){ // Caso esteja rodando nosso Ardupilot custom (Major Version 255)
+                let allMessages = _activeVehicle.formattedMessages;
+                    let lines = allMessages.split("<br/>").filter(line => line.trim() !== "");
 
-            if(_GD60){
+                    if (lines.length > 0) {
+                        let lastLine = lines[lines.length - 1].replace(/<[^>]*>/g, "");
 
-                _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 20)/5.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
-                _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
-                _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
+                        // 1. Regex para capturar o Tempo e o ID (Grupo 5)
+                        // Note o [ID: (\d+)] no final para pegar o número
+                        let match = lastLine.match(/\[(\d{2}):(\d{2}):(\d{2})\.(\d{3})\].*RC Override: Ativo \[ID: (\d+)\]/);
 
-                _pct_bateria_2 = ((((_activeVehicle.batteries.get(_battery2Index).voltage.rawValue).toFixed(2) - 47.6)/13.3)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
-                _tensao_bateria_2 = (_activeVehicle.batteries.get(_battery2Index).voltage.rawValue).toFixed(2)
-                _current_bateria_2 = (_activeVehicle.batteries.get(_battery2Index).current.rawValue).toFixed(2)
+                        if (match) {
+                            // Se entramos aqui, a ÚLTIMA mensagem é um "Ativo"
+                            let msgTime = new Date();
+                            msgTime.setHours(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]), parseInt(match[4]));
 
+                            // Atualizamos o timestamp de controle com o tempo da MENSAGEM
+                            lastRcOverrideTimestamp = msgTime.getTime();
+                            activeOverrideID = parseInt(match[5]);
+                            overrideActive = true;
+                        }
+                        else if (lastLine.includes("RC Override") && !lastLine.includes("Ativo")) {
+                            // Se a última mensagem for explicitamente de desativação
+                            overrideActive = false;
+                            activeOverrideID = -1;
 
-            }
-            else{
-                _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 42)/8.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
-                _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
-                _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
-            }
-
-
-
-            _satCount = _activeVehicle.gps.count.rawValue
-            _satPDOP = _activeVehicle.gps.lock.rawValue
-
-
-            // console.log(_activeVehicle.rcRSSI.valueOf())
-            _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue//_activeVehicle.batteries.index(0,1).voltage.rawValue
-
-            if(_activeVehicle.rcRSSI != 0){
-                _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
-                _rcQuality_ARRAY.push(_rcQuality)
-                if(_rcQuality_ARRAY.length === 10){
-                    var qual_temp1 = 0;
-                    for(var i =0; i<10; i++){
-                        qual_temp1 = _rcQuality_ARRAY[i] + qual_temp1
+                        }
                     }
-                    qual_temp1 = qual_temp1/10
-                    _rcQuality_mean = qual_temp1
-                    _rcQuality_mean = _rcQuality_mean.toFixed(0)
-                    _rcQuality_ARRAY.shift();
+
+                    // 2. Lógica de Expiração (independente de qual seja a última mensagem)
+                    if (overrideActive) {
+                        let now = new Date().getTime();
+                        let diffMs = now - lastRcOverrideTimestamp;
+
+                        // Se passou de 7.5 segundos desde a última mensagem de "Ativo" encontrada
+                        if (diffMs > 7500) {
+                            overrideActive = false;
+                            activeOverrideID = -1;
+                            console.log("RC Override expirou por tempo (7.5s)");
+                        }
+                    }
                 }
-                console.log("RCQUALITY: ",_rcQuality, " MEDIA: ",_rcQuality_mean, " ARRAY: ", _rcQuality_ARRAY)
-            }
-            horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
-            minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
-            segundos_restantes = (7200 * (_gasolina/100))%60
 
 
-
-            if(horas_restantes<10) {horas_restantes_string = "0"+horas_restantes.toString()}
-            else {horas_restantes_string = horas_restantes.toString()}
-            if(minutos_restantes < 10){ minutos_restantes_string = "0" +minutos_restantes.toString()}
-            else {minutos_restantes_string = minutos_restantes.toString()}
-            if(segundos_restantes <10) {segundos_restantes_string = "0" + segundos_restantes.toString()}
-            else {segundos_restantes_string = segundos_restantes.toString()}
-
-            /*console.log("poly count: ",_geoFenceController.polygons.count.toString())
-            console.log("  poly 0 -> ",_geoFenceController.polygons.get(0).path)
-            console.log("  poly first NS coord -> ",_geoFenceController.polygons.get(0).path[0])
-            console.log("  poly first WE coord -> ",_geoFenceController.polygons.get(0).path[1])
-            console.log("  vehicle pos -> ", _activeVehicle.coordinate.toString())*/
 
             var breach_val = breachDetection()
             if (breach_val.level > -1 && canShowBreachAlert) {
@@ -407,76 +367,12 @@ Item {
                     _breachAlertColor = "Orange"
                 }
 
-                // breachAlertPopup.open()
+                breachAlertPopup.open()
+                breachAlertPopup.visible = true
                 canShowBreachAlert = false
                 breachCooldownTimer.start()
             }
 
-
-            if(_GD60){
-                _aceleracao_rotor_1 = _aceleracao_rotor_1
-                _aceleracao_rotor_2 = _aceleracao_rotor_2
-                _aceleracao_rotor_3 = _aceleracao_rotor_3
-                _aceleracao_rotor_4 = _aceleracao_rotor_4
-            }
-            else{
-                aceleracao_rotor_1_ARRAY.push(_aceleracao_rotor_1)
-                aceleracao_rotor_2_ARRAY.push(_aceleracao_rotor_2)
-                aceleracao_rotor_3_ARRAY.push(_aceleracao_rotor_3)
-                aceleracao_rotor_4_ARRAY.push(_aceleracao_rotor_4)
-                aceleracao_rotor_5_ARRAY.push(_aceleracao_rotor_5)
-                aceleracao_rotor_6_ARRAY.push(_aceleracao_rotor_6)
-            }
-            _current_generator_ARRAY.push(_current_generator)
-
-            // console.log("maxvel: ",_maxVel)
-            //var params = _activeVehicle.parameterNames(1); // Chama a função C++
-            //console.log("Parameters:", params); // Imprime no console do QML
-            //params.forEach(param => console.log(param.toString())); //TODO: typeError. QStringList e QString não são reconhecidos pelo QML padrão. Resolver isso depois
-            _current_generator = _activeVehicle.batteries.get(_generatorIndex).current.rawValue.toFixed(2)
-            _current_bateria_1 = _activeVehicle.batteries.get(_battery1Index).current.rawValue.toFixed(2)
-
-
-
-            if(_current_generator_ARRAY.length === 20){ //sabendo que recebemos um dado novo a cada 0.1 segundos, (ver c/ Erich)
-                _returnFunctionArray = generatorAlert(_current_battery_ARRAY, _current_generator_ARRAY, oldGeneratorMediamValue);//executa função
-                flagAlertaGerador = _returnFunctionArray[0]; //atualiza flag geral com valor booleano retornado da função
-                oldGeneratorMediamValue = _returnFunctionArray[1]; //atualiza valor de média
-                _current_battery_ARRAY.shift(); //apaga primeiro elemento (ver c/Erich se é pra apagar o primeiro elemento ou todos)
-                _current_generator_ARRAY.shift();
-                //console.log(_current_battery_ARRAY);
-                //console.log(_current_generator_ARRAY);
-            }
-            if(aceleracao_rotor_1_ARRAY.length ===20){
-                var temp1 = 0;
-                var temp2 = 0;
-                var temp3 = 0;
-                var temp4 = 0;
-                var temp5 = 0;
-                var temp6 = 0;
-                for (var c = 0; c<20; c++){
-                    temp1 = temp1 + aceleracao_rotor_1_ARRAY[c];
-                    temp2 = temp2 + aceleracao_rotor_2_ARRAY[c];
-                    temp3 = temp3 + aceleracao_rotor_3_ARRAY[c];
-                    temp4 = temp4 + aceleracao_rotor_4_ARRAY[c];
-                    temp5 = temp5 + aceleracao_rotor_5_ARRAY[c];
-                    temp6 = temp6 + aceleracao_rotor_6_ARRAY[c];
-                }
-                medAceleracaoRotor1 = temp1/20
-                medAceleracaoRotor2 = temp2/20
-                medAceleracaoRotor3 = temp3/20
-                medAceleracaoRotor4 = temp4/20
-                medAceleracaoRotor5 = temp5/20
-                medAceleracaoRotor6 = temp6/20
-                //   console.log("medAccell1", medAceleracaoRotor1)
-
-                aceleracao_rotor_1_ARRAY.shift();
-                aceleracao_rotor_2_ARRAY.shift();
-                aceleracao_rotor_3_ARRAY.shift();
-                aceleracao_rotor_4_ARRAY.shift();
-                aceleracao_rotor_5_ARRAY.shift();
-                aceleracao_rotor_6_ARRAY.shift();
-            }
         }
     }
 
@@ -484,1393 +380,39 @@ Item {
     //**************************************************************************************************//
     //                          BOTTOM VIEW AREA                                                        //
     //**************************************************************************************************//
-    Loader{
-        id: bottomDataLoader
+    FlyViewBottomViewArea {
+        id: bottomArea
+
         anchors.bottom: parent.bottom
         anchors.left: parent.left
+
         width: parent.width
         height: parent.height - mainViewHeight
-        active: true  // or false if you want to delay loading
-        asynchronous: true
-        onLoaded: {let now = new Date();
-            console.log("bottomDataArea LOADED at " + now.toLocaleTimeString());}
+        toolsMargin: _toolsMargin
 
-        sourceComponent: Component {
-            id: bottomDataComponent
-            Item {
-                id: bottomDataArea
-                anchors.bottom : parent.bottom
-                anchors.left : parent.left
-                width : parent.width
-                height: parent.height
+        _androidBuild: _androidBuild
 
-
-
-
-
-                Rectangle {
-                    id: gradientBar
-                    anchors.fill: parent
-
-                    gradient: Gradient {
-                        GradientStop { position: 0.7; color:  qgcPal.toolbarBackground} // Top color
-                        GradientStop { position: 1.0; color:  toolbar._mainStatusBGColor} // Bottom color
-                    }
-                }
-
-                QGCColoredImage {
-                    id: batteryPercentageIcon_1
-                    anchors.top:        parent.top
-                    anchors.left:       parent.left
-                    anchors.margins:    _toolsMargin
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/Battery.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              "white"
-                    visible: true
-                }
-
-                Rectangle{
-                    id: batteryPercentageBar_1
-                    anchors.top: batteryPercentageIcon_1.top
-                    anchors.left: batteryPercentageIcon_1.left
-                    //anchors.margins: _toolsMargin
-                    width: batteryPercentageIcon_1.width
-                    height: batteryPercentageIcon_1.height
-                    color: "transparent"//batMouseArea.containsMouse? "green": "red"
-                    visible: false
-                    Rectangle{
-                        y: parent.height*0.1
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*0.85 //fixo pra não ultrapassar o desenho
-                        color: (_pct_bateria_1) > 50 ? "green" : ((_pct_bateria_1) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria_1
-                    }
-                    Rectangle{ //BARRA DE ALTURA DINAMICA PRA INDICAR O NÍVEL DE bateria -> HEIGHT = 1-bateria%
-
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*(0.15 + 0.85*(1-_pct_bateria_1/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
-                        color: qgcPal.toolbarBackground
-                    }
-
-                }
-
-                OpacityMask{
-                    anchors.fill: batteryPercentageBar_1
-                    source: batteryPercentageBar_1
-                    maskSource: batteryPercentageIcon_1
-                    invert: true
-                    MouseArea{
-                        id: batMouseArea_1
-                        anchors.fill: parent
-                        hoverEnabled : true
-
-                    }
-                }
-                Rectangle{
-                    id: textBoxBatteryInfo_1
-                    anchors.verticalCenter: batteryPercentageIcon_1 .verticalCenter
-                    //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
-                    anchors.left: batteryPercentageIcon_1.right
-                    anchors.rightMargin: _toolsMargin
-                    height: batteryPercentageIcon_1.height*0.7
-                    width: batteryPercentageIcon_1.width*0.7
-                    visible: true//batMouseArea_1.containsMouse? true: false
-                    color: "transparent"// desktop version "black"
-                    border.width: 0
-                    border.color: "transparent"// desktop version "lightgray"
-                    Component.onCompleted: gasolineIconLoader.active = true
-
-
-                    ColumnLayout {
-                        id:                     batteryInfoColumn_1
-                        //anchors.top: textBoxBatteryInfo_1.top
-                        //anchors.horizontalCenter: textBoxBatteryInfo_1.horizontalCenter
-                        anchors.fill:parent
-                        spacing:                0
-                        visible: true//textBoxBatteryInfo_1.visible
-
-                        Text {
-                            id: textBoxBatteryInfo_1PCT
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _pct_bateria_1 > 9? _pct_bateria_1+"%": "0"+_pct_bateria_1+"%"
-                            font.pixelSize:       _androidBuild ?  13 : 21//ScreenTools.smallFontPixelHeight
-                            visible: textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-                        Text {
-                            id: textBoxBatteryInfo_1TENSION
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _tensao_bateria_1 + " V"
-                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
-                            visible: textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-                        Text {
-                            id: textBoxBatteryInfo_1CURRENT
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _current_bateria_1 + " A"
-                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
-                            visible: textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-
-                    }
-                }
-
-                QGCColoredImage {
-                    id: batteryPercentageIcon_2
-                    anchors.top:        parent.top
-                    anchors.left:       textBoxBatteryInfo_1.right
-                    anchors.margins:    _toolsMargin
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/Battery.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              "white"
-                    visible: _GD60//true
-                }
-
-                Rectangle{
-                    id: batteryPercentageBar_2
-                    anchors.top: batteryPercentageIcon_2.top
-                    anchors.left: batteryPercentageIcon_2.left
-                    //anchors.margins: _toolsMargin
-                    width: batteryPercentageIcon_2.width
-                    height: batteryPercentageIcon_2.height
-                    color: "transparent"//batMouseArea.containsMouse? "green": "red"
-                    visible: false
-                    Rectangle{
-                        y: parent.height*0.1
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*0.85 //fixo pra não ultrapassar o desenho
-                        color: (_pct_bateria_2) > 50 ? "green" : ((_pct_bateria_2) > 30 ? "orange" : "red") //cor dinamica de acordo com o _pct_bateria_1
-                    }
-                    Rectangle{ //BARRA DE ALTURA DINAMICA PRA INDICAR O NÍVEL DE bateria -> HEIGHT = 1-bateria%
-
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        //anchors.left: parent.left
-                        width: parent.width/2
-                        height: parent.height*(0.15 + 0.85*(1-_pct_bateria_2/100) )// bateria | dinamico de acordo com 1-(% bateria). cor há de ser dinamica também
-                        color: qgcPal.toolbarBackground
-                    }
-
-                }
-
-                OpacityMask{
-                    anchors.fill: batteryPercentageBar_2
-                    source: batteryPercentageBar_2
-                    maskSource: batteryPercentageIcon_2
-                    invert: true
-                    MouseArea{
-                        id: batMouseArea_2
-                        anchors.fill: parent
-                        hoverEnabled : true
-
-                    }
-                }
-                Rectangle{
-                    id: textBoxBatteryInfo_2
-                    anchors.verticalCenter: batteryPercentageIcon_2 .verticalCenter
-                    //anchors.horizontalCenter: batteryPercentageIcon_1.horizontalCenter
-                    anchors.left: batteryPercentageIcon_2.right
-                    anchors.rightMargin: _toolsMargin
-                    height: batteryPercentageIcon_2.height*0.7
-                    width: batteryPercentageIcon_2.width*0.7
-                    visible: _GD60//true//batMouseArea_1.containsMouse? true: false
-                    color: "transparent"// desktop version "black"
-                    border.width: 0
-                    border.color: "transparent"// desktop version "lightgray"
-                    Component.onCompleted: gasolineIconLoader.active = true
-
-
-                    ColumnLayout {
-                        id:                     batteryInfoColumn_2
-                        anchors.top: textBoxBatteryInfo_2.top
-                        anchors.horizontalCenter: textBoxBatteryInfo_2.horizontalCenter
-                        spacing:                0
-                        visible: _GD60//true//textBoxBatteryInfo_1.visible
-
-                        Text {
-                            id: textBoxBatteryInfo_2PCT
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _pct_bateria_2 > 9? _pct_bateria_2+"%": "0"+_pct_bateria_2+"%"
-                            font.pixelSize:       _androidBuild ?  13 : 21//ScreenTools.smallFontPixelHeight
-                            visible: _GD60//textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-                        Text {
-                            id: textBoxBatteryInfo_2TENSION
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _tensao_bateria_2 + " V"
-                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
-                            visible: _GD60//textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-                        Text {
-                            id: textBoxBatteryInfo_2CURRENT
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _current_bateria_2 + " A"
-                            font.pixelSize:         _androidBuild ?  13 : 21///ScreenTools.smallFontPixelHeight
-                            visible: _GD60//textBoxBatteryInfo_1.visible
-                            font.bold: true
-                        }
-
-                    }
-                }
-
-                //gasolina
-                Loader {
-                    id: gasolineIconLoader
-                    anchors.top: parent.top
-                    anchors.left: _GD60 ? textBoxBatteryInfo_2.right :textBoxBatteryInfo_1.right
-                    anchors.rightMargin: _toolsMargin
-                    anchors.leftMargin: _toolsMargin*2
-                    anchors.topMargin: _toolsMargin
-                    asynchronous: false
-                    width: height
-                    height: parent.height * 2 / 3
-                    active: false  // set true when you want to load it
-                    visible: true
-
-                    sourceComponent: Component {
-                        QGCColoredImage {
-                            id: gasolinePercentageIcon
-                            anchors.fill: parent
-                            anchors.margins: 0
-                            source: "/qmlimages/GasCan.svg"
-                            fillMode: Image.PreserveAspectFit
-                            color:  _gasolina > 50 ? "green" : (_gasolina > 20 ? "orange" : "red")
-                            visible: true
-                        }
-                    }
-                }
-
-                DropShadow {
-                    anchors.fill: gasolineIconLoader
-                    source: gasolineIconLoader.item
-                    color: "#80000000" // Semi-transparent black shadow
-                    radius: 8
-                    samples:17
-                    spread: 0
-                    verticalOffset: 5
-                    horizontalOffset: 5
-                }
-
-                Rectangle{
-                    id: textBoxGasolinePercentage
-                    anchors.verticalCenter: gasolineIconLoader.verticalCenter
-                    anchors.horizontalCenter: gasolineIconLoader.horizontalCenter
-                    height: gasolineIconLoader.height/3
-                    width: gasolineIconLoader.width
-                    visible: visible//gasMouseArea.containsMouse? true: false
-                    color: "black"
-                    border.width: 1
-                    border.color: "lightgray"
-
-                }
-                Text{
-                    anchors.fill: textBoxGasolinePercentage
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    text: _gasolina + "%"
-                    font.bold: true
-                    color: "white"
-                    visible: textBoxGasolinePercentage.visible
-                }
-
-
-
-
-                //operação do gerador (pode ser pop-up por que é fudido de importante?) incluir pop-up/cor dinamica/etc
-                QGCColoredImage {
-                    id: generatorFunctionalityIcon
-                    anchors.top:        parent.top
-                    anchors.left:       gasolineIconLoader.right
-                    anchors.leftMargin: _toolsMargin*2
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/Generator.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              !flagAlertaGerador ? "white" : "orange" //vai receber o retorno da função. Ou vai estar verde ou vai estar vermelho/laranja. Sem rolo
-
-                }
-                DropShadow {
-                    anchors.fill: generatorFunctionalityIcon
-                    source: generatorFunctionalityIcon
-                    color: "#80000000" // Semi-transparent black shadow
-                    radius: 8
-                    samples:17
-                    spread: 0
-                    verticalOffset: 5
-                    horizontalOffset: 5
-                }
-
-                OpacityMask{
-                    anchors.fill: generatorFunctionalityIcon
-                    source: generatorFunctionalityIcon
-                    maskSource: generatorFunctionalityIcon
-                    MouseArea{
-                        id: generatorMouseArea
-                        anchors.fill: parent
-                        hoverEnabled : true
-
-                    }
-                }
-
-
-
-                Rectangle{
-                    //anchors.fill:parent
-                    id: generatorCurrentBar
-                    anchors.left: generatorFunctionalityIcon.right
-                    anchors.top: parent.top
-                    anchors.leftMargin: _toolsMargin*2
-                    anchors.topMargin:  _toolsMargin*2
-                    width:height/3
-                    height: parent.height*2/3
-                    color:"green"
-                    visible: _GD60? false:true
-                    //z:1000000
-                    Rectangle{
-                        anchors.top:generatorCurrentBar.top
-                        anchors.left:generatorCurrentBar.left
-                        width:generatorCurrentBar.width
-                        height: _current_generator >= 0 ?  generatorCurrentBar.height * (1-(_current_generator/maxGeneratorCurrent)): generatorCurrentBar.height
-                        color:"black"
-                    }
-                    Rectangle{
-                        anchors.fill:parent
-                        border.width:2
-                        border.color: "lightgray"
-                        color:"transparent"
-                    }
-                    Rectangle{
-                        anchors.horizontalCenter: generatorCurrentBar.horizontalCenter
-                        width: generatorCurrentBar.width + _toolsMargin
-                        height: generatorCurrentBar.height/20
-                        y: generatorCurrentBar.height*(oldGeneratorMediamValue/20)/maxGeneratorCurrent
-                        color: "white"
-                        border.width:1
-                        border.color:"black"
-                    }
-                }
-
-                Rectangle{
-                    id: textBoxGeneratorInfo
-                    anchors.verticalCenter: generatorFunctionalityIcon.verticalCenter
-                    anchors.horizontalCenter: generatorFunctionalityIcon.horizontalCenter
-                    height: generatorFunctionalityIcon.height/2
-                    width: generatorFunctionalityIcon.width
-                    visible: true//generatorMouseArea.containsMouse? true: false
-                    color: "black"
-                    border.width: 1
-                    border.color: "lightgray"
-                }
-                ColumnLayout {
-                    id:                     generatorInfoColumn
-                    anchors.fill: textBoxGeneratorInfo
-                    spacing:                0
-                    visible: textBoxGeneratorInfo.visible
-
-
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _current_generator + "A"
-                        font.bold: true
-                        //font.pointSize:         ScreenTools.mediumFontPixelHeight
-                    }
-
-                }
-
-
-
-                //satelite https://forest-gis.com/2018/01/acuracia-gps-o-que-sao-pdop-hdop-gdop-multi-caminho-e-outros.html/?srsltid=AfmBOorX7DD9JggA1vLTP2DuhOK44T28jHasCbLA0nv5nSnLX7irYLlW
-                //activeVehicle.gps.count.rawValue (NUM SATELITES); _activeVehicle.gps.hdop.rawValue (HDOP); globals.activeVehicle.gps.lock.rawValue (PDOP)
-                QGCColoredImage {
-                    id: satteliteInformationIcon
-                    anchors.top:        parent.top
-                    anchors.left:       _GD60? generatorFunctionalityIcon.right :generatorCurrentBar.right
-                    anchors.leftMargin: _toolsMargin
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/Gps.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              _satPDOP >= 2 && _satCount >=6 ? "green": "orange"
-                }
-                DropShadow {
-                    anchors.fill: satteliteInformationIcon
-                    source: satteliteInformationIcon
-                    color: "#80000000" // Semi-transparent black shadow
-                    radius: 8
-                    samples:17
-                    spread: 0
-                    verticalOffset: 5
-                    horizontalOffset: 5
-                }
-                OpacityMask{
-                    anchors.fill: satteliteInformationIcon
-                    source: satteliteInformationIcon
-                    maskSource: satteliteInformationIcon
-                    MouseArea{
-                        id: satMouseArea
-                        anchors.fill: parent
-                        hoverEnabled : true
-
-                    }
-                }
-                Rectangle{
-                    id: textBoxSatteliteInfo
-                    anchors.verticalCenter: satteliteInformationIcon.verticalCenter
-                    //anchors.horizontalCenter: satteliteInformationIcon.horizontalCenter
-                    anchors.left: satteliteInformationIcon.right
-                    anchors.leftMargin: _toolsMargin
-                    anchors.rightMargin: _toolsMargin
-                    height: satteliteInformationIcon.height*0.7
-                    width: satteliteInformationIcon.width
-                    visible: true//satMouseArea.containsMouse? true: false
-                    color: "transparent" // desktop "black"
-                    border.width: 0// 1
-                    border.color: "transparent"// desktop "lightgray"
-                }
-                ColumnLayout {
-                    id:                     satteliteInfoColumn
-                    anchors.fill: textBoxSatteliteInfo
-                    spacing:                0
-                    visible: textBoxSatteliteInfo.visible
-
-
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   "Count: " + _satCount
-                        font.bold: true
-                        font.pixelSize:         _androidBuild ?  13 : 24
-                    }
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   "PDOP: "+ _satPDOP
-                        font.bold: true
-                        font.pixelSize:         _androidBuild ?  13 : 24
-                        //font.pointSize:         ScreenTools.mediumFontPixelHeight
-                    }
-
-                }
-
-                //enlace
-                QGCColoredImage {
-                    id: rcInformationIcon
-                    anchors.top:        parent.top
-                    anchors.left:       textBoxSatteliteInfo.right
-                    anchors.leftMargin: _toolsMargin
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/RC.svg"
-                    fillMode:           Image.PreserveAspectFit
-                    color:           _activeVehicle.rcRSSI.valueOf() >= 60 ? "green" : (_activeVehicle.rcRSSI.valueOf()>=30? "yellow": (_activeVehicle.rcRSSI.valueOf() >= 20 ? "orange":"red"))
-                    visible: true
-
-                    MouseArea{
-                        id: rcMouseArea
-                        anchors.fill: parent
-                        hoverEnabled : true
-                        onClicked: {
-                            if (_androidBuild) {
-                                textBoxRCInfo.visible = !textBoxRCInfo.visible;
-                            }
-                        }
-                    }
-                }
-
-
-                Rectangle{
-                    id: textBoxRCInfo
-                    anchors.verticalCenter: rcInformationIcon.verticalCenter
-                    anchors.horizontalCenter: rcInformationIcon.horizontalCenter
-                    height: satteliteInformationIcon.height*0.7
-                    width: satteliteInformationIcon.width*0.8
-                    visible: _androidBuild ? false : rcMouseArea.containsMouse
-                    color: "black"
-                    border.width: 1
-                    border.color: "lightgray"
-                }
-                ColumnLayout {
-                    id:                     rcInfoColumn
-                    anchors.fill: textBoxRCInfo
-                    //anchors.rightMargin: _toolsMargin*2
-                    spacing:                0
-                    visible: textBoxRCInfo.visible
-
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _activeVehicle.rcRSSI.toString()+"%" /*_activeVehicle.rcRSSI.toString() +"%"*/ /*_rcQuality + "%"*/
-                        font.bold: true
-                        //font.pointSize:         ScreenTools.mediumFontPixelHeight
-                    }
-                }
-
-
-                //Temperatura Gerador
-                QGCColoredImage {
-                    id: motorTemperatureInformationIcon
-                    anchors.top: parent.top
-                    anchors.left: rcInformationIcon.right
-                    anchors.leftMargin: _toolsMargin * 2   // Adjust this for desired spacing
-                    anchors.topMargin: _toolsMargin * 2
-                    width: height
-                    height: parent.height * 2/3
-                    source: "/qmlimages/MotorTemp.svg"
-                    fillMode: Image.PreserveAspectFit
-                    color: "white"
-                }
-                QGCColoredImage {
-                    id: motorTemperatureInformationIcon2
-                    anchors.top: parent.top
-                    anchors.left: rcInformationIcon.right
-                    anchors.leftMargin: _toolsMargin * 2  // Slight spacing between both temp icons
-                    anchors.topMargin: _toolsMargin * 2
-                    width: height
-                    height: parent.height * 2/3
-                    source: "/qmlimages/MotorTermometer.png"
-                    fillMode: Image.PreserveAspectFit
-                    color: _motor_temp > 110 ? (_motor_temp > 150 ? (_motor_temp >= 200 ? "red" : "orange") : "yellow") : "white"
-                }
-
-                Rectangle{
-                    id: textBoxMotorTempInfo
-                    anchors.verticalCenter: motorTemperatureInformationIcon.verticalCenter
-                    anchors.horizontalCenter: motorTemperatureInformationIcon.horizontalCenter
-                    height: motorTemperatureInformationIcon.height*1.2
-                    width: motorTemperatureInformationIcon.width
-                    visible:  _androidBuild ? false : motorTempMouseArea.containsMouse//motorTempMouseArea.containsMouse? true: false
-                    color: "black"
-                    border.width: 1
-                    border.color: "lightgray"
-                }
-                MouseArea{
-                    id:motorTempMouseArea
-                    anchors.fill: motorTemperatureInformationIcon
-                    hoverEnabled: true
-                    onClicked: {
-                        if (_androidBuild) {
-                            textBoxMotorTempInfo.visible = !textBoxMotorTempInfo.visible;
-                        }
-                    }
-                }
-                ColumnLayout {
-                    id: motorTempInfoColumn
-                    anchors.fill: textBoxMotorTempInfo
-                    spacing:                0
-                    visible: textBoxMotorTempInfo.visible
-
-
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _motor_temp.toString()+"°C"
-                        font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                    }
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   "RPM: "
-                        font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                    }
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _motor_rpm.toFixed(0)
-                        font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                    }
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _motor_temp.toString()+"°C"
-                        font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                        visible: _GD60? true:false
-                    }
-
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   "RPM: "+_motor_rpm.toFixed(0)
-                        font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                        visible: _GD60? true:false
-                    }
-                }
-
-
-
-                //Temperatura Rotores
-                QGCColoredImage {
-                    id: rotorAccelerationInformationIcon
-                    anchors.top:        parent.top
-                    anchors.left:       motorTemperatureInformationIcon.right
-                    anchors.leftMargin: _toolsMargin
-                    anchors.topMargin:  _toolsMargin*2
-                    width:              height
-                    height:             parent.height*2/3
-                    source:             "/qmlimages/rotorsAccell.png"
-                    fillMode:           Image.PreserveAspectFit
-                    color:              "white"
-                    visible: !_GD60? true:false
-
-                }
-                Rectangle {
-                    id: rotorsTempArea
-                    anchors.top: parent.top
-                    anchors.left: _GD60? motorTempInfoColumn.right : rotorAccelerationInformationIcon.right
-                    anchors.margins: _toolsMargin * 1.5
-                    width: height * 2
-                    height: rotorAccelerationInformationIcon.height
-                    color: "black" // Background color
-
-                    // Borda com aparência de aço
-                    Rectangle {
-                        anchors.fill: parent
-                        color: "transparent"
-                        border.width: 2
-                        z: parent.z+13
-                        border.color: "lightgray" // Cor base da borda
-                    }
-                    Rectangle {
-                        anchors.fill: parent
-                        z: -1
-                        color: "black"
-                        opacity: 0.3
-                        scale: 1.05
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-
-                    // Modelo dinâmico com tensões das células
-                    ListModel {
-                        id: accellRotorModel
-                    }
-
-                    // Popula o modelo com valores dinamicamente
-                    Component.onCompleted: {
-                        if (_GD60){
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_1)/5000 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_2)/5000 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_3)/5000 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_4)/5000 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_5)/5000 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_6)/5000 });
-                        }
-                        else{
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_1)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_2)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_3)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_4)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_5)/3850 });
-                            accellRotorModel.append({ aceleracao: (_aceleracao_rotor_6)/3850 });
-                        }
-
-                    }
-
-                    Timer{//Atualiza os valores periodicamente [TODO: mudar interval depois]
-                        interval: 100; running: true; repeat: true
-                        onTriggered: {
-
-                            if (!_GD60){
-                                accellRotorModel.set(0, { aceleracao: _aceleracao_rotor_1/3850 });
-                                accellRotorModel.set(1, { aceleracao: _aceleracao_rotor_2/3850 });
-                                accellRotorModel.set(2, { aceleracao: _aceleracao_rotor_3/3850 });
-                                accellRotorModel.set(3, { aceleracao: _aceleracao_rotor_4/3850 });
-                                accellRotorModel.set(4, { aceleracao: _aceleracao_rotor_5/3850 });
-                                accellRotorModel.set(5, { aceleracao: _aceleracao_rotor_6/3850 });}
-                            else{
-                                accellRotorModel.set(0, { aceleracao: _aceleracao_rotor_1/5000 });
-                                accellRotorModel.set(1, { aceleracao: _aceleracao_rotor_2/5000 });
-                                accellRotorModel.set(2, { aceleracao: _aceleracao_rotor_3/5000 });
-                                accellRotorModel.set(3, { aceleracao: _aceleracao_rotor_4/5000 });;
-                            }
-                        }
-                    }
-
-                    Repeater {
-                        model: accellRotorModel
-
-                        Rectangle {
-                            width: _GD60? parent.width /4 : parent.width / 6
-                            height: model.aceleracao* parent.height // Altura proporcional à aceleracao
-                            x: _GD60? index * parent.width / 4 : index * parent.width / 6 // Posiciona horizontalmente
-                            anchors.bottom: parent.bottom
-                            z: parent.z + 10
-                            color: "green"
-                            border.color: {
-                                if(index == 0 && _selected_rotor_1) return "yellow"
-                                else if (index == 1 && _selected_rotor_2) return "yellow"
-                                else if (index == 2 && _selected_rotor_3) return "yellow"
-                                else if (index == 3 && _selected_rotor_4) return "yellow"
-                                else if (index == 4 && _selected_rotor_5) return "yellow"
-                                else if (index == 5 && _selected_rotor_6) return "yellow"
-                                else return "black"
-                            }
-                            border.width: 3//index === 0 && motor1_selected ? 3 : 1
-                            MouseArea { // Torna a barra interativa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: {
-                                    console.log("Célula", index + 1, "tensão:", model.tensao);
-                                    console.log(_activeVehicle)
-                                    console.log(_activeVehicle.batteries.count)
-                                    console.log(_activeVehicle.batteries.get(0).percentRemaining.valueString)
-
-                                }
-
-                                onContainsMouseChanged: {
-                                    if(!_GD60){
-                                        if(index == 0){_selected_rotor_1 = !_selected_rotor_1 }
-                                        else if(index == 1){_selected_rotor_2 = !_selected_rotor_2 }
-                                        else if(index == 2){_selected_rotor_3 = !_selected_rotor_3 }
-                                        else if(index == 3){_selected_rotor_4 = !_selected_rotor_4 }
-                                        else if(index == 4){_selected_rotor_5 = !_selected_rotor_5 }
-                                        else if(index == 5){_selected_rotor_6 = !_selected_rotor_6 }
-                                    }
-                                }
-                            }
-
-                        }
-
-
-
-                    }
-
-                    Repeater{
-                        model: accellRotorModel
-                        Rectangle{
-                            width: parent.width/6
-                            height: parent.height/20
-                            y: {
-                                if(index == 0) return parent.height*((medAceleracaoRotor1)/4000)
-                                else if (index == 1) return parent.height*((medAceleracaoRotor2)/4000)
-                                else if (index == 2) return parent.height*((medAceleracaoRotor3)/4000)
-                                else if (index == 3) return parent.height*((medAceleracaoRotor4)/4000)
-                                else if (index == 4) return parent.height*((medAceleracaoRotor5)/4000)
-                                else if (index == 5) return parent.height*((medAceleracaoRotor6)/4000)
-                            }
-                            x: index*parent.width/6
-                            z:1000
-                            color: "white"
-                            border.color:"black"
-                            border.width:0.5
-                            visible: false
-                        }
-                    }
-
-                }
-
-                // Dial Accelerometer
-                Item{
-                    id: centralRotor_1_Accell
-                    anchors.left: rotorsTempArea.right
-                    anchors.top: parent.top
-                    anchors.margins:    _toolsMargin*2
-                    height: parent.height*2/3
-                    width: height
-                    visible: _GD60? true:false
-                    Canvas { //border of
-                        anchors.fill: parent
-                        id: rotor1Arc
-                        onPaint: {
-                            var ctx = getContext("2d")
-                            ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal1/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                        }
-                    }
-                    /*MouseArea { // Torna o  interativa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            console.log("Click Test");
-                        }
-                        onContainsMouseChanged: {
-                            _selected_rotor_1 = !_selected_rotor_1
-                        }
-                    }*/
-                    DropShadow {
-                        anchors.fill: parent
-                        source: rotor1Arc
-                        color: "yellow" // Semi-transparent black shadow
-                        radius: 8
-                        samples:17
-                        spread: 0.4
-                        verticalOffset: 0
-                        horizontalOffset: 0
-                        visible: _selected_rotor_1
-                    }
-                    //Component.onCompleted: requestPaint()
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _rpm_horizontal1
-                        color:"green"
-                        font.bold: true
-                    }
-                }
-
-                Item{
-                    id: centralRotor_2_Accell
-                    anchors.left: centralRotor_1_Accell.right
-                    anchors.top: parent.top
-                    anchors.margins:    _toolsMargin*2
-                    height: parent.height*2/3
-                    width: height
-                    visible: _GD60? true:false
-                    Canvas { //border of
-                        anchors.fill: parent
-                        id: rotor2Arc
-                        onPaint: {
-                            var ctx = getContext("2d")
-                            ctx.clearRect(0, 0, width, height)
-                            ctx.strokeStyle = "gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            var radius = Math.min(width, height) / 2.5
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * 0.25, false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                            ctx.strokeStyle = "green"//"gray" // Arc color
-                            ctx.lineWidth = 8
-                            ctx.beginPath()
-                            ctx.arc(width / 2, height / 2, radius,  Math.PI * 0.75, Math.PI * (0.75 + accelerationPercentageToRadius(_rpm_horizontal2/4000)) , false) // ctx.arc(width,height,radius,start,end,anticlockwise)
-                            //ctx.arc(width / 2, height / 2, 100, Math.PI * 0.75, Math.PI * 0.25, false) // Arc from 135° to 45°
-                            ctx.stroke()
-                        }
-                    }
-                    /*MouseArea { // Torna o  interativa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            console.log("Click Test");
-                        }
-                        onContainsMouseChanged: {
-                            _selected_rotor_1 = !_selected_rotor_1
-                        }
-                    }*/
-                    DropShadow {
-                        anchors.fill: parent
-                        source: rotor2Arc
-                        color: "yellow" // Semi-transparent black shadow
-                        radius: 8
-                        samples:17
-                        spread: 0.4
-                        verticalOffset: 0
-                        horizontalOffset: 0
-                        visible: _selected_rotor_1
-                    }
-                    //Component.onCompleted: requestPaint()
-                    Text{
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: _rpm_horizontal2
-                        color:"green"
-                        font.bold: true
-                    }
-                }
-
-
-
-            }
-
-        }
     }
 
 
     //**************************************************************************************************//
     //                          LATERAL VIEW AREA                                                       //
     //**************************************************************************************************//
-    Loader{
+    Loader {
         id: lateralDataLoader
-        anchors.right : parent.right
-        anchors.bottom : bottomDataLoader.top
-        anchors.top:toolbarsize.bottom
-        width : parent.width - mainViewWidth
+
+        anchors.right: parent.right
+        anchors.bottom: bottomArea.top
+        anchors.top: toolbarsize.bottom
+
+        width: parent.width - mainViewWidth
         height: mainViewHeight
-        active: active  // or false if you want to delay loading
-        asynchronous: true
-        onLoaded:{
-            let now = new Date();
-            console.log("lateralDataArea LOADED at " + now.toLocaleTimeString());
-            //bottomDataLoader.active = true;
-        }
 
-        sourceComponent: Component {
-            id: lateralDataComponent
-            Item {
-                id: lateralDataArea
-                anchors.fill: parent
-                property real sectionHeight: (parent.height - bottomDataLoader.height) / 6
-                Rectangle {
-                    anchors.fill: parent
-                    color:qgcPal.toolbarBackground
-                }
-                Item{
-                    id: flightTimeArea
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: sectionHeight
+        active: true
 
-                    ColumnLayout {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        spacing:                0
-                        height: sectionHeight
-
-
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "Est. Time"
-                            font.pixelSize:         _androidBuild ?  15 : 24//ScreenTools.smallFontPixelHeight
-                            font.bold: true
-                        }
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   horas_restantes_string+":"+minutos_restantes_string+":"+segundos_restantes_string
-                            font.pixelSize:         _androidBuild ?  15 : 24//ScreenTools.smallFontPixelHeight
-                            font.bold: true
-                        }
-                    }
-                }
-                Item{
-                    id: dist2HomeArea
-                    anchors.top: flightTimeArea.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: sectionHeight
-
-                    ColumnLayout {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        spacing:                0
-                        height: sectionHeight
-
-
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "Dist. Home"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _activeVehicle.distanceToHome.value === "NaN"? 0 : _activeVehicle.distanceToHome.value.toFixed(2)+"m"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                    }
-                }
-
-                Item{
-                    id: dist2WaypointArea
-                    anchors.top: dist2HomeArea.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: sectionHeight
-
-                    ColumnLayout {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        spacing:                0
-                        height: sectionHeight
-
-
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "Dist. WP"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _activeVehicle.distanceToNextWP.value == "NaN"? 0 : _activeVehicle.distanceToNextWP.value+"m"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                    }
-                }
-                Item{
-                    id: altitudeRelativeArea
-                    anchors.top: dist2WaypointArea.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: sectionHeight
-
-                    ColumnLayout {
-
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        spacing:                0
-                        height: sectionHeight
-
-
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "Alt. LIDAR"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   _activeVehicle.rangeFinderDist.value.toFixed(2) + "m" //altitudeRelative.value*10)/10 + "m"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                    }
-                }
-                Item{
-                    id: altitudeBarometricArea
-                    anchors.top: altitudeRelativeArea.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: sectionHeight
-
-                    ColumnLayout {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        spacing:                0
-                        height: sectionHeight
-
-
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "Alt. AMSL"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   Math.round(_activeVehicle.altitudeAMSL.value*10)/10 + "m"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                    }
-                }
-                Item{
-                    id: horSpeedArea
-                    anchors.top: altitudeBarometricArea.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: sectionHeight
-
-                    ColumnLayout {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        spacing:                0
-                        height: sectionHeight
-
-
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "Hor. speed"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  Math.round(_activeVehicle.airSpeed.value*10)/10 < 17? "White" : "Red"
-                            text:                   Math.round(_activeVehicle.airSpeed.value*10)/10 +"m/s"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                    }
-                }
-                Item{
-                    id: vertSpeedArea
-                    anchors.top: horSpeedArea.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: sectionHeight
-
-                    ColumnLayout {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        spacing:                0
-                        height: sectionHeight
-
-
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   "Vert. speed"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                        Text {
-
-                            Layout.alignment:       Text.AlignHCenter
-                            verticalAlignment:      Text.AlignVCenter
-                            color:                  "White"
-                            text:                   Math.round(_activeVehicle.climbRate.value*10)/10+"m/s"
-                            font.pixelSize:         _androidBuild ?  15 : 24
-                            font.bold: true
-                        }
-                    }
-                }
-
-                Text {
-                    id: minSpeedText
-                    text: "Min Speed: 0km/h"
-                    anchors.left: parent.left
-                    anchors.bottom: maxSpeedText.top
-                    anchors.margins: _toolsMargin // Adiciona um pequeno espaço do canto
-                    font.bold: true
-                    font.pixelSize:         _androidBuild ?  7 : 12
-                    color: qgcPal.toolbarBackground
-                    z:1000
-                }
-                Text {
-                    id: maxSpeedText
-                    text: "Max Speed: 61,2km/h"
-                    anchors.left: parent.left
-                    anchors.bottom: parent.bottom
-                    anchors.margins: _toolsMargin // Adiciona um pequeno espaço do canto
-                    font.bold: true
-                    font.pixelSize:         _androidBuild ?  7 : 12
-                    color: qgcPal.toolbarBackground
-                    z:1000
-                    Component.onCompleted: aircraftAndRotorsLoader.active = true
-                }
-
-
-                Loader {
-                    id: aircraftAndRotorsLoader
-                    active: false
-                    asynchronous: true
-
-                    anchors.top: parent.bottom
-                    anchors.left: parent.left
-                    width: parent.width
-                    height: width
-
-                    sourceComponent: Component {
-                        Item {
-                            width: parent.width
-                            height: width
-
-                            QGCColoredImage {
-                                id: aircraftIcon
-                                anchors.fill: parent
-                                source: _GD60 ? "/qmlimages/GD60_lowres.png" : "/qmlimages/GD25_lowres.png"
-                                fillMode: Image.PreserveAspectFit
-                                color: "white"
-                            }
-
-                            QGCColoredImage {
-                                id: rotor1Mask
-                                anchors.fill: parent
-                                source: "/qmlimages/rotor1mask_lowres.png"
-                                visible:  !_GD60
-                                color: "white"
-                            }
-                            DropShadow {
-                                anchors.fill: rotor1Mask
-                                source: rotor1Mask
-                                color: "yellow"
-                                radius: 8
-                                samples: 17
-                                spread: 0.4
-                                verticalOffset: 0
-                                horizontalOffset: 0
-                                visible: _selected_rotor_1
-                            }
-
-                            QGCColoredImage {
-                                id: rotor2Mask
-                                anchors.fill: parent
-                                source: "/qmlimages/rotor2mask_lowres.png"
-                                color: "white"
-                                visible:  !_GD60
-                            }
-                            DropShadow {
-                                anchors.fill: rotor2Mask
-                                source: rotor2Mask
-                                color: "yellow"
-                                radius: 8
-                                samples: 17
-                                spread: 0.4
-                                verticalOffset: 0
-                                horizontalOffset: 0
-                                visible: _selected_rotor_2
-                            }
-
-                            QGCColoredImage {
-                                id: rotor3Mask
-                                anchors.fill: parent
-                                source: "/qmlimages/rotor3mask_lowres.png"
-                                color: "white"
-                                visible:  !_GD60
-                            }
-                            DropShadow {
-                                anchors.fill: rotor3Mask
-                                source: rotor3Mask
-                                color: "yellow"
-                                radius: 8
-                                samples: 17
-                                spread: 0.4
-                                verticalOffset: 0
-                                horizontalOffset: 0
-                                visible: _selected_rotor_3
-                            }
-
-                            QGCColoredImage {
-                                id: rotor4Mask
-                                anchors.fill: parent
-                                source: "/qmlimages/rotor4mask_lowres.png"
-                                color: "white"
-                                visible:  !_GD60
-                            }
-                            DropShadow {
-                                anchors.fill: rotor4Mask
-                                source: rotor4Mask
-                                color: "yellow"
-                                radius: 8
-                                samples: 17
-                                spread: 0.4
-                                verticalOffset: 0
-                                horizontalOffset: 0
-                                visible: _selected_rotor_4
-                            }
-
-                            QGCColoredImage {
-                                id: rotor5Mask
-                                anchors.fill: parent
-                                source: "/qmlimages/rotor5mask_lowres.png"
-                                color: "white"
-                                visible:  !_GD60
-                            }
-                            DropShadow {
-                                anchors.fill: rotor5Mask
-                                source: rotor5Mask
-                                color: "yellow"
-                                radius: 8
-                                samples: 17
-                                spread: 0.4
-                                verticalOffset: 0
-                                horizontalOffset: 0
-                                visible: _selected_rotor_5
-                            }
-
-                            QGCColoredImage {
-                                id: rotor6Mask
-                                anchors.fill: parent
-                                source: "/qmlimages/rotor6mask_lowres.png"
-                                color: "white"
-                                visible:  !_GD60
-                            }
-                            DropShadow {
-                                anchors.fill: rotor6Mask
-                                source: rotor6Mask
-                                color: "yellow"
-                                radius: 8
-                                samples: 17
-                                spread: 0.4
-                                verticalOffset: 0
-                                horizontalOffset: 0
-                                visible: _selected_rotor_6
-                            }
-                        }
-                    }
-                }
-
-            }
+        sourceComponent: FlyViewLateralViewArea {
+            anchors.fill: parent
+            activeVehicle: _activeVehicle
         }
     }
 
@@ -1882,11 +424,11 @@ Item {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: lateralDataLoader.left
-        anchors.bottom: bottomDataLoader.top
+        anchors.bottom: bottomArea.top
 
         Component.onCompleted:{
             let now = new Date();
-            console.log("mainViewArea LOADED at " + now.toLocaleTimeString());lateralDataLoader.active = true; bottomDataLoader.active = true;}
+            console.log("mainViewArea LOADED at " + now.toLocaleTimeString());lateralDataLoader.active = true; bottomArea.active = true;}
 
         QGCToolInsets {
             id: _toolInsets
@@ -1905,6 +447,7 @@ Item {
             mapControl: _mapControl
             visible: !QGroundControl.videoManager.fullScreen
         }
+
 
         FlyViewCustomLayer {
             id: customOverlay
@@ -2001,14 +544,14 @@ Item {
                 anchors.fill: parent
                 color: _breachAlertColor
                 border.color: "black"
-                visible: false
+                visible: parent.open()
 
                 Text {
                     anchors.centerIn: parent
                     text: popUp_breachAlert
                     font.bold: true
-                    visible: false
-                    // font.pixelSize: _androidBuild? 8 : 14
+                    visible: parent.visible
+                     font.pixelSize: _androidBuild? 16 : 20
                 }
             }
         }
@@ -2047,6 +590,7 @@ Item {
                     }
                 }
             ]
+
 
 
             Row {
@@ -2103,5 +647,197 @@ Item {
                 }
             }
         }
+
+        Rectangle {
+                    id: btnOverride
+                    width: parent.width*0.15
+                    height: parent.height*0.1
+                    radius: 5
+                    color: overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "red":"grey") : "green"  // cor dinâmica. Ativado mas
+                    border.color: "black"
+                    border.width: 1
+                    //anchors.horizontalCenter:  parent.horizontalCenter
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottomz
+                    z: _fullItemZorder + 10
+
+                    // texto centralizado
+                    Text {
+                        anchors.centerIn: parent
+                        text:  overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "Stop Override": "Active by:"+activeOverrideID):"Override RC"
+                        color: "white"
+                        font.bold: true
+                    }
+
+                    // efeito de clique
+                    MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: (activeOverrideID===-1 || activeOverrideID===gcsID)
+                           //cursorShape: Qt.PointingHandCursor
+
+                            onClicked: {
+                                // botão apenas abre popup
+                                if (activeOverrideID === -1 || activeOverrideID === gcsID) {
+                                        confirmOverridePopup.wantsToEnable = !overrideActive
+                                        confirmOverridePopup.open()
+                                    } else {
+                                        console.log("Clique bloqueado: Outro ID tem o controle:", activeOverrideID)
+                                    }
+                            }
+                        }
+                }
+
+        Popup {
+                            id: confirmOverridePopup
+                            modal: true
+                            focus: true
+                            width: parent.width * 0.4
+                            height: parent.height * 0.25
+                            anchors.centerIn: Overlay.overlay
+
+                            // popup precisa saber se vai ativar ou desativar
+                            property bool wantsToEnable: true
+
+                            background: Rectangle {
+                                color: "#333"
+                                radius: 8
+                                border.color: "white"
+
+                            }
+
+                            Column {
+                                spacing: 20
+                                anchors.centerIn: parent
+
+
+                                Text {
+                                    text: !overrideActive
+                                          ? "Tem certeza que deseja ATIVAR o Override RC?"
+                                          : "Tem certeza que deseja DESATIVAR o Override RC?"
+                                    color: "white"
+                                    font.pixelSize: 18
+                                    wrapMode: Text.WordWrap
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+
+                                Row {
+                                    spacing: 20
+                                    anchors.horizontalCenter: parent.horizontalCenter
+
+                                    // BOTÃO "SIM"
+                                    Rectangle {
+                                        property bool selected: false
+                                        id: btnYes
+                                        width: 150
+                                        height: 80
+                                        radius: 5
+                                        color: "#66bb6a"
+                                        border.width: selected ? 3 : 0
+                                        border.color: "yellow"
+
+                                        Text {
+                                            id: _simText
+                                            anchors.centerIn: parent
+                                            text: "SIM"
+                                            color: "white"
+                                            font.bold: true
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+
+                                            onClicked: {
+                                                //array_valores_rc
+
+                                                var arrayInt = array_valores_rc.map(v => Number(v) | 0)
+                                                if (!overrideActive) {
+                                                    //if(!override_first_clicked && _activeVehicle.firmwareMajorVersion.toString() == "255"){
+                                                    //    var try_override = _activeVehicle.validateRCChannels(arrayInt);
+                                                    //    console.log("RESULTADO TRY_OVERRIDE: ",try_override)
+                                                    //    if(try_override!==""){
+                                                    //        _alertaForceOverride.text = "ATENÇÃO: "+try_override
+                                                    //        override_first_clicked = true;
+                                                    //        _simText.color = "black"
+                                                    //        btnYes.color = "yellow"
+                                                    //    }
+                                                    //    else{
+                                                    //        overrideActive = true
+                                                    //        confirmOverridePopup.close()
+                                                    //    }
+                                                    //    //confirmOverridePopup.wantsToEnable = false
+                                                    //}
+                                                    //else{
+                                                        console.log("FORÇANDO OVERRIDE")
+                                                        _activeVehicle.overwriteRC(arrayInt, true)
+                                                        overrideActive = true
+                                                        override_first_clicked = false;
+                                                        _simText.color = "white"
+                                                        btnYes.color = "#66bb6a"
+                                                        _alertaForceOverride.text = ""
+                                                        confirmOverridePopup.close()
+                                                    //}
+
+                                                } else {
+                                                    _activeVehicle.stopRCOverride()
+                                                    overrideActive = false
+                                                    override_first_clicked = false;
+                                                    confirmOverridePopup.close()
+                                                }
+                                                //confirmOverridePopup.close()
+                                            }
+                                            hoverEnabled: true
+                                            onEntered: btnYes.selected = true
+                                            onExited: btnYes.selected = false
+                                        }
+                                    }
+
+                                    // BOTÃO "NÃO"
+                                    Rectangle {
+                                        id: btnNo
+                                        property bool selected: false
+                                        width: 150
+                                        height: 80
+                                        radius: 5
+                                        color: "#e53935"
+                                        border.width: selected ? 3 : 0
+                                        border.color: "yellow"
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "NÃO"
+                                            color: "white"
+                                            font.bold: true
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onClicked: {
+                                                confirmOverridePopup.close()
+                                                _simText.color = "white"
+                                                btnYes.color = "#66bb6a"
+                                                _alertaForceOverride.text = ""
+                                                override_first_clicked = false
+                                            }
+                                            onEntered: btnNo.selected = true
+                                            onExited: btnNo.selected = false
+                                        }
+                                    }
+
+                                }
+
+                            }
+                            Text {
+                                id: _alertaForceOverride
+                                text: ""
+                                anchors.bottom: parent.bottom
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                font.pixelSize: 18
+                                wrapMode: Text.WordWrap
+                                horizontalAlignment: Text.AlignHCenter
+                                color: "white"
+                            }
+                        }
+
     }
 }

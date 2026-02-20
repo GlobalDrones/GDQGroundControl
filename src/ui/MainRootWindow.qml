@@ -45,7 +45,7 @@ ApplicationWindow {
         firstRunPromptManager.nextPrompt()
     }
 
-    Timer {
+    /*Timer { //Código legado, mantendo como referência futura caso necessário (duvido)
         interval: 500; running: true; repeat: true
         onTriggered: {
            // if (!flyView._GD60){
@@ -59,6 +59,11 @@ ApplicationWindow {
             //console.log("RPMs: ",controller4._RPM_R1,controller4._RPM_R2,controller4._RPM_R3,controller4._RPM_R4,controller4._RPM_R5,controller4._RPM_R6, "MAINWINDOW")
             flightView._motor_rpm    = controller4._RPM_MOTOR
             flightView._motor_temp   = controller4._TEMP_MOTOR
+
+            flightView.array_valores_rc = controller4.array_valores_rc_MV
+            //console.log("TESTE MAINVIEW:")
+            //for(var j = 0; j<16;j++){console.log(flightView.array_valores_rc[j])}
+            //console.log("FIM TESTE MAINVIEW")
             //flightView._tensao_bateria = controller4.battery_tension
             //flightView._gasolina = controller4.gasoline_value / 1000
             //console.log("GASOLINA MAINROOTWINDOW: ", controller4.gasoline_value / 1000)
@@ -76,7 +81,7 @@ ApplicationWindow {
                 height:1
                 z: mainWindow.z - 1
             }
-        }
+        }*/
 
     QtObject {
         id: firstRunPromptManager

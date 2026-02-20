@@ -63,7 +63,8 @@ LinuxBuild {
         QMAKE_POST_LINK += xcopy \"$$GST_ROOT_WIN\\bin\*.\" \"$$DESTDIR_WIN\" /S/Y $$escape_expand(\\n)
 
         # Copy GStreamer plugins
-        QMAKE_POST_LINK += $$escape_expand(\\n) xcopy \"$$GST_ROOT_WIN\\lib\\gstreamer-1.0\\*.dll\" \"$$DESTDIR_WIN\\gstreamer-plugins\\\" /Y $$escape_expand(\\n)
+        QMAKE_POST_LINK += $$escape_expand(\\n) xcopy "$$GST_ROOT_WIN/lib/gstreamer-1.0/*.dll" "$$DESTDIR_WIN/gstreamer-plugins/" /Y $$escape_expand(\\n)
+
     }
 } else:AndroidBuild {
     #- gstreamer assumed to be installed in $$PWD/../../gstreamer-1.0-android-universal-1.18.5/***

@@ -21,7 +21,7 @@ Item {
     // property bool autoCenterThrottle - true: throttle will snap back to center when released
 
     property var _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
-
+    visible: false
     Timer {
         interval:   40  // 25Hz, same as real joystick rate
         running:    QGroundControl.settingsManager.appSettings.virtualJoystick.value && _activeVehicle

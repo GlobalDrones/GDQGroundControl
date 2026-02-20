@@ -152,33 +152,46 @@ bool JoystickAndroid::handleKeyEvent(jobject event) {
     QJNIObjectPrivate ev(event);
     QMutexLocker lock(&m_mutex);
     const int _deviceId = ev.callMethod<jint>("getDeviceId", "()I");
-    if (_deviceId!=deviceId) return false;
- 
+    if (_deviceId != deviceId) return false;
+
     const int action = ev.callMethod<jint>("getAction", "()I");
     const int keyCode = ev.callMethod<jint>("getKeyCode", "()I");
 
-    for (int i = 0; i <_buttonCount; i++) {
+    for (int i = 0; i < _buttonCount; i++) {
         if (btnCode[i] == keyCode) {
             if (action == ACTION_DOWN) btnValue[i] = true;
             if (action == ACTION_UP)   btnValue[i] = false;
+
+            // 🔹 QWarning mostrando qual botão foi pressionado/solto
+            qWarning() << "Joystick" << deviceId
+                       << "Botão" << keyCode
+                       << (action == ACTION_DOWN ? "pressionado" : "solto");
+
             return true;
         }
     }
     return false;
 }
 
+
 bool JoystickAndroid::handleGenericMotionEvent(jobject event) {
     QJNIObjectPrivate ev(event);
     QMutexLocker lock(&m_mutex);
     const int _deviceId = ev.callMethod<jint>("getDeviceId", "()I");
-    if (_deviceId!=deviceId) return false;
- 
-    for (int i = 0; i <_axisCount; i++) {
-        const float v = ev.callMethod<jfloat>("getAxisValue", "(I)F",axisCode[i]);
-        axisValue[i] = static_cast<int>((v*32767.f));
+    if (_deviceId != deviceId) return false;
+
+    for (int i = 0; i < _axisCount; i++) {
+        const float v = ev.callMethod<jfloat>("getAxisValue", "(I)F", axisCode[i]);
+        axisValue[i] = static_cast<int>(v * 32767.f);
+
+        // 🔹 QWarning mostrando o valor do eixo
+        qWarning() << "Joystick" << deviceId
+                   << "Eixo" << axisCode[i]
+                   << "valor" << axisValue[i];
     }
     return true;
 }
+
 
 bool JoystickAndroid::_open(void) {
     return true;

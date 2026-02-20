@@ -32,7 +32,8 @@ Item {
 
     property real _rollAngle:   vehicle ? vehicle.roll.rawValue  : 0
     property real _pitchAngle:  vehicle ? vehicle.pitch.rawValue : 0
-
+    property bool _gd60 : false
+    visible: !_gd60
     width:  size
     height: size
 

@@ -14,6 +14,10 @@
 #include "QGCApplication.h"
 #include "ShapeFileHelper.h"
 #include "QGCLoggingCategory.h"
+#include <vector>
+#include <cmath>
+#include <numeric>
+
 
 #include <QGeoRectangle>
 #include <QDebug>
@@ -21,6 +25,10 @@
 #include <QLineF>
 #include <QFile>
 #include <QDomDocument>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 const char* QGCMapPolygon::jsonPolygonKey = "polygon";
 
@@ -493,8 +501,541 @@ bool QGCMapPolygon::loadKMLOrSHPFile(const QString& file)
     _beginResetIfNotActive();
     clear();
     appendVertices(rgCoords);
+    //Aqui é como se acessa rgCoords)
+    //for(auto i: rgCoords)qWarning()<<(i.toString());
     _endResetIfNotActive();
 
+    return true;
+}
+/*bool QGCMapPolygon::loadKMLwithSpacing(const QString& file, int intra_spacing) //v1
+{
+    //===================Parse polygons========================================
+    QString errorString;
+    QList<QGeoCoordinate> rgCoords; // Stores the original and final Lat/Lon coordinates
+
+    if (!ShapeFileHelper::loadPolygonFromFile(file, rgCoords, errorString)) {
+        qgcApp()->showAppMessage(errorString);
+        return false;
+    }
+
+    _beginResetIfNotActive();
+    clear();
+
+    if (rgCoords.size() < 3 || intra_spacing == 0) {
+        // Not a polygon or no spacing needed
+        appendVertices(rgCoords);
+        _endResetIfNotActive();
+        return true;
+    }
+
+    //===================SETUP CONSTANTS AND REFERENCE POINT===================
+
+    // R in METERS is crucial for scaling to be in meters.
+    const double R_METERS = 6371000.0;
+    const double DEG_TO_RAD = M_PI / 180.0;
+    const double RAD_TO_DEG = 180.0 / M_PI;
+    const int desiredPrecision = 9; // For debugging output
+
+    // 1. CHOOSE LOCAL TANGENT PLANE (LTP) ORIGIN
+    // Use the first vertex as the local origin (lat_0, lon_0)
+    double lat_ref_deg = rgCoords.first().latitude();
+    double lon_ref_deg = rgCoords.first().longitude();
+
+    double lat_ref_rad = lat_ref_deg * DEG_TO_RAD;
+    double lon_ref_rad = lon_ref_deg * DEG_TO_RAD;
+
+    // Pre-calculate the scale factor for Longitude (R * cos(lat_ref))
+    const double LON_SCALE_FACTOR = R_METERS * std::cos(lat_ref_rad);
+
+    // Coordinate structure for local (meter) projection
+    struct Coordinate {
+        double x; // East (m)
+        double y; // North (m)
+    };
+
+    //===================1. FORWARD PROJECTION (Lat/Lon -> X, Y Meters)===================
+
+    std::vector<Coordinate> vertices; // Stores the local X, Y (meters) vertices
+    for(const auto& geoCoord : rgCoords) {
+        double lat_i_rad = geoCoord.latitude() * DEG_TO_RAD;
+        double lon_i_rad = geoCoord.longitude() * DEG_TO_RAD;
+
+        // X (East) = dLon * (R * cos(lat_ref))
+        double dLon_rad = lon_i_rad - lon_ref_rad;
+        double x = dLon_rad * LON_SCALE_FACTOR;
+
+        // Y (North) = dLat * R
+        double dLat_rad = lat_i_rad - lat_ref_rad;
+        double y = dLat_rad * R_METERS;
+
+        Coordinate curr_coord;
+        curr_coord.x = x;
+        curr_coord.y = y;
+        vertices.push_back(curr_coord);
+    }
+
+    //===================2. CENTROID CALCULATION (on X, Y Meters)===================
+
+    int n = vertices.size();
+    double signedArea = 0.0;
+    double centroidX = 0.0;
+    double centroidY = 0.0;
+
+    for (int i = 0; i < n; ++i) {
+        const Coordinate& p_i = vertices[i];
+        const Coordinate& p_i_plus_1 = vertices[(i + 1) % n];
+
+        double crossProduct = (p_i.x * p_i_plus_1.y - p_i_plus_1.x * p_i.y);
+
+        signedArea += crossProduct;
+        centroidX += (p_i.x + p_i_plus_1.x) * crossProduct;
+        centroidY += (p_i.y + p_i_plus_1.y) * crossProduct;
+    }
+
+    signedArea *= 0.5;
+
+    // Handle zero area polygon (collinear points)
+    if (std::abs(signedArea) < 1e-9) {
+        qgcApp()->showAppMessage(QStringLiteral("KML/SHP polygon has zero area. Cannot calculate centroid or scale."));
+        _endResetIfNotActive();
+        return false;
+    }
+
+    // Final Centroid Calculation
+    double scaleFactor = 1.0 / (6.0 * signedArea);
+    Coordinate centroid;
+    centroid.x = centroidX * scaleFactor;
+    centroid.y = centroidY * scaleFactor;
+
+    //===================3. SCALING THE POLYGON (towards Centroid)===================
+
+    std::vector<Coordinate> newVertices;
+    newVertices.reserve(vertices.size());
+    double S = (double)intra_spacing; // Spacing to be reduced, now in meters
+
+    for (const auto& v_i : vertices) {
+        // Vector from Centroid to Vertex (V_i - C)
+        double vector_x = v_i.x - centroid.x;
+        double vector_y = v_i.y - centroid.y;
+
+        // Distance (Magnitude D)
+        double D = std::sqrt(vector_x * vector_x + vector_y * vector_y);
+
+        double k; // Scaling factor
+
+        if (D < 1e-9) {
+            k = 0.0; // Point already at centroid
+        } else {
+            // New Distance D' = max(0, D - S)
+            double D_prime = std::max(0.0, D - S);
+            k = D_prime / D;
+        }
+
+        // New Position: C + (Vector * k)
+        Coordinate v_prime;
+        v_prime.x = centroid.x + vector_x * k;
+        v_prime.y = centroid.y + vector_y * k;
+        newVertices.push_back(v_prime);
+    }
+
+    //===================4. INVERSE PROJECTION (X, Y Meters -> Lat/Lon)===================
+
+    // Reuse rgCoords to store the new Lat/Lon
+    // NOTE: This loop relies on 'rgCoords' and 'newVertices' being the same size (n)
+    for (int i = 0; i < n; ++i) {
+        double l_x = newVertices[i].x; // X (East) in meters
+        double l_y = newVertices[i].y; // Y (North) in meters
+
+        // Inverse Y -> Latitude
+        // dLat_rad = Y / R_METERS
+        double dLat_rad_prime = l_y / R_METERS;
+        double new_lat_deg = (lat_ref_rad + dLat_rad_prime) * RAD_TO_DEG;
+
+        // Inverse X -> Longitude
+        // dLon_rad = X / LON_SCALE_FACTOR
+        double dLon_rad_prime = l_x / LON_SCALE_FACTOR;
+        double new_lon_deg = (lon_ref_rad + dLon_rad_prime) * RAD_TO_DEG;
+
+        // Set the new coordinate in the GeoCoordinate list
+        rgCoords[i].setLongitude(new_lon_deg);
+        rgCoords[i].setLatitude(new_lat_deg);
+
+        // --- DEBUG PRINTING ---
+        QString x_str = QString::number(l_x, 'f', desiredPrecision);
+        QString y_str = QString::number(l_y, 'f', desiredPrecision);
+        QString latStr = QString::number(new_lat_deg, 'f', desiredPrecision);
+        QString lonStr = QString::number(new_lon_deg, 'f', desiredPrecision);
+
+        qDebug() << "--- New Vertex Coords (i=" << i << ") ---";
+        qDebug().noquote() << QString("Lat: %1, Lon: %2").arg(latStr).arg(lonStr);
+        qDebug().noquote() << QString("X (East): %1, Y (North): %2").arg(x_str).arg(y_str);
+        qDebug() << "---------------------------------------";
+    }
+
+    // Clean up temporary vectors (optional, but good practice)
+    vertices.clear();
+    newVertices.clear();
+
+    appendVertices(rgCoords);
+    _endResetIfNotActive();
+
+    return true;
+}
+*/
+
+/*bool QGCMapPolygon::loadKMLwithSpacing(const QString& file, int intra_spacing) //v2
+{
+    //===================Parse polygons========================================
+    QString errorString;
+    QList<QGeoCoordinate> rgCoords; // Stores the original and final Lat/Lon coordinates
+
+    if (!ShapeFileHelper::loadPolygonFromFile(file, rgCoords, errorString)) {
+        qgcApp()->showAppMessage(errorString);
+        return false;
+    }
+
+    _beginResetIfNotActive();
+    clear();
+
+    if (rgCoords.size() < 3) {
+        // Not a polygon or no spacing needed
+        appendVertices(rgCoords);
+        _endResetIfNotActive();
+        return true;
+    }
+
+    //===================SETUP CONSTANTS AND REFERENCE POINT===================
+
+    // R in METERS is crucial for scaling to be in meters.
+    const double R_METERS = 6371000.0;
+    const double DEG_TO_RAD = M_PI / 180.0;
+    const double RAD_TO_DEG = 180.0 / M_PI;
+    const int desiredPrecision = 9; // For debugging output
+
+    // 1. CHOOSE LOCAL TANGENT PLANE (LTP) ORIGIN
+    // Use the first vertex as the local origin (lat_0, lon_0)
+    double lat_ref_deg = rgCoords.first().latitude();
+    double lon_ref_deg = rgCoords.first().longitude();
+
+    double lat_ref_rad = lat_ref_deg * DEG_TO_RAD;
+    double lon_ref_rad = lon_ref_deg * DEG_TO_RAD;
+
+    // Pre-calculate the scale factor for Longitude (R * cos(lat_ref))
+    const double LON_SCALE_FACTOR = R_METERS * std::cos(lat_ref_rad);
+
+    // Coordinate structure for local (meter) projection
+    struct Coordinate {
+        double x; // East (m)
+        double y; // North (m)
+    };
+
+    //===================1. FORWARD PROJECTION (Lat/Lon -> X, Y Meters)===================
+
+    std::vector<Coordinate> vertices; // Stores the local X, Y (meters) vertices
+    vertices.reserve(static_cast<size_t>(rgCoords.size()));
+    for(const auto& geoCoord : rgCoords) {
+        double lat_i_rad = geoCoord.latitude() * DEG_TO_RAD;
+        double lon_i_rad = geoCoord.longitude() * DEG_TO_RAD;
+
+        // X (East) = dLon * (R * cos(lat_ref))
+        double dLon_rad = lon_i_rad - lon_ref_rad;
+        double x = dLon_rad * LON_SCALE_FACTOR;
+
+        // Y (North) = dLat * R
+        double dLat_rad = lat_i_rad - lat_ref_rad;
+        double y = dLat_rad * R_METERS;
+
+        Coordinate curr_coord;
+        curr_coord.x = x;
+        curr_coord.y = y;
+        vertices.push_back(curr_coord);
+    }
+
+    //===================2. CENTROID CALCULATION (on X, Y Meters)===================
+
+    int n = static_cast<int>(vertices.size());
+    double signedArea = 0.0;
+    double centroidX = 0.0;
+    double centroidY = 0.0;
+
+    for (int i = 0; i < n; ++i) {
+        const Coordinate& p_i = vertices[i];
+        const Coordinate& p_i_plus_1 = vertices[(i + 1) % n];
+
+        double crossProduct = (p_i.x * p_i_plus_1.y - p_i_plus_1.x * p_i.y);
+
+        signedArea += crossProduct;
+        centroidX += (p_i.x + p_i_plus_1.x) * crossProduct;
+        centroidY += (p_i.y + p_i_plus_1.y) * crossProduct;
+    }
+
+    signedArea *= 0.5;
+
+    // Handle zero area polygon (collinear points)
+    if (std::abs(signedArea) < 1e-9) {
+        qgcApp()->showAppMessage(QStringLiteral("KML/SHP polygon has zero area. Cannot calculate centroid or scale."));
+        _endResetIfNotActive();
+        return false;
+    }
+
+    // Final Centroid Calculation
+    double scaleFactor = 1.0 / (6.0 * signedArea);
+    Coordinate centroid;
+    centroid.x = centroidX * scaleFactor;
+    centroid.y = centroidY * scaleFactor;
+
+    //===================3. SCALING THE POLYGON (towards Centroid)===================
+
+    std::vector<Coordinate> newVertices;
+    newVertices.reserve(vertices.size());
+    double S = static_cast<double>(intra_spacing); // Spacing to be reduced, in meters
+
+    for (const auto& v_i : vertices) {
+        // Vector from Centroid to Vertex (V_i - C)
+        double vector_x = v_i.x - centroid.x;
+        double vector_y = v_i.y - centroid.y;
+
+        // Distance (Magnitude D)
+        double D = std::sqrt(vector_x * vector_x + vector_y * vector_y);
+
+        double k; // Scaling factor
+
+        if (D < 1e-9) {
+            k = 0.0; // Point already at centroid
+        } else {
+            // New Distance D' = max(0, D - S)
+            double D_prime = std::max(0.0, D - S);
+            k = D_prime / D;
+        }
+
+        // New Position: C + (Vector * k)
+        Coordinate v_prime;
+        v_prime.x = centroid.x + vector_x * k;
+        v_prime.y = centroid.y + vector_y * k;
+        newVertices.push_back(v_prime);
+    }
+
+    //===================3.5. DENSIFY EDGES (INSERT EXACTLY 5000 INTERMEDIATE POINTS)
+    // and move each created point inward by intra_spacing (same shrink formula) ================
+
+    const int numSegments = 50; // EXACT number requested
+    // Pre-check: ensure we have at least 1 vertex in newVertices
+    if (newVertices.empty()) {
+        // Nothing to do (shouldn't happen because we already checked rgCoords.size() >= 3)
+    } else {
+        std::vector<Coordinate> densifiedVertices;
+        // Reserve heuristic: each original vertex produces 1 + numSegments outputs.
+        // This can be huge; be mindful of memory.
+        size_t approxCount = static_cast<size_t>(newVertices.size()) * (static_cast<size_t>(numSegments) + 1ULL);
+        const size_t maxReserve = 100000000ULL; // safety cap for reserve; adjust as needed
+        if (approxCount > maxReserve) approxCount = maxReserve;
+        densifiedVertices.reserve(approxCount);
+
+        for (size_t i = 0; i < newVertices.size(); ++i) {
+            const Coordinate& v1 = newVertices[i];
+            const Coordinate& v2 = newVertices[(i + 1) % newVertices.size()]; // wrap-around for closing edge
+
+            // 1) Add the starting vertex of the edge (already shrunk)
+            densifiedVertices.push_back(v1);
+
+            // 2) Compute direction vector (v1 -> v2)
+            double dx = v2.x - v1.x;
+            double dy = v2.y - v1.y;
+
+            // 3) Generate exactly numSegments intermediate points between v1 and v2
+            for (int j = 1; j <= numSegments; ++j) {
+                double t = static_cast<double>(j) / (static_cast<double>(numSegments) + 1.0);
+
+                // Interpolated point between v1 and v2 (in local meters)
+                Coordinate interp;
+                interp.x = v1.x + t * dx;
+                interp.y = v1.y + t * dy;
+
+                // Now move interp toward centroid by 'S' meters using correct vector (interp - centroid)
+                double vec_x = interp.x - centroid.x; // vector FROM centroid TO interp
+                double vec_y = interp.y - centroid.y;
+                double distToCentroid = std::sqrt(vec_x * vec_x + vec_y * vec_y);
+
+                if (distToCentroid > 1e-9) {
+                    double Dp = std::max(0.0, distToCentroid - S); // new distance
+                    double k = Dp / distToCentroid;               // scaling factor
+                    interp.x = centroid.x + vec_x * k;
+                    interp.y = centroid.y + vec_y * k;
+                } else {
+                    // interp is at centroid (degenerate) -> leave at centroid
+                }
+
+                densifiedVertices.push_back(interp);
+            }
+
+            // Do NOT push v2 here; the next iteration will push v2 as v1 (this preserves order without duplicates)
+        }
+
+        // Replace newVertices with densified version
+        newVertices.swap(densifiedVertices);
+    }
+
+    //===================4. INVERSE PROJECTION (X, Y Meters -> Lat/Lon)===================
+
+    // Make sure rgCoords has the same size as newVertices
+    int newN = static_cast<int>(newVertices.size());
+    //rgCoords.resize(newN); // preserve indexing
+    while (rgCoords.size() < newN) {
+        rgCoords.push_back(QGeoCoordinate()); // push a default QGeoCoordinate
+    }
+
+    for (int i = 0; i < newN; ++i) {
+        double l_x = newVertices[i].x; // X (East) in meters
+        double l_y = newVertices[i].y; // Y (North) in meters
+
+        // Inverse Y -> Latitude
+        // dLat_rad = Y / R_METERS
+        double dLat_rad_prime = l_y / R_METERS;
+        double new_lat_deg = (lat_ref_rad + dLat_rad_prime) * RAD_TO_DEG;
+
+        // Inverse X -> Longitude
+        // dLon_rad = X / LON_SCALE_FACTOR
+        double dLon_rad_prime = l_x / LON_SCALE_FACTOR;
+        double new_lon_deg = (lon_ref_rad + dLon_rad_prime) * RAD_TO_DEG;
+
+        // Set the new coordinate in the GeoCoordinate list
+        rgCoords[i].setLongitude(new_lon_deg);
+        rgCoords[i].setLatitude(new_lat_deg);
+
+        // --- DEBUG PRINTING ---
+        QString x_str = QString::number(l_x, 'f', desiredPrecision);
+        QString y_str = QString::number(l_y, 'f', desiredPrecision);
+        QString latStr = QString::number(new_lat_deg, 'f', desiredPrecision);
+        QString lonStr = QString::number(new_lon_deg, 'f', desiredPrecision);
+
+        qDebug() << "--- New Vertex Coords (i=" << i << ") ---";
+        qDebug().noquote() << QString("Lat: %1, Lon: %2").arg(latStr).arg(lonStr);
+        qDebug().noquote() << QString("X (East): %1, Y (North): %2").arg(x_str).arg(y_str);
+        qDebug() << "---------------------------------------";
+    }
+
+    // Clean up temporary vectors (optional, but good practice)
+    vertices.clear();
+    newVertices.clear();
+
+    appendVertices(rgCoords);
+    _endResetIfNotActive();
+
+    return true;
+}
+*/
+
+
+bool QGCMapPolygon::loadKMLwithSpacing(const QString& file, int intra_spacing) //v3
+{
+    //===================Parse polygons========================================
+    QString errorString;
+    QList<QGeoCoordinate> rgCoords; // original polygon
+
+    if (!ShapeFileHelper::loadPolygonFromFile(file, rgCoords, errorString)) {
+        qgcApp()->showAppMessage(errorString);
+        return false;
+    }
+
+    _beginResetIfNotActive();
+    clear();
+
+    if (rgCoords.size() < 3) {
+        appendVertices(rgCoords);
+        _endResetIfNotActive();
+        return true;
+    }
+
+    //===================Constants for projection=============================
+    const double R_METERS = 6371000.0;
+    const double DEG_TO_RAD = M_PI / 180.0;
+    const double RAD_TO_DEG = 180.0 / M_PI;
+
+    // Use first vertex as reference point for projection
+    double lat_ref_deg = rgCoords.first().latitude();
+    double lon_ref_deg = rgCoords.first().longitude();
+    double lat_ref_rad = lat_ref_deg * DEG_TO_RAD;
+    double lon_ref_rad = lon_ref_deg * DEG_TO_RAD;
+    const double LON_SCALE = R_METERS * std::cos(lat_ref_rad);
+
+    //===================Forward projection: Lat/Lon -> local meters=========
+    struct Coord { double x, y; };
+    std::vector<Coord> vertices;
+    for (const auto& c : rgCoords) {
+        double lat_rad = c.latitude() * DEG_TO_RAD;
+        double lon_rad = c.longitude() * DEG_TO_RAD;
+        double x = (lon_rad - lon_ref_rad) * LON_SCALE;
+        double y = (lat_rad - lat_ref_rad) * R_METERS;
+        vertices.push_back({x, y});
+    }
+
+    //===================Compute centroid====================================
+    double signedArea = 0.0, cx = 0.0, cy = 0.0;
+    int n = vertices.size();
+    for (int i = 0; i < n; ++i) {
+        const auto& p0 = vertices[i];
+        const auto& p1 = vertices[(i+1)%n];
+        double cross = p0.x*p1.y - p1.x*p0.y;
+        signedArea += cross;
+        cx += (p0.x + p1.x) * cross;
+        cy += (p0.y + p1.y) * cross;
+    }
+    signedArea *= 0.5;
+    if (std::abs(signedArea) < 1e-9) {
+        qgcApp()->showAppMessage("Polygon has zero area.");
+        _endResetIfNotActive();
+        return false;
+    }
+    double scaleFactor = 1.0 / (6.0 * signedArea);
+    Coord centroid = {cx * scaleFactor, cy * scaleFactor};
+
+    //===================Shrink vertices toward centroid======================
+    std::vector<Coord> shrunk;
+    for (const auto& v : vertices) {
+        double dx = v.x - centroid.x;
+        double dy = v.y - centroid.y;
+        double dist = std::sqrt(dx*dx + dy*dy);
+        double k = dist < 1e-9 ? 0.0 : std::max(0.0, dist - intra_spacing)/dist;
+        shrunk.push_back({ centroid.x + dx*k, centroid.y + dy*k });
+    }
+
+    //===================Densify edges only, exclude original vertices========
+    const int numSegments = 50; // points per edge
+    std::vector<Coord> densified;
+    for (size_t i = 0; i < shrunk.size(); ++i) {
+        const Coord& A = shrunk[i];
+        const Coord& B = shrunk[(i+1)%shrunk.size()];
+
+        // Generate exactly numSegments intermediate points
+        for (int j = 1; j <= numSegments; ++j) {
+            double t = static_cast<double>(j) / (numSegments + 1.0);
+            double x = A.x + t*(B.x - A.x);
+            double y = A.y + t*(B.y - A.y);
+
+            // Shrink intermediate point toward centroid
+            double dx = x - centroid.x;
+            double dy = y - centroid.y;
+            double dist = std::sqrt(dx*dx + dy*dy);
+            if (dist > 1e-9) {
+                double k = std::max(0.0, dist - intra_spacing)/dist;
+                x = centroid.x + dx*k;
+                y = centroid.y + dy*k;
+            }
+
+            densified.push_back({x, y});
+        }
+    }
+
+    //===================Convert back to lat/lon=============================
+    QList<QGeoCoordinate> finalCoords;
+    for (const auto& v : densified) {
+        double lat = (lat_ref_rad + v.y / R_METERS) * RAD_TO_DEG;
+        double lon = (lon_ref_rad + v.x / LON_SCALE) * RAD_TO_DEG;
+        finalCoords.push_back(QGeoCoordinate(lat, lon));
+    }
+
+    appendVertices(finalCoords);
+    _endResetIfNotActive();
     return true;
 }
 

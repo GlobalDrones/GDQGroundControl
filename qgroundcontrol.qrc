@@ -286,6 +286,8 @@
         <file alias="VTOLLandingPatternEditor.qml">src/PlanView/VTOLLandingPatternEditor.qml</file>
         <file alias="QGroundControl/FlightDisplay/FlyViewVideoSiYiController.qml">src/FlightDisplay/FlyViewVideoSiYiController.qml</file>
         <file alias="QGroundControl/FlightDisplay/FlyViewVideoSiYiControllerAiSettings.qml">src/FlightDisplay/FlyViewVideoSiYiControllerAiSettings.qml</file>
+        <file alias="QGroundControl/FlightDisplay/FlyViewBottomViewArea.qml">src/FlightDisplay/FlyViewBottomViewArea.qml</file>
+        <file alias="QGroundControl/FlightDisplay/FlyViewLateralViewArea.qml">src/FlightDisplay/FlyViewLateralViewArea.qml</file>
     </qresource>
     <qresource prefix="/FirstRunPromptDialogs">
         <file alias="UnitsFirstRunPrompt.qml">src/FirstRunPromptDialogs/UnitsFirstRunPrompt.qml</file>
