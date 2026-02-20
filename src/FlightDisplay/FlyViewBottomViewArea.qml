@@ -70,6 +70,16 @@ Item {
         }
     }
 
+    Binding{
+        target: bottomDataArea
+        property: "_motor_temp"
+        value:{
+        if (!activeVehicle) return 0
+        if (activeVehicle.batteries.count <= 0) return 0
+        return activeVehicle.gd60_Sensor1.rawValue.toFixed(0)
+        }
+    }
+
     property string batteryVoltageText: ""
     Binding {
         target: bottomDataArea
@@ -278,11 +288,20 @@ Item {
         id: motorTempMouseArea
         anchors.fill: motorTemperatureInformationIcon
         hoverEnabled: true
+        property bool tapped: false
 
-        onClicked: {
-            if (_androidBuild)
-                textBoxMotorTempInfo.visible = !textBoxMotorTempInfo.visible
-        }
+        onPressed: {
+                if (_androidBuild) {
+                    tapped = !tapped
+                    textBoxMotorTempInfo.visible = tapped
+                }
+            }
+
+            onContainsMouseChanged: {
+                if (!_androidBuild) {
+                    textBoxMotorTempInfo.visible = containsMouse
+                }
+            }
     }
 
     ColumnLayout {

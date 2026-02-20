@@ -70,30 +70,7 @@ Item {
     property real  mainViewHeight: parent.height*5/6
     property real  mainViewWidth : parent.width - (parent.height - mainViewHeight) //garantir simetria
     property bool _cameraExchangeActive : false
-    property var _pct_bateria_1: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
-    property var _tensao_bateria_1:  0 //modificado em MainWindow
-    property var _current_bateria_1:  0
 
-    property var _pct_bateria_2: 0//_activeVehicle.batteries.get(0).percentRemaining.valueString + "%"
-    property var _tensao_bateria_2:  0 //modificado em MainWindow
-    property var _current_bateria_2:  0
-
-    property var _current_generator: 0
-    property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage (P/ GD25)
-
-    property int _battery1Index: 0
-    property int _battery2Index: 0
-    property int _gasolineIndex: 1
-    property int _generatorIndex: 2
-
-
-    property int _satCount: 0
-    property int _satPDOP: 0
-    property var _rcQuality: 0
-    property var _rcQuality_ARRAY: []
-    property var _rcQuality_mean: 0
-    property var _current_battery_ARRAY: []
-    property var _current_generator_ARRAY: []
     property var _returnFunctionArray: []
     property bool flagAlertaGerador: false
     property var oldGeneratorMediamValue: 0
@@ -144,19 +121,11 @@ Item {
     property bool _selected_rotor_6: false
 
     property bool overrideActive: false
-    property real _motor_temp: 30
     property real _motor_rpm: 3000
 
     property int _rpm_horizontal1: 0
     property int _rpm_horizontal2: 0
 
-    property int horas_restantes:0
-    property int minutos_restantes:0
-    property int segundos_restantes:0
-
-    property string horas_restantes_string:"00"
-    property string minutos_restantes_string:"00"
-    property string segundos_restantes_string:"00"
 
     property bool _androidBuild: (Qt.platform.os === "ios" || Qt.platform.os === "android")
 
@@ -300,6 +269,7 @@ Item {
         return {breach:!inside, level:level_breach};
     }
 
+    //Bom incluir isso aqui, mas preciso de um log que presta pra testar então foda-se por enquanto
     function generatorAlert(batValues, gerValues, oldGerMed){ //TODO: incluir condicional tensão da bateria < 44V
         var medBat = 0;
         var medGer = 0;
@@ -337,12 +307,6 @@ Item {
         repeat: true
 
         onTriggered:{
-            /*console.log("TESTING BATTERY ACCESS")
-            console.log(_activeVehicle.batteries.count)
-            console.log(_activeVehicle.batteries.get(0).voltage.rawValue)
-            console.log(_activeVehicle.batteries.columnCount())
-            console.log(_activeVehicle.batteries.get(1).voltage.rawValue)*/
-            //console.log(_activeVehicle.batteries.index(1,0).voltage.rawValue)
             gcsID = QGroundControl.mavlinkSystemID.valueOf(); //tem que ficar atualizando. tem jeito melhor pra fazer mas isso é pequisa futura e o desempenho ta satisfatório pra agora
             //console.log("ID DA GCS: ",gcsID);
             if(_activeVehicle.firmwareMajorVersion.toString() == "255"){ // Caso esteja rodando nosso Ardupilot custom (Major Version 255)
@@ -388,15 +352,7 @@ Item {
                     }
                 }
 
-                _pct_bateria_1 = ((((_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2) - 42)/8.2)*100).toFixed(2)//(((_activeVehicle.batteries.get(0).voltage.rawValue/100)/50)*10000).toFixed(2)//_activeVehicle.batteries.get(0).percentRemaining.rawValue
-                _tensao_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).voltage.rawValue).toFixed(2)
-                _current_bateria_1 = (_activeVehicle.batteries.get(_battery1Index).current.rawValue).toFixed(2)
 
-
-
-
-            _satCount = _activeVehicle.gps.count.rawValue
-            _satPDOP = _activeVehicle.gps.lock.rawValue
 
             var breach_val = breachDetection()
             if (breach_val.level > -1 && canShowBreachAlert) {
@@ -417,93 +373,6 @@ Item {
                 breachCooldownTimer.start()
             }
 
-            // console.log(_activeVehicle.rcRSSI.valueOf())
-
-            //console.log("Gasolina: ",_activeVehicle.batteries.get(_gasolineIndex).percentRemaining,"|",)
-            if(_activeVehicle.rcRSSI != 0){
-                _rcQuality = _activeVehicle.rcRSSI//(100 - _activeVehicle.mavlinkLossPercent.valueOf().toFixed(1)).toFixed(1)
-                _rcQuality_ARRAY.push(_rcQuality)
-                if(_rcQuality_ARRAY.length === 10){
-                    var qual_temp1 = 0;
-                    for(var i =0; i<10; i++){
-                        qual_temp1 = _rcQuality_ARRAY[i] + qual_temp1
-                    }
-                    qual_temp1 = qual_temp1/10
-                    _rcQuality_mean = qual_temp1
-                    _rcQuality_mean = _rcQuality_mean.toFixed(0)
-                    _rcQuality_ARRAY.shift();
-                }
-                //console.log("RCQUALITY: ",_rcQuality, " MEDIA: ",_rcQuality_mean, " ARRAY: ", _rcQuality_ARRAY)
-            }
-
-            /*console.log("poly count: ",_geoFenceController.polygons.count.toString())
-            console.log("  poly 0 -> ",_geoFenceController.polygons.get(0).path)
-            console.log("  poly first NS coord -> ",_geoFenceController.polygons.get(0).path[0])
-            console.log("  poly first WE coord -> ",_geoFenceController.polygons.get(0).path[1])
-            console.log("  vehicle pos -> ", _activeVehicle.coordinate.toString())*/
-
-
-
-
-                aceleracao_rotor_1_ARRAY.push(_aceleracao_rotor_1)
-                aceleracao_rotor_2_ARRAY.push(_aceleracao_rotor_2)
-                aceleracao_rotor_3_ARRAY.push(_aceleracao_rotor_3)
-                aceleracao_rotor_4_ARRAY.push(_aceleracao_rotor_4)
-                aceleracao_rotor_5_ARRAY.push(_aceleracao_rotor_5)
-                aceleracao_rotor_6_ARRAY.push(_aceleracao_rotor_6)
-
-            _current_generator_ARRAY.push(_current_generator)
-
-            // console.log("maxvel: ",_maxVel)
-            //var params = _activeVehicle.parameterNames(1); // Chama a função C++
-            //console.log("Parameters:", params); // Imprime no console do QML
-            //params.forEach(param => console.log(param.toString())); //TODO: typeError. QStringList e QString não são reconhecidos pelo QML padrão. Resolver isso depois
-            _current_generator = _activeVehicle.batteries.get(_generatorIndex).current.rawValue.toFixed(2)
-            _current_bateria_1 = _activeVehicle.batteries.get(_battery1Index).current.rawValue.toFixed(2)
-
-
-
-            if(_current_generator_ARRAY.length >= 20){ //sabendo que recebemos um dado novo a cada 0.1 segundos, (ver c/ Erich)
-                _returnFunctionArray = generatorAlert(_current_battery_ARRAY, _current_generator_ARRAY, oldGeneratorMediamValue);//executa função
-                flagAlertaGerador = _returnFunctionArray[0]; //atualiza flag geral com valor booleano retornado da função
-                oldGeneratorMediamValue = _returnFunctionArray[1]; //atualiza valor de média
-                _current_battery_ARRAY.shift(); //apaga primeiro elemento (ver c/Erich se é pra apagar o primeiro elemento ou todos)
-                _current_generator_ARRAY.shift();
-                //console.log(_current_battery_ARRAY);
-                //console.log(_current_generator_ARRAY);
-            }
-            if(aceleracao_rotor_1_ARRAY.length ===20){
-                var temp1 = 0;
-                var temp2 = 0;
-                var temp3 = 0;
-                var temp4 = 0;
-                var temp5 = 0;
-                var temp6 = 0;
-                for (var c = 0; c<20; c++){
-                    temp1 = temp1 + aceleracao_rotor_1_ARRAY[c];
-                    temp2 = temp2 + aceleracao_rotor_2_ARRAY[c];
-                    temp3 = temp3 + aceleracao_rotor_3_ARRAY[c];
-                    temp4 = temp4 + aceleracao_rotor_4_ARRAY[c];
-                    temp5 = temp5 + aceleracao_rotor_5_ARRAY[c];
-                    temp6 = temp6 + aceleracao_rotor_6_ARRAY[c];
-                }
-                medAceleracaoRotor1 = temp1/20
-                medAceleracaoRotor2 = temp2/20
-                medAceleracaoRotor3 = temp3/20
-                medAceleracaoRotor4 = temp4/20
-                medAceleracaoRotor5 = temp5/20
-                medAceleracaoRotor6 = temp6/20
-                //   console.log("medAccell1", medAceleracaoRotor1)
-
-                aceleracao_rotor_1_ARRAY.shift();
-                aceleracao_rotor_2_ARRAY.shift();
-                aceleracao_rotor_3_ARRAY.shift();
-                aceleracao_rotor_4_ARRAY.shift();
-                aceleracao_rotor_5_ARRAY.shift();
-                aceleracao_rotor_6_ARRAY.shift();
-
-
-            }
         }
     }
 
@@ -521,8 +390,6 @@ Item {
         height: parent.height - mainViewHeight
         toolsMargin: _toolsMargin
 
-        _motor_temp: _motor_temp
-       // activeVehicle: _activeVehicle
         _androidBuild: _androidBuild
 
     }

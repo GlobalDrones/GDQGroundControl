@@ -1650,7 +1650,8 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             UNKNOWN = 0,
             TEMP1,
             TEMP2,
-            TEMP3
+            TEMP3,
+            TEMPGD25
         };
 
         mavlink_named_value_float_t msg_nvf;
@@ -1659,6 +1660,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         if (strncmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
         else if (strncmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
         else if (strncmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
+        else if (strncmp(msg_nvf.name, "TempICE", 10) == 0) id = TEMPGD25;
 
         switch(id) {
         case TEMP1:
@@ -1672,6 +1674,9 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         case TEMP3:
             //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
             _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
+            break;
+        case TEMPGD25:
+            _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
         default:
             //qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
