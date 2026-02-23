@@ -1303,7 +1303,7 @@ GstVideoReceiver::_onBusMessage(GstBus* bus, GstMessage* msg, gpointer data)
             }
 
             if (error != nullptr) {
-                qCCritical(VideoReceiverLog) << "GStreamer error:" << error->message;
+                //qCCritical(VideoReceiverLog) << "GStreamer error:" << error->message;
                 g_error_free(error);
                 error = nullptr;
             }

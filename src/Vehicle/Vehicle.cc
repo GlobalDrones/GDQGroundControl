@@ -1699,9 +1699,12 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         mavlink_msg_gimbal_device_attitude_status_decode(&message, &stat_gimbal);
         QQuaternion quaternion(stat_gimbal.q[0],stat_gimbal.q[1],stat_gimbal.q[2],stat_gimbal.q[3]);
         QVector3D euler_angles = quaternion.toEulerAngles();
-        _GD_GimbalPitchFact.setRawValue(euler_angles.x());
-        _GD_GimbalYawFact.setRawValue(euler_angles.y());
-        _GD_GimbalRollFact.setRawValue(euler_angles.z());
+        _GD_GimbalRollFact.setRawValue(euler_angles.x());
+        _GD_GimbalPitchFact.setRawValue(euler_angles.y());
+        _GD_GimbalYawFact.setRawValue(euler_angles.z());
+
+        qDebug()<<"Quart "<<stat_gimbal.q[0]<<stat_gimbal.q[1]<<stat_gimbal.q[2]<<stat_gimbal.q[3];
+        qDebug()<<"euler "<<euler_angles.x()<<euler_angles.y()<<euler_angles.z();
         break;
     }
 

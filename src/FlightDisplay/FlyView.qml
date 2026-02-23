@@ -582,9 +582,9 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
 
                     // Lógica de texto concatenando os valores das Facts do activeVehicle
-                    text: "GIMBAL PITCH: " + _activeVehicle._GD_GimbalPitch.value.toFixed(1) + "\n" +
-                          "YAW: "          + _activeVehicle._GD_GimbalYaw.value.toFixed(1)   + "\n" +
-                          "ROLL: "         + _activeVehicle._GD_GimbalRoll.value.toFixed(1)
+                    text: "GIMBAL PITCH: " + _activeVehicle._GD_GimbalPitch.rawValue.toFixed(2) + "\n" +
+                          "YAW: "          + _activeVehicle._GD_GimbalYaw.rawValue.toFixed(2)   + "\n" +
+                          "ROLL: "         + _activeVehicle._GD_GimbalRoll.rawValue.toFixed(2)
 
                     // Opcional: só mostrar se o veículo estiver ativo para não poluir
                     visible: _activeVehicle ? true : false

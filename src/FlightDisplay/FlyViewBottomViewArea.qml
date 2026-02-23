@@ -36,6 +36,9 @@ Item {
 
     property real _gasolina
     property real _motor_temp
+    property var _heading
+    property var _gimbal_yaw
+    property var _old_gimbal_yaw: 0
 
     property var activeVehicle:QGroundControl.multiVehicleManager.activeVehicle
     property real   toolsMargin
@@ -59,6 +62,29 @@ Item {
     property real medAceleracaoRotor4
     property real medAceleracaoRotor5
     property real medAceleracaoRotor6
+
+    Binding{
+        target:bottomDataArea
+        property: "_gimbal_yaw"
+        value:{
+            if (!activeVehicle) return 0
+            if(_old_gimbal_yaw!=0 && Number(activeVehicle._GD_GimbalYaw.rawValue.toFixed(2))===0){
+                return _old_gimbal_yaw
+            }
+            _old_gimbal_yaw = Number(activeVehicle._GD_GimbalYaw.rawValue.toFixed(2))
+            return Number(activeVehicle._GD_GimbalYaw.rawValue.toFixed(2))
+        }
+
+    }
+
+    Binding{
+        target:bottomDataArea
+        property: "_heading"
+        value:{
+            if (!activeVehicle) return 0
+            return activeVehicle.heading.value
+        }
+    }
 
     Binding{
         target: bottomDataArea
@@ -248,7 +274,7 @@ Item {
         id: motorTemperatureInformationIcon
         anchors.top: parent.top
         anchors.left: textBoxGasolinePercentage.right
-        anchors.leftMargin: toolsMargin * 2
+        anchors.leftMargin: toolsMargin*0.5
         anchors.topMargin: toolsMargin * 2
 
         width: height
@@ -344,7 +370,7 @@ Item {
         id: rotorsTempArea
         anchors.top: parent.top
         anchors.left: motorTemperatureInformationIcon.right
-        anchors.margins: toolsMargin * 1.5
+        anchors.margins: toolsMargin * 1
 
         width: height * 2
         height: parent.height * 2 / 3
@@ -432,7 +458,7 @@ Item {
                             width: parent.width*0.45
                             anchors.top: parent.top
                             anchors.left: rotorsTempArea.right
-                            anchors.margins: toolsMargin * 1.5
+                            anchors.margins: toolsMargin
                             property int _borderWidth: 2
                             property int _fontSize: 10//_androidBuild ?  15 : 20
 
@@ -567,4 +593,106 @@ Item {
             source: "qrc:/qml/QGCInstrumentWidget.qml"
         }
     }
+
+    //**************************************************************************************************
+    // GIMBAL HEADING AND PITCH
+    //**************************************************************************************************
+
+    Item {
+        id: root
+        width: height
+        height: parent.height*0.85
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: _toolsMargin
+
+
+        QGCPalette { id: qgcPal; colorGroupEnabled: enabled }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: width / 2
+            color: qgcPal.window
+            border.color: qgcPal.text
+            border.width: 1
+        }
+
+        Item {
+            id: instrument
+            anchors.fill: parent
+            visible: false
+
+            // CAMERA ICON (no lugar do pointer)
+            Image {
+                id: cameraIcon
+                width: parent.width * 0.4
+                source: "/qmlimages/camera_video.svg"
+                mipmap: true
+                fillMode: Image.PreserveAspectFit
+                anchors.centerIn: parent
+                sourceSize.width: width
+
+                transform: Rotation {
+                    origin.x: cameraIcon.width / 2
+                    origin.y: cameraIcon.height / 2
+                    angle: -90 + Number(_heading) + _gimbal_yaw //offset + heading do veículo + yaw relativo ao heading
+                }
+            }
+
+            // DIAL DA BÚSSOLA
+            QGCColoredImage {
+                id: compassDial
+                source: "/qmlimages/compassInstrumentDial.svg"
+                mipmap: true
+                fillMode: Image.PreserveAspectFit
+                anchors.fill: parent
+                sourceSize.height: parent.height
+                color: qgcPal.text
+
+                transform: Rotation {
+                    origin.x: compassDial.width / 2
+                    origin.y: compassDial.height / 2
+                    angle: 0
+                }
+            }
+
+            // BLOCO DE TEXTO
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width * 0.35
+                height: parent.width * 0.2
+                border.color: qgcPal.text
+                color: qgcPal.window
+                opacity: 0.65
+                z:_fullItemZorder+10
+
+                QGCLabel {
+                    text: _headingString3
+                    anchors.centerIn: parent
+                    color: qgcPal.text
+                    font.pointSize: 12
+
+                    property string _headingString: activeVehicle ? String((Number(_heading) + _gimbal_yaw)%360) : "OFF"
+                    property string _headingString2: _headingString.length === 1 ? "0" + _headingString : _headingString
+                    property string _headingString3: _headingString2.length === 2 ? "0" + _headingString2 : _headingString2
+                }
+            }
+        }
+
+        // MASK CIRCULAR
+        Rectangle {
+            id: mask
+            anchors.fill: instrument
+            radius: width / 2
+            color: "black"
+            visible: false
+        }
+
+        OpacityMask {
+            anchors.fill: instrument
+            source: instrument
+            maskSource: mask
+        }
+    }
+
 }
