@@ -317,6 +317,9 @@ public:
     Q_PROPERTY(Fact* _GD_RPM5           READ _GD_RPM5           CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM6           READ _GD_RPM6           CONSTANT)
     Q_PROPERTY(Fact* _GD_GeneratorRPM   READ _GD_GeneratorRPM   CONSTANT)
+    Q_PROPERTY(Fact* _GD_GimbalPitch    READ _GD_GimbalPitch    CONSTANT)
+    Q_PROPERTY(Fact* _GD_GimbalYaw      READ _GD_GimbalYaw      CONSTANT)
+    Q_PROPERTY(Fact* _GD_GimbalRoll     READ _GD_GimbalRoll     CONSTANT)
 
 
 
@@ -683,6 +686,9 @@ public:
     Fact* _GD_RPM5                          () { return &_GD_RPM5Fact;}
     Fact* _GD_RPM6                          () { return &_GD_RPM6Fact;}
     Fact* _GD_GeneratorRPM                  () {return &_GD_GeneratorRPMFact;}
+    Fact* _GD_GimbalPitch                   () {return &_GD_GimbalPitchFact;}
+    Fact* _GD_GimbalYaw                     () {return &_GD_GimbalYawFact;}
+    Fact* _GD_GimbalRoll                    () {return &_GD_GimbalRollFact;}
 
     FactGroup* gpsFactGroup                 () { return &_gpsFactGroup; }
     FactGroup* gps2FactGroup                () { return &_gps2FactGroup; }
@@ -1356,6 +1362,9 @@ private:
     Fact _GD_RPM5Fact;
     Fact _GD_RPM6Fact;
     Fact _GD_GeneratorRPMFact;
+    Fact _GD_GimbalPitchFact;
+    Fact _GD_GimbalYawFact;
+    Fact _GD_GimbalRollFact;
     Fact _distanceToHomeFact;
     Fact _missionItemIndexFact;
     Fact _headingToNextWPFact;
@@ -1420,6 +1429,9 @@ private:
     static const char* _GD_RPM5FactName;
     static const char* _GD_RPM6FactName;
     static const char* _GD_GeneratorRPMFactName;
+    static const char* _GD_GimbalPitchFactName;
+    static const char* _GD_GimbalYawFactName;
+    static const char* _GD_GimbalRollFactName;
     static const char* _distanceToHomeFactName;
     static const char* _missionItemIndexFactName;
     static const char* _headingToNextWPFactName;

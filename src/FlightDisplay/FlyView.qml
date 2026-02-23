@@ -75,6 +75,14 @@ Item {
     property bool flagAlertaGerador: false
     property var oldGeneratorMediamValue: 0
     property int  maxGeneratorCurrent: 120
+    property var generatorCurrentArray: []
+    property var batteryCurrentArray: []
+    property real generatorCurrentMed: 0
+    property string popUp_generatorAlert: ""
+    property string _generatorAlertColor: "red"
+    property bool canShowGeneratorAlert: true
+
+
     property var  _distanceToHome:     _activeVehicle.distanceToHome.rawValue.toFixed(2)
     property var  _distanceToWP: _activeVehicle.distanceToNextWP.rawValue.toFixed(2)
     property var _mavlinkLossPercent: _activeVehicle.mavlinkLossPercent.rawValue
@@ -161,6 +169,14 @@ Item {
         running: false
         repeat: false
         onTriggered: canShowBreachAlert = true
+    }
+    Timer {
+        id: generatorCooldownTimer
+        interval: 10000   // 10 segundos de cooldown
+        running: false
+        repeat: false
+
+        onTriggered: canShowGeneratorAlert = true
     }
 
     function _calcCenterViewPort() {
@@ -270,33 +286,119 @@ Item {
     }
 
     //Bom incluir isso aqui, mas preciso de um log que presta pra testar então foda-se por enquanto
-    function generatorAlert(batValues, gerValues, oldGerMed){ //TODO: incluir condicional tensão da bateria < 44V
-        var medBat = 0;
-        var medGer = 0;
-        var flagAlert = false;
-        for (var i = 0; i<20; i++){
-            medBat = medBat + batValues[i];
-            medGer = medGer + gerValues[i];
-        }
-        medBat = medBat;
-        medGer = medGer;
+    function generatorAlert(batValues, gerValues, oldGerMed) {
 
-        //Se a média da corrente do gerador esta próxima de 0, levanta flag
-        if (Math.abs(medGer)<20){
-            flagAlert = true;
+        var medBat = 0
+        var medGer = 0
+        var flagAlert = false
+
+        for (var i = 0; i < 20; i++) {
+            medBat += batValues[i]
+            medGer += gerValues[i]
         }
-        //Se a media da corrente da bateria é maior que do gerador E a média do gerador está caindo, levanta flag
+
+        medBat = medBat / 20
+        medGer = medGer / 20
+
+        // Gerador perto de zero
+        if (Math.abs(medGer) < 20) {
+            flagAlert = true
+        }
+        // Bateria maior que gerador e gerador caindo
         else if (medBat > medGer && oldGerMed > medGer) {
-            flagAlert = true;
-            //console.log(medBat,medGer, oldGerMed)
+            flagAlert = true
         }
 
-        return [flagAlert, medGer];
+        return [flagAlert, medGer]
     }
+
 
     function accelerationPercentageToRadius(percentage){
         return percentage*0.015
 
+    }
+
+    Timer {
+        id: debugTimer
+        interval: 1000   // 0.5s → 10s janela com 20 amostras
+        running: true
+        repeat: true
+
+        onTriggered: {
+            console.log("GIMBAL PITCH: ",_activeVehicle._GD_GimbalPitch.value.toFixed(1),
+                        "| Yaw: ",_activeVehicle._GD_GimbalYaw.value.toFixed(1),
+                        "| Roll:",_activeVehicle._GD_GimbalRoll.value.toFixed(1))
+        }
+
+    }
+
+
+    Timer {
+        id: generatorMonitorTimer
+        interval: 500   // 0.5s → 10s janela com 20 amostras
+        running: true
+        repeat: true
+
+        onTriggered: {
+
+            if (!_activeVehicle) {
+                return
+            }
+
+            var batCurrent = 0
+            var gerCurrent = 0
+
+            try {
+                batCurrent = _activeVehicle.batteries.get(0).current.rawValue
+                gerCurrent = _activeVehicle.batteries.get(2).current.rawValue
+            } catch(e) {
+                console.log("Erro lendo baterias:", e)
+                return
+            }
+
+            // adiciona valores
+            batteryCurrentArray.push(batCurrent)
+            generatorCurrentArray.push(gerCurrent)
+
+            // mantém tamanho 20
+            if (batteryCurrentArray.length > 20)
+                batteryCurrentArray.shift()
+
+            if (generatorCurrentArray.length > 20)
+                generatorCurrentArray.shift()
+
+            // só roda quando buffer cheio
+            if (batteryCurrentArray.length === 20 &&
+                generatorCurrentArray.length === 20) {
+
+                var result = generatorAlert(
+                            batteryCurrentArray,
+                            generatorCurrentArray,
+                            oldGeneratorMediamValue)
+
+                flagAlertaGerador = result[0]
+                generatorCurrentMed = result[1]
+                oldGeneratorMediamValue = generatorCurrentMed
+
+                if (flagAlertaGerador && canShowGeneratorAlert) {
+
+                    popUp_generatorAlert = "FALHA NO GERADOR DETECTADA"
+                    _generatorAlertColor = "red"
+
+                    generatorAlertPopup.open()
+
+                    canShowGeneratorAlert = false
+                    generatorCooldownTimer.start()
+                }
+
+
+                console.log("------ GERADOR MONITOR ------")
+                console.log("BatMed:", batteryCurrentArray)
+                console.log("GerMed:", generatorCurrentArray)
+                console.log("flag:", flagAlertaGerador)
+                console.log("medGer:", generatorCurrentMed)
+            }
+        }
     }
 
 
@@ -394,7 +496,6 @@ Item {
 
     }
 
-
     //**************************************************************************************************//
     //                          LATERAL VIEW AREA                                                       //
     //**************************************************************************************************//
@@ -465,6 +566,29 @@ Item {
             altitudeSlider: _guidedAltSlider
         }
 
+        Text {
+                    id: gimbalDebugText
+                    anchors.centerIn: parent
+
+                    // O nível Z precisa ser maior que os overlays existentes
+                    z: _fullItemZorder + 1000
+
+                    // Estética: Vermelho, enorme e com sombra para legibilidade
+                    color:          "red"
+                    font.pointSize: 40
+                    font.bold:      true
+                    style:          Text.Outline
+                    styleColor:     "black"
+                    horizontalAlignment: Text.AlignHCenter
+
+                    // Lógica de texto concatenando os valores das Facts do activeVehicle
+                    text: "GIMBAL PITCH: " + _activeVehicle._GD_GimbalPitch.value.toFixed(1) + "\n" +
+                          "YAW: "          + _activeVehicle._GD_GimbalYaw.value.toFixed(1)   + "\n" +
+                          "ROLL: "         + _activeVehicle._GD_GimbalRoll.value.toFixed(1)
+
+                    // Opcional: só mostrar se o veículo estiver ativo para não poluir
+                    visible: _activeVehicle ? true : false
+                }
 
         /*GuidedActionConfirm {
                 id:                         guidedActionConfirm
@@ -686,6 +810,33 @@ Item {
                             }
                         }
                 }
+        Popup {
+            id: generatorAlertPopup
+            x: (parent.width - width) / 2
+            y: 10
+            width: parent.width / 4
+            height: 100
+            modal: false
+            focus: false
+            background: null
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+            visible: false
+
+            Rectangle {
+                anchors.fill: parent
+                color: _generatorAlertColor
+                border.color: "black"
+                visible: parent.opened
+
+                Text {
+                    anchors.centerIn: parent
+                    text: popUp_generatorAlert
+                    font.bold: true
+                    visible: parent.visible
+                    font.pixelSize: _androidBuild ? 16 : 20
+                }
+            }
+        }
 
         Popup {
                             id: confirmOverridePopup

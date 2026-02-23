@@ -123,6 +123,9 @@ const char* Vehicle::_GD_RPM4FactName=               "_GD_RPM4";
 const char* Vehicle::_GD_RPM5FactName=               "_GD_RPM5";
 const char* Vehicle::_GD_RPM6FactName=               "_GD_RPM6";
 const char* Vehicle::_GD_GeneratorRPMFactName=       "_GD_GeneratorRPM";
+const char* Vehicle::_GD_GimbalPitchFactName= "_GD_GimbalPitch";
+const char* Vehicle::_GD_GimbalYawFactName=   "_GD_GimbalYaw";
+const char* Vehicle::_GD_GimbalRollFactName=  "_GD_GimbalRoll";
 const char* Vehicle::_distanceToHomeFactName =      "distanceToHome";
 const char* Vehicle::_missionItemIndexFactName =    "missionItemIndex";
 const char* Vehicle::_headingToNextWPFactName =     "headingToNextWP";
@@ -354,6 +357,9 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _GD_RPM5Fact                           (0, _GD_RPM5FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM6Fact                           (0, _GD_RPM6FactName,           FactMetaData::valueTypeInt16)
     , _GD_GeneratorRPMFact                   (0, _GD_GeneratorRPMFactName,   FactMetaData::valueTypeInt16)
+    , _GD_GimbalPitchFact                    (0, _GD_GimbalPitchFactName,    FactMetaData::valueTypeDouble)
+    , _GD_GimbalYawFact                      (0, _GD_GimbalYawFactName,      FactMetaData::valueTypeDouble)
+    , _GD_GimbalRollFact                     (0, _GD_GimbalRollFactName,     FactMetaData::valueTypeDouble)
     , _distanceToHomeFact                    (0, _distanceToHomeFactName,    FactMetaData::valueTypeDouble)
     , _missionItemIndexFact                  (0, _missionItemIndexFactName,  FactMetaData::valueTypeUint16)
     , _headingToNextWPFact                   (0, _headingToNextWPFactName,   FactMetaData::valueTypeDouble)
@@ -1215,7 +1221,10 @@ void Vehicle::_commonInit()
     _addFact(&_GD_RPM4Fact,             _GD_RPM4FactName);
     _addFact(&_GD_RPM5Fact,             _GD_RPM5FactName);
     _addFact(&_GD_RPM6Fact,             _GD_RPM6FactName);
-    _addFact(&_GD_GeneratorRPMFact,         _GD_GeneratorRPMFactName);
+    _addFact(&_GD_GeneratorRPMFact,     _GD_GeneratorRPMFactName);
+    _addFact(&_GD_GimbalPitchFact ,     _GD_GimbalPitchFactName);
+    _addFact(&_GD_GimbalYawFact ,       _GD_GimbalYawFactName);
+    _addFact(&_GD_GimbalRollFact ,      _GD_GimbalRollFactName);
     _addFact(&_distanceToHomeFact,      _distanceToHomeFactName);
     _addFact(&_missionItemIndexFact,    _missionItemIndexFactName);
     _addFact(&_headingToNextWPFact,     _headingToNextWPFactName);
@@ -1682,6 +1691,17 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             //qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
             break;
         }
+        break;
+    }
+    case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
+    {
+        mavlink_gimbal_device_attitude_status_t stat_gimbal;
+        mavlink_msg_gimbal_device_attitude_status_decode(&message, &stat_gimbal);
+        QQuaternion quaternion(stat_gimbal.q[0],stat_gimbal.q[1],stat_gimbal.q[2],stat_gimbal.q[3]);
+        QVector3D euler_angles = quaternion.toEulerAngles();
+        _GD_GimbalPitchFact.setRawValue(euler_angles.x());
+        _GD_GimbalYawFact.setRawValue(euler_angles.y());
+        _GD_GimbalRollFact.setRawValue(euler_angles.z());
         break;
     }
 

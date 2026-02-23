@@ -132,16 +132,16 @@ Item {
         }
     }
 
-    property string altAMSLText: ""
+    property string altLIDARText: ""
     Binding {
         target: bottomDataArea
-        property: "altAMSLText"
+        property: "altLIDARText"
         value: {
-            if (!activeVehicle) return "Altitude AMSL:"
-            if (activeVehicle.batteries.count <= 0) return "Altitude AMSL:"
+            if (!activeVehicle) return "Altitude LIDAR:"
+            if (activeVehicle.batteries.count <= 0) return "Altitude LIDAR:"
 
-            return "Altitude AMSL: " +
-                       activeVehicle.altitudeAMSL.value.toFixed(1)+"m"
+            return "Altitude LIDAR: " +
+                       activeVehicle.rangeFinderDist.value.toFixed(1)+"m"
         }
     }
 
@@ -542,10 +542,10 @@ Item {
                                         border.color:"white"
                                         Text {
                                             anchors.centerIn: parent
-                                            text: altAMSLText
+                                            text: altLIDARText
                                             font.bold: true
                                             font.pointSize: _dataBox._fontSize
-                                            color: "white"
+                                            color: activeVehicle? (activeVehicle.rangeFinderDist.value.toFixed(1) > 120 ? "red":"white"):"white"
                                         }
                                     }
                                 }
