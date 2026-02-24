@@ -943,6 +943,7 @@ signals:
     void allSensorsHealthyChanged       (bool allSensorsHealthy);
     void requiresGpsFixChanged          ();
     void gd_rcchannelsChanged();
+    void photoTaken();
 
     void firmwareVersionChanged         ();
     void firmwareCustomVersionChanged   ();

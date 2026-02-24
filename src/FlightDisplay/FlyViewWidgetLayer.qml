@@ -172,7 +172,7 @@ Item {
         height: telemetryPanel.height
         color:  qgcPal.toolbarBackground
         anchors.rightMargin: 10
-        visible: true
+        visible: false
         radius: 5
 
         QGCLabel {

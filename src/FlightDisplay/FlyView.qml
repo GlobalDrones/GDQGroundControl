@@ -163,6 +163,27 @@ Item {
     property real _altitudeAMSL: 0
     property int _flightTime:0
     property real _filteredGimbalPitch: 0
+
+    property var siyi: SiYi
+    property SiYiCamera camera: siyi.camera
+
+
+    Connections {
+        target: camera ? camera : null
+
+        function onIsRecordingChanged() {
+            if (!camera) return
+
+            console.log("Recording state:", camera.isRecording())
+
+            if (camera.isRecording) {
+                photoText.visible = true
+            } else {
+                photoText.visible = false
+            }
+        }
+    }
+
     Connections {
         target: _activeVehicle ? _activeVehicle._GD_GimbalPitch : null
 
@@ -173,10 +194,11 @@ Item {
 
             // ignora zeros espúrios (ajuste tolerância se quiser)
             if (Math.abs(v) > 0.01) {
-                _filteredGimbalPitch = v
+                _filteredGimbalPitch = -v
             }
         }
     }
+
 
 
 
@@ -817,6 +839,20 @@ Item {
                 }
 
             }
+        }
+        Text {
+            id: photoText
+            text: "📸 Photo Captured"
+            anchors.horizontalCenter: cameraControlOverlay.horizontalCenter
+            anchors.top: cameraControlOverlay.bottom
+            font.pixelSize: 24
+            visible: false
+        }
+
+        Timer {
+            id: photoTextTimer
+            interval: 1500
+            onTriggered: photoText.visible = false
         }
 
         Rectangle {

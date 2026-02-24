@@ -1805,6 +1805,7 @@ void Vehicle::_handleCameraImageCaptured(const mavlink_message_t& message)
     qCDebug(VehicleLog) << "_handleCameraFeedback coord:index" << imageCoordinate << feedback.image_index << feedback.capture_result;
     if (feedback.capture_result == 1) {
         _cameraTriggerPoints.append(new QGCQGeoCoordinate(imageCoordinate, this));
+        emit photoTaken();
     }
 }
 
