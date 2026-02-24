@@ -121,7 +121,7 @@ Rectangle {
         anchors.top:            parent.top
         anchors.bottom:         parent.bottom
         anchors.margins:        ScreenTools.defaultFontPixelHeight * 0.66
-        visible:                currentToolbar !== planViewToolbar && _activeVehicle && !_communicationLost && x > (toolsFlickable.x + toolsFlickable.contentWidth + ScreenTools.defaultFontPixelWidth)
+        visible:                false//currentToolbar !== planViewToolbar && _activeVehicle && !_communicationLost && x > (toolsFlickable.x + toolsFlickable.contentWidth + ScreenTools.defaultFontPixelWidth)
         fillMode:               Image.PreserveAspectFit
         source:                 _outdoorPalette ? _brandImageOutdoor : _brandImageIndoor
         mipmap:                 true
@@ -229,7 +229,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.rightMargin: 32
         anchors.verticalCenter: parent.verticalCenter
-        visible: false
+        visible: false //coisa siyi. não sei o que é
         Image {
             id: emiterImage
             source: "qrc:/resources/SiYi/Emiter.svg"
@@ -270,7 +270,7 @@ Rectangle {
         anchors.right: brandingLogo.source ? brandingLogo.left : parent.right
         anchors.rightMargin: 32
         anchors.verticalCenter: parent.verticalCenter
-        visible: transmitter.isConnected
+        visible: false //coisa siyi. não sei o que é | transmitter.isConnected
         Row {
             spacing: 10
             Image {

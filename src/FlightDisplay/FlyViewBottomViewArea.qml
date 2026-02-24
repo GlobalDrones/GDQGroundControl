@@ -63,13 +63,19 @@ Item {
     property real medAceleracaoRotor5
     property real medAceleracaoRotor6
 
+    property bool motorTempInfoVisible: false
+
+
     Binding{
         target:bottomDataArea
         property: "_gimbal_yaw"
         value:{
             if (!activeVehicle) return 0
             if(_old_gimbal_yaw!=0 && Number(activeVehicle._GD_GimbalYaw.rawValue.toFixed(2))===0){
-                return _old_gimbal_yaw
+                var temp = _old_gimbal_yaw;
+                //caso realmente esteja em 0 tem que atualizar o _old pra zero se não vai cair fora do if
+                _old_gimbal_yaw = Number(activeVehicle._GD_GimbalYaw.rawValue.toFixed(2))
+                return temp
             }
             _old_gimbal_yaw = Number(activeVehicle._GD_GimbalYaw.rawValue.toFixed(2))
             return Number(activeVehicle._GD_GimbalYaw.rawValue.toFixed(2))
@@ -304,7 +310,7 @@ Item {
         height: motorTemperatureInformationIcon.height * 1.2
         width: motorTemperatureInformationIcon.width
 
-        visible: _androidBuild ? false : motorTempMouseArea.containsMouse
+        visible: motorTempInfoVisible
         color: "black"
         border.width: 1
         border.color: "lightgray"
@@ -314,21 +320,20 @@ Item {
         id: motorTempMouseArea
         anchors.fill: motorTemperatureInformationIcon
         hoverEnabled: true
-        property bool tapped: false
 
-        onPressed: {
-                if (_androidBuild) {
-                    tapped = !tapped
-                    textBoxMotorTempInfo.visible = tapped
-                }
-            }
+        property int press_count:0
 
-            onContainsMouseChanged: {
-                if (!_androidBuild) {
-                    textBoxMotorTempInfo.visible = containsMouse
-                }
+        onClicked: {
+            if (!_androidBuild) {
+                press_count = press_count+1
+                if(press_count%2===00){motorTempInfoVisible = !motorTempInfoVisible}
             }
+        }
+
+
     }
+
+
 
     ColumnLayout {
         anchors.fill: textBoxMotorTempInfo
@@ -667,14 +672,12 @@ Item {
                 z:_fullItemZorder+10
 
                 QGCLabel {
-                    text: _headingString3
+                    text: _headingString
                     anchors.centerIn: parent
                     color: qgcPal.text
                     font.pointSize: 12
 
-                    property string _headingString: activeVehicle ? String((Number(_heading) + _gimbal_yaw)%360) : "OFF"
-                    property string _headingString2: _headingString.length === 1 ? "0" + _headingString : _headingString
-                    property string _headingString3: _headingString2.length === 2 ? "0" + _headingString2 : _headingString2
+                    property string _headingString: activeVehicle ? String( _gimbal_yaw%360) : "OFF"
                 }
             }
         }

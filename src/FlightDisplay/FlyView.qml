@@ -162,6 +162,23 @@ Item {
     property real _groundSpeed: 0
     property real _altitudeAMSL: 0
     property int _flightTime:0
+    property real _filteredGimbalPitch: 0
+    Connections {
+        target: _activeVehicle ? _activeVehicle._GD_GimbalPitch : null
+
+        function onRawValueChanged() {
+            if (!_activeVehicle) return
+
+            var v = _activeVehicle._GD_GimbalPitch.rawValue
+
+            // ignora zeros espúrios (ajuste tolerância se quiser)
+            if (Math.abs(v) > 0.01) {
+                _filteredGimbalPitch = v
+            }
+        }
+    }
+
+
 
     Timer {
         id: breachCooldownTimer
@@ -309,6 +326,9 @@ Item {
             flagAlert = true
         }
 
+        if(!_activeVehicle.flying){
+            flagAlert=false
+        }
         return [flagAlert, medGer]
     }
 
@@ -566,29 +586,7 @@ Item {
             altitudeSlider: _guidedAltSlider
         }
 
-        Text {
-                    id: gimbalDebugText
-                    anchors.centerIn: parent
 
-                    // O nível Z precisa ser maior que os overlays existentes
-                    z: _fullItemZorder + 1000
-
-                    // Estética: Vermelho, enorme e com sombra para legibilidade
-                    color:          "red"
-                    font.pointSize: 40
-                    font.bold:      true
-                    style:          Text.Outline
-                    styleColor:     "black"
-                    horizontalAlignment: Text.AlignHCenter
-
-                    // Lógica de texto concatenando os valores das Facts do activeVehicle
-                    text: "GIMBAL PITCH: " + _activeVehicle._GD_GimbalPitch.rawValue.toFixed(2) + "\n" +
-                          "YAW: "          + _activeVehicle._GD_GimbalYaw.rawValue.toFixed(2)   + "\n" +
-                          "ROLL: "         + _activeVehicle._GD_GimbalRoll.rawValue.toFixed(2)
-
-                    // Opcional: só mostrar se o veículo estiver ativo para não poluir
-                    visible: _activeVehicle ? true : false
-                }
 
         /*GuidedActionConfirm {
                 id:                         guidedActionConfirm
@@ -769,6 +767,55 @@ Item {
                         }
                     }
                 }
+                Item {
+                    id: cameraPitchIndication
+                    width: ScreenTools.defaultFontPixelHeight * 2.5
+                    height: width
+
+                    // container que gira tudo junto
+                    Item {
+                        id: rotatingGroup
+                        anchors.centerIn: parent
+                        width: parent.width
+                        height: parent.height
+
+                        rotation: {
+                            _filteredGimbalPitch
+                        }
+
+                        transformOrigin: Item.Center
+
+                        QGCColoredImage {
+                            id: cameraPitch
+                            source: "/qmlimages/camera_video"
+                            anchors.fill: parent
+                            fillMode: Image.PreserveAspectFit
+                            color: "white"
+                        }
+
+                        Rectangle {
+                            width: parent.width * 0.5
+                            height: parent.width * 0.4
+
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.horizontalCenterOffset: -parent.width * 0.15   // 👈 move para esquerda
+
+                            border.color: qgcPal.text
+                            color: "#80000000"
+                            z: _fullItemZorder + 10
+
+                            QGCLabel {
+                                text: Number(_filteredGimbalPitch).toFixed(0) + "°"
+                                anchors.centerIn: parent
+                                color: qgcPal.text
+                                font.pointSize: 8
+                            }
+                        }
+
+                    }
+                }
+
             }
         }
 
