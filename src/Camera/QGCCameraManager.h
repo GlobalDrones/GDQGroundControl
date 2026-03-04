@@ -56,6 +56,8 @@ signals:
     void    cameraLabelsChanged     ();
     void    currentCameraChanged    ();
     void    streamChanged           ();
+    void    recordingStateChanged   ();
+    void    photoCapturedSignal     ();
 
 protected slots:
     virtual void    _vehicleReady           (bool ready);

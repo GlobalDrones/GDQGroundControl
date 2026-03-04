@@ -144,6 +144,7 @@ bool SiYiCamera::sendRecodingCommand(int cmd)
 
     QByteArray msg = packMessage(0x01, cmdId, body);
     sendMessage(msg);
+    emit isRecordingChanged();
     return true;
 }
 
@@ -559,6 +560,8 @@ bool SiYiCamera::unpackMessage(ProtocolMessageContext *ctx,
     return false;
 }
 
+
+
 void SiYiCamera::getCamerVersion()
 {
     uint8_t cmdId = 0x94;
@@ -633,6 +636,48 @@ void SiYiCamera::messageHandle0x81(const QByteArray &msg)
 #endif
     }
 }
+
+void SiYiCamera::messageHandle0x0b(const QByteArray &msg){
+    // Header SIYI padrão
+    int headerLength = 4 + 1 + 4 + 2 + 1 + 4;
+
+    // Payload esperado: 1 byte (info_type)
+    if (msg.length() < headerLength + 1)
+        return;
+
+    const char *ptr = msg.constData();
+    ptr += headerLength;
+
+    uint8_t info_type = static_cast<uint8_t>(*ptr);
+
+    switch (info_type) {
+
+    case 0: // Photo captured successfully
+        qDebug() << "SIYI: Photo captured!";
+        //emit photoTaken();
+        break;
+
+    case 1:
+        qDebug() << "SIYI: Photo capture failed";
+        break;
+
+    case 5:
+        qDebug() << "SIYI: Recording started";
+        emit isRecordingChanged();
+        break;
+
+    case 6:
+        qDebug() << "SIYI: Recording stopped";
+        emit isRecordingChanged();
+        break;
+
+    default:
+        qDebug() << "SIYI: Feedback type:" << info_type;
+        break;
+    }
+}
+
+
 
 void SiYiCamera::messageHandle0x83(const QByteArray &msg)
 {
@@ -1107,6 +1152,8 @@ void SiYiCamera::messageHandle0xbb(const QByteArray &msg)
     }
 }
 
+
+
 bool SiYiCamera::using1080p()
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)
@@ -1128,3 +1175,4 @@ void SiYiCamera::setUsing1080p(bool using1080p)
     settings.setValue("using1080p", using1080p);
     emit using1080pChanged();
 }
+

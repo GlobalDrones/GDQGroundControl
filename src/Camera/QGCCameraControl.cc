@@ -386,6 +386,7 @@ QGCCameraControl::takePhoto()
             _setPhotoStatus(PHOTO_CAPTURE_IN_PROGRESS);
             _captureInfoRetries = 0;
             //-- Capture local image as well
+            emit photoCaptured();
             if(qgcApp()->toolbox()->videoManager()) {
                 qgcApp()->toolbox()->videoManager()->grabImage();
             }

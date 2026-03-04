@@ -167,7 +167,45 @@ Item {
     property var siyi: SiYi
     property SiYiCamera camera: siyi.camera
 
+    Connections {
+        target: _activeVehicle ? _activeVehicle.cameraManager : null
+        //_activeVehicle.
+        function onPhotoCapturedSignal()  {
+            console.log("Photo taken signal received")
+           // photoText.visible = true
+          //  photoTextTimer.start()
+        }
+    }
+    Connections {
+        target: _activeVehicle ? _activeVehicle.cameraManager.currentCamera : null
+        //_activeVehicle.
+        function onPhotoCaptured()  {
+            console.log("Photo taken signal received")
+           // photoText.visible = true
+           // photoTextTimer.start()
+        }
+    }
 
+    Connections {
+        target: _activeVehicle ? _activeVehicle.cameraManager : null
+
+        function onRecordingStateChanged()  {
+            console.log("recording taken signal received")
+            //photoText.visible = !photoText.visible
+            //photoTextTimer.start()
+        }
+    }
+
+    Connections {
+        target: _activeVehicle ? _activeVehicle : null
+
+        function onPhotoTaken() {
+            console.log("Photo taken signal received")
+
+            //photoText.visible = true
+            //photoTextTimer.start()
+        }
+    }
     Connections {
         target: camera ? camera : null
 
@@ -176,11 +214,9 @@ Item {
 
             console.log("Recording state:", camera.isRecording())
 
-            if (camera.isRecording) {
-                photoText.visible = true
-            } else {
-                photoText.visible = false
-            }
+            //photoText.visible = true
+            //photoTextTimer.start()
+
         }
     }
 
@@ -209,14 +245,7 @@ Item {
         repeat: false
         onTriggered: canShowBreachAlert = true
     }
-    Timer {
-        id: generatorCooldownTimer
-        interval: 10000   // 10 segundos de cooldown
-        running: false
-        repeat: false
 
-        onTriggered: canShowGeneratorAlert = true
-    }
 
     function _calcCenterViewPort() {
         var newToolInset = Qt.rect(0, 0, width, height)
@@ -324,35 +353,6 @@ Item {
         return {breach:!inside, level:level_breach};
     }
 
-    //Bom incluir isso aqui, mas preciso de um log que presta pra testar então foda-se por enquanto
-    function generatorAlert(batValues, gerValues, oldGerMed) {
-
-        var medBat = 0
-        var medGer = 0
-        var flagAlert = false
-
-        for (var i = 0; i < 20; i++) {
-            medBat += batValues[i]
-            medGer += gerValues[i]
-        }
-
-        medBat = medBat / 20
-        medGer = medGer / 20
-
-        // Gerador perto de zero
-        if (Math.abs(medGer) < 20) {
-            flagAlert = true
-        }
-        // Bateria maior que gerador e gerador caindo
-        else if (medBat > medGer && oldGerMed > medGer) {
-            flagAlert = true
-        }
-
-        if(!_activeVehicle.flying){
-            flagAlert=false
-        }
-        return [flagAlert, medGer]
-    }
 
 
     function accelerationPercentageToRadius(percentage){
@@ -375,73 +375,6 @@ Item {
     }
 
 
-    Timer {
-        id: generatorMonitorTimer
-        interval: 500   // 0.5s → 10s janela com 20 amostras
-        running: true
-        repeat: true
-
-        onTriggered: {
-
-            if (!_activeVehicle) {
-                return
-            }
-
-            var batCurrent = 0
-            var gerCurrent = 0
-
-            try {
-                batCurrent = _activeVehicle.batteries.get(0).current.rawValue
-                gerCurrent = _activeVehicle.batteries.get(2).current.rawValue
-            } catch(e) {
-                console.log("Erro lendo baterias:", e)
-                return
-            }
-
-            // adiciona valores
-            batteryCurrentArray.push(batCurrent)
-            generatorCurrentArray.push(gerCurrent)
-
-            // mantém tamanho 20
-            if (batteryCurrentArray.length > 20)
-                batteryCurrentArray.shift()
-
-            if (generatorCurrentArray.length > 20)
-                generatorCurrentArray.shift()
-
-            // só roda quando buffer cheio
-            if (batteryCurrentArray.length === 20 &&
-                generatorCurrentArray.length === 20) {
-
-                var result = generatorAlert(
-                            batteryCurrentArray,
-                            generatorCurrentArray,
-                            oldGeneratorMediamValue)
-
-                flagAlertaGerador = result[0]
-                generatorCurrentMed = result[1]
-                oldGeneratorMediamValue = generatorCurrentMed
-
-                if (flagAlertaGerador && canShowGeneratorAlert) {
-
-                    popUp_generatorAlert = "FALHA NO GERADOR DETECTADA"
-                    _generatorAlertColor = "red"
-
-                    generatorAlertPopup.open()
-
-                    canShowGeneratorAlert = false
-                    generatorCooldownTimer.start()
-                }
-
-
-                console.log("------ GERADOR MONITOR ------")
-                console.log("BatMed:", batteryCurrentArray)
-                console.log("GerMed:", generatorCurrentArray)
-                console.log("flag:", flagAlertaGerador)
-                console.log("medGer:", generatorCurrentMed)
-            }
-        }
-    }
 
 
     Timer{
@@ -842,10 +775,12 @@ Item {
         }
         Text {
             id: photoText
-            text: "📸 Photo Captured"
+            text: "Photo Captured"
             anchors.horizontalCenter: cameraControlOverlay.horizontalCenter
             anchors.top: cameraControlOverlay.bottom
-            font.pixelSize: 24
+            font.pixelSize: 0//36
+            color: "red"
+            font.bold: true
             visible: false
         }
 
@@ -893,185 +828,5 @@ Item {
                             }
                         }
                 }
-        Popup {
-            id: generatorAlertPopup
-            x: (parent.width - width) / 2
-            y: 10
-            width: parent.width / 4
-            height: 100
-            modal: false
-            focus: false
-            background: null
-            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-            visible: false
-
-            Rectangle {
-                anchors.fill: parent
-                color: _generatorAlertColor
-                border.color: "black"
-                visible: parent.opened
-
-                Text {
-                    anchors.centerIn: parent
-                    text: popUp_generatorAlert
-                    font.bold: true
-                    visible: parent.visible
-                    font.pixelSize: _androidBuild ? 16 : 20
-                }
-            }
-        }
-
-        Popup {
-                            id: confirmOverridePopup
-                            modal: true
-                            focus: true
-                            width: parent.width * 0.4
-                            height: parent.height * 0.25
-                            anchors.centerIn: Overlay.overlay
-
-                            // popup precisa saber se vai ativar ou desativar
-                            property bool wantsToEnable: true
-
-                            background: Rectangle {
-                                color: "#333"
-                                radius: 8
-                                border.color: "white"
-
-                            }
-
-                            Column {
-                                spacing: 20
-                                anchors.centerIn: parent
-
-
-                                Text {
-                                    text: !overrideActive
-                                          ? "Tem certeza que deseja ATIVAR o Override RC?"
-                                          : "Tem certeza que deseja DESATIVAR o Override RC?"
-                                    color: "white"
-                                    font.pixelSize: 18
-                                    wrapMode: Text.WordWrap
-                                    horizontalAlignment: Text.AlignHCenter
-                                }
-
-                                Row {
-                                    spacing: 20
-                                    anchors.horizontalCenter: parent.horizontalCenter
-
-                                    // BOTÃO "SIM"
-                                    Rectangle {
-                                        property bool selected: false
-                                        id: btnYes
-                                        width: 150
-                                        height: 80
-                                        radius: 5
-                                        color: "#66bb6a"
-                                        border.width: selected ? 3 : 0
-                                        border.color: "yellow"
-
-                                        Text {
-                                            id: _simText
-                                            anchors.centerIn: parent
-                                            text: "SIM"
-                                            color: "white"
-                                            font.bold: true
-                                        }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-
-                                            onClicked: {
-                                                //array_valores_rc
-
-                                                var arrayInt = array_valores_rc.map(v => Number(v) | 0)
-                                                if (!overrideActive) {
-                                                    //if(!override_first_clicked && _activeVehicle.firmwareMajorVersion.toString() == "255"){
-                                                    //    var try_override = _activeVehicle.validateRCChannels(arrayInt);
-                                                    //    console.log("RESULTADO TRY_OVERRIDE: ",try_override)
-                                                    //    if(try_override!==""){
-                                                    //        _alertaForceOverride.text = "ATENÇÃO: "+try_override
-                                                    //        override_first_clicked = true;
-                                                    //        _simText.color = "black"
-                                                    //        btnYes.color = "yellow"
-                                                    //    }
-                                                    //    else{
-                                                    //        overrideActive = true
-                                                    //        confirmOverridePopup.close()
-                                                    //    }
-                                                    //    //confirmOverridePopup.wantsToEnable = false
-                                                    //}
-                                                    //else{
-                                                        console.log("FORÇANDO OVERRIDE")
-                                                        _activeVehicle.overwriteRC(arrayInt, true)
-                                                        overrideActive = true
-                                                        override_first_clicked = false;
-                                                        _simText.color = "white"
-                                                        btnYes.color = "#66bb6a"
-                                                        _alertaForceOverride.text = ""
-                                                        confirmOverridePopup.close()
-                                                    //}
-
-                                                } else {
-                                                    _activeVehicle.stopRCOverride()
-                                                    overrideActive = false
-                                                    override_first_clicked = false;
-                                                    confirmOverridePopup.close()
-                                                }
-                                                //confirmOverridePopup.close()
-                                            }
-                                            hoverEnabled: true
-                                            onEntered: btnYes.selected = true
-                                            onExited: btnYes.selected = false
-                                        }
-                                    }
-
-                                    // BOTÃO "NÃO"
-                                    Rectangle {
-                                        id: btnNo
-                                        property bool selected: false
-                                        width: 150
-                                        height: 80
-                                        radius: 5
-                                        color: "#e53935"
-                                        border.width: selected ? 3 : 0
-                                        border.color: "yellow"
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "NÃO"
-                                            color: "white"
-                                            font.bold: true
-                                        }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            onClicked: {
-                                                confirmOverridePopup.close()
-                                                _simText.color = "white"
-                                                btnYes.color = "#66bb6a"
-                                                _alertaForceOverride.text = ""
-                                                override_first_clicked = false
-                                            }
-                                            onEntered: btnNo.selected = true
-                                            onExited: btnNo.selected = false
-                                        }
-                                    }
-
-                                }
-
-                            }
-                            Text {
-                                id: _alertaForceOverride
-                                text: ""
-                                anchors.bottom: parent.bottom
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                font.pixelSize: 18
-                                wrapMode: Text.WordWrap
-                                horizontalAlignment: Text.AlignHCenter
-                                color: "white"
-                            }
-                        }
-
     }
 }
