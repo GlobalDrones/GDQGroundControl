@@ -360,19 +360,7 @@ Item {
 
     }
 
-    Timer {
-        id: debugTimer
-        interval: 1000   // 0.5s → 10s janela com 20 amostras
-        running: true
-        repeat: true
 
-        onTriggered: {
-            console.log("GIMBAL PITCH: ",_activeVehicle._GD_GimbalPitch.value.toFixed(1),
-                        "| Yaw: ",_activeVehicle._GD_GimbalYaw.value.toFixed(1),
-                        "| Roll:",_activeVehicle._GD_GimbalRoll.value.toFixed(1))
-        }
-
-    }
 
 
 
@@ -773,22 +761,167 @@ Item {
 
             }
         }
-        Text {
-            id: photoText
-            text: "Photo Captured"
-            anchors.horizontalCenter: cameraControlOverlay.horizontalCenter
-            anchors.top: cameraControlOverlay.bottom
-            font.pixelSize: 0//36
-            color: "red"
-            font.bold: true
-            visible: false
-        }
+
 
         Timer {
             id: photoTextTimer
             interval: 1500
             onTriggered: photoText.visible = false
         }
+
+        Popup {
+                                    id: confirmOverridePopup
+                                    modal: true
+                                    focus: true
+                                    width: parent.width * 0.4
+                                    height: parent.height * 0.25
+                                    anchors.centerIn: Overlay.overlay
+
+                                    // popup precisa saber se vai ativar ou desativar
+                                    property bool wantsToEnable: true
+
+                                    background: Rectangle {
+                                        color: "#333"
+                                        radius: 8
+                                        border.color: "white"
+
+                                    }
+
+                                    Column {
+                                        spacing: 20
+                                        anchors.centerIn: parent
+
+
+                                        Text {
+                                            text: !overrideActive
+                                                  ? "Tem certeza que deseja ATIVAR o Override RC?"
+                                                  : "Tem certeza que deseja DESATIVAR o Override RC?"
+                                            color: "white"
+                                            font.pixelSize: 18
+                                            wrapMode: Text.WordWrap
+                                            horizontalAlignment: Text.AlignHCenter
+                                        }
+
+                                        Row {
+                                            spacing: 20
+                                            anchors.horizontalCenter: parent.horizontalCenter
+
+                                            // BOTÃO "SIM"
+                                            Rectangle {
+                                                property bool selected: false
+                                                id: btnYes
+                                                width: 150
+                                                height: 80
+                                                radius: 5
+                                                color: "#66bb6a"
+                                                border.width: selected ? 3 : 0
+                                                border.color: "yellow"
+
+                                                Text {
+                                                    id: _simText
+                                                    anchors.centerIn: parent
+                                                    text: "SIM"
+                                                    color: "white"
+                                                    font.bold: true
+                                                }
+
+                                                MouseArea {
+                                                    anchors.fill: parent
+
+                                                    onClicked: {
+                                                        //array_valores_rc
+
+                                                        var arrayInt = array_valores_rc.map(v => Number(v) | 0)
+                                                        if (!overrideActive) {
+                                                            //if(!override_first_clicked && _activeVehicle.firmwareMajorVersion.toString() == "255"){
+                                                            //    var try_override = _activeVehicle.validateRCChannels(arrayInt);
+                                                            //    console.log("RESULTADO TRY_OVERRIDE: ",try_override)
+                                                            //    if(try_override!==""){
+                                                            //        _alertaForceOverride.text = "ATENÇÃO: "+try_override
+                                                            //        override_first_clicked = true;
+                                                            //        _simText.color = "black"
+                                                            //        btnYes.color = "yellow"
+                                                            //    }
+                                                            //    else{
+                                                            //        overrideActive = true
+                                                            //        confirmOverridePopup.close()
+                                                            //    }
+                                                            //    //confirmOverridePopup.wantsToEnable = false
+                                                            //}
+                                                            //else{
+                                                                console.log("FORÇANDO OVERRIDE")
+                                                                _activeVehicle.overwriteRC(arrayInt, true)
+                                                                overrideActive = true
+                                                                override_first_clicked = false;
+                                                                _simText.color = "white"
+                                                                btnYes.color = "#66bb6a"
+                                                                _alertaForceOverride.text = ""
+                                                                confirmOverridePopup.close()
+                                                            //}
+
+                                                        } else {
+                                                            _activeVehicle.stopRCOverride()
+                                                            overrideActive = false
+                                                            override_first_clicked = false;
+                                                            confirmOverridePopup.close()
+                                                        }
+                                                        //confirmOverridePopup.close()
+                                                    }
+                                                    hoverEnabled: true
+                                                    onEntered: btnYes.selected = true
+                                                    onExited: btnYes.selected = false
+                                                }
+                                            }
+
+                                            // BOTÃO "NÃO"
+                                            Rectangle {
+                                                id: btnNo
+                                                property bool selected: false
+                                                width: 150
+                                                height: 80
+                                                radius: 5
+                                                color: "#e53935"
+                                                border.width: selected ? 3 : 0
+                                                border.color: "yellow"
+
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: "NÃO"
+                                                    color: "white"
+                                                    font.bold: true
+                                                }
+
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    onClicked: {
+                                                        confirmOverridePopup.close()
+                                                        _simText.color = "white"
+                                                        btnYes.color = "#66bb6a"
+                                                        _alertaForceOverride.text = ""
+                                                        override_first_clicked = false
+                                                    }
+                                                    onEntered: btnNo.selected = true
+                                                    onExited: btnNo.selected = false
+                                                }
+                                            }
+
+                                        }
+
+                                    }
+                                    Text {
+                                        id: _alertaForceOverride
+                                        text: ""
+                                        anchors.bottom: parent.bottom
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        font.pixelSize: 18
+                                        wrapMode: Text.WordWrap
+                                        horizontalAlignment: Text.AlignHCenter
+                                        color: "white"
+                                    }
+
+
+            }
 
         Rectangle {
                     id: btnOverride
