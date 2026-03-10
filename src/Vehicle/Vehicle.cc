@@ -746,6 +746,87 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                     values_changed = true;
                 }
 
+                // Canal 1
+                if ((channels_override.chan1_raw > 2000 || channels_override.chan1_raw < 800) && previous_channels.chan1_raw != 65535) {
+                    channels_override.chan1_raw = previous_channels.chan1_raw;
+                }
+
+                // Canal 2
+                if ((channels_override.chan2_raw > 2000 || channels_override.chan2_raw < 800) && previous_channels.chan2_raw != 65535) {
+                    channels_override.chan2_raw = previous_channels.chan2_raw;
+                }
+
+                // Canal 3
+                if ((channels_override.chan3_raw > 2000 || channels_override.chan3_raw < 800) && previous_channels.chan3_raw != 65535) {
+                    channels_override.chan3_raw = previous_channels.chan3_raw;
+                }
+
+                // Canal 4
+                if ((channels_override.chan4_raw > 2000 || channels_override.chan4_raw < 800) && previous_channels.chan4_raw != 65535) {
+                    channels_override.chan4_raw = previous_channels.chan4_raw;
+                }
+
+                // Canal 5
+                if ((channels_override.chan5_raw > 2000 || channels_override.chan5_raw < 800) && previous_channels.chan5_raw != 65535) {
+                    channels_override.chan5_raw = previous_channels.chan5_raw;
+                }
+
+                // Canal 6
+                if ((channels_override.chan6_raw > 2000 || channels_override.chan6_raw < 800) && previous_channels.chan6_raw != 65535) {
+                    channels_override.chan6_raw = previous_channels.chan6_raw;
+                }
+
+                // Canal 7
+                if ((channels_override.chan7_raw > 2000 || channels_override.chan7_raw < 800) && previous_channels.chan7_raw != 65535) {
+                    channels_override.chan7_raw = previous_channels.chan7_raw;
+                }
+
+                // Canal 8
+                if ((channels_override.chan8_raw > 2000 || channels_override.chan8_raw < 800) && previous_channels.chan8_raw != 65535) {
+                    channels_override.chan8_raw = previous_channels.chan8_raw;
+                }
+
+                // Canal 9
+                if ((channels_override.chan9_raw > 2000 || channels_override.chan9_raw < 800) && previous_channels.chan9_raw != 65535) {
+                    channels_override.chan9_raw = previous_channels.chan9_raw;
+                }
+
+                // Canal 10
+                if ((channels_override.chan10_raw > 2000 || channels_override.chan10_raw < 800) && previous_channels.chan10_raw != 65535) {
+                    channels_override.chan10_raw = previous_channels.chan10_raw;
+                }
+
+                // Canal 11
+                if ((channels_override.chan11_raw > 2000 || channels_override.chan11_raw < 800) && previous_channels.chan11_raw != 65535) {
+                    channels_override.chan11_raw = previous_channels.chan11_raw;
+                }
+
+                // Canal 12
+                if ((channels_override.chan12_raw > 2000 || channels_override.chan12_raw < 800) && previous_channels.chan12_raw != 65535) {
+                    channels_override.chan12_raw = previous_channels.chan12_raw;
+                }
+
+                // Canal 13
+                if ((channels_override.chan13_raw > 2000 || channels_override.chan13_raw < 800) && previous_channels.chan13_raw != 65535) {
+                    channels_override.chan13_raw = previous_channels.chan13_raw;
+                }
+
+                // Canal 14
+                if ((channels_override.chan14_raw > 2000 || channels_override.chan14_raw < 800) && previous_channels.chan14_raw != 65535) {
+                    channels_override.chan14_raw = previous_channels.chan14_raw;
+                }
+
+                // Canal 15
+                if ((channels_override.chan15_raw > 2000 || channels_override.chan15_raw < 800) && previous_channels.chan15_raw != 65535) {
+                    channels_override.chan15_raw = previous_channels.chan15_raw;
+                }
+
+                // Canal 16
+                if ((channels_override.chan16_raw > 2000 || channels_override.chan16_raw < 800) && previous_channels.chan16_raw != 65535) {
+                    channels_override.chan16_raw = previous_channels.chan16_raw;
+                }
+
+
                 current_time = QDateTime::currentMSecsSinceEpoch();
                 elapsed_time = current_time - last_sent_time;
                 // bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;

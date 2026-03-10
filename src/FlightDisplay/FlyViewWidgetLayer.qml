@@ -201,7 +201,7 @@ Item {
 
     Rectangle {
         id: resultRectangle
-        anchors.bottom: telemetryPanel.top
+        anchors.bottom: parent.bottom
         width: resultLabel.width + resultLabel.width * 0.4
         height: resultLabel.height + resultLabel.height * 0.4
         anchors.bottomMargin: 10
