@@ -168,6 +168,7 @@ Item {
     property SiYiCamera camera: siyi.camera
 
 
+
     Connections {
         target: camera ? camera : null
 

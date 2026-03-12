@@ -381,6 +381,40 @@ Rectangle {
                                 visible:                tcpUrlLabel.visible
                             }
 
+                            RowLayout {
+                                Layout.columnSpan: 2
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.preferredWidth: _comboFieldWidth
+                                spacing: _margins
+
+                                property string transmitterIp: ""
+
+                                QGCLabel {
+                                    text: qsTr("SiYi TX IP")
+                                }
+
+                                QGCTextField {
+                                    id: transmitterIpField
+                                    Layout.fillWidth: true
+                                    placeholderText: qsTr("192.168.144.12")
+
+                                    onTextChanged: {
+                                        transmitterIp = text
+                                    }
+                                }
+
+                                QGCButton {
+                                    id: setButton
+                                    text: qsTr("Set")
+                                    checkable: false
+
+                                    onClicked: {
+                                        SiYi.transmitter.setIp(transmitterIpField.text)
+                                        setButton.checked = false
+                                    }
+                                }
+                            }
+
                             QGCLabel {
                                 text:                   qsTr("Aspect Ratio")
                                 visible:                !_videoAutoStreamConfig && _isGst && _videoSettings.aspectRatio.visible
