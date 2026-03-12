@@ -123,6 +123,9 @@ const char* Vehicle::_GD_RPM4FactName=               "_GD_RPM4";
 const char* Vehicle::_GD_RPM5FactName=               "_GD_RPM5";
 const char* Vehicle::_GD_RPM6FactName=               "_GD_RPM6";
 const char* Vehicle::_GD_GeneratorRPMFactName=       "_GD_GeneratorRPM";
+const char* Vehicle::_GD_GimbalPitchFactName= "_GD_GimbalPitch";
+const char* Vehicle::_GD_GimbalYawFactName=   "_GD_GimbalYaw";
+const char* Vehicle::_GD_GimbalRollFactName=  "_GD_GimbalRoll";
 const char* Vehicle::_distanceToHomeFactName =      "distanceToHome";
 const char* Vehicle::_missionItemIndexFactName =    "missionItemIndex";
 const char* Vehicle::_headingToNextWPFactName =     "headingToNextWP";
@@ -354,6 +357,9 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _GD_RPM5Fact                           (0, _GD_RPM5FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM6Fact                           (0, _GD_RPM6FactName,           FactMetaData::valueTypeInt16)
     , _GD_GeneratorRPMFact                   (0, _GD_GeneratorRPMFactName,   FactMetaData::valueTypeInt16)
+    , _GD_GimbalPitchFact                    (0, _GD_GimbalPitchFactName,    FactMetaData::valueTypeDouble)
+    , _GD_GimbalYawFact                      (0, _GD_GimbalYawFactName,      FactMetaData::valueTypeDouble)
+    , _GD_GimbalRollFact                     (0, _GD_GimbalRollFactName,     FactMetaData::valueTypeDouble)
     , _distanceToHomeFact                    (0, _distanceToHomeFactName,    FactMetaData::valueTypeDouble)
     , _missionItemIndexFact                  (0, _missionItemIndexFactName,  FactMetaData::valueTypeUint16)
     , _headingToNextWPFact                   (0, _headingToNextWPFactName,   FactMetaData::valueTypeDouble)
@@ -592,7 +598,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         int  count_no_rcv=0;
         _overrideRunning = true;
         while (_overrideRunning) {
-            qDebug("[DEBUG LOOP DA THREAD]");
+            //qDebug("[DEBUG LOOP DA THREAD]");
             // LER DADOS DA SERIAL
 
 
@@ -629,9 +635,73 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             //hex += QString(" | N = %1").arg(n);
             //qDebug() << "[SERIAL HEX]" << hex;}
 
+            // CRC recebido (últimos 2 bytes)
+            // tamanho mínimo para header + CRC
+            if (n < 10) {
+                qWarning() << "[PACKET TOO SMALL]" << n;
+                continue;
+            }
+
+            // valida header
+            if (buf[0] != 0x55 || buf[1] != 0x66) {
+                qWarning() << "[HEADER ERROR]";
+                continue;
+            }
+
+            // CRC recebido e validação do pacote
+            bool valid_crc = false;
+            int i = 0; // índice dentro do buffer
+            while (i + 42 <= n) { // precisa ter pelo menos 42 bytes para um pacote completo
+                // procura header 0x55 0x66
+                if ((uint8_t)buf[i] == 0x55 && (uint8_t)buf[i+1] == 0x66) {
+
+                    const int packet_len = 42; // tamanho fixo do pacote
+
+                    // lê CRC recebido (últimos 2 bytes do pacote)
+                    uint16_t received_crc = ((uint8_t)buf[i + packet_len - 1] << 8) | (uint8_t)buf[i + packet_len - 2];
+
+                    // extrai pacote sem os 2 bytes de CRC
+                    QByteArray packet(reinterpret_cast<char*>(buf + i), packet_len - 2);
+
+                    // calcula CRC
+                    uint16_t calculated_crc = crcAPI.calculate_crc16_python_style(packet);
+
+                    if (received_crc != calculated_crc) {
+                        qWarning() << "[CRC ERROR] recebido:" << received_crc
+                                   << "calculado:" << calculated_crc;
+
+                        QFile file("/sdcard/qgc_debug.txt");
+                        if (file.open(QIODevice::Append)) {
+                            QTextStream out(&file);
+
+                            // Escreve CRC
+                            out << "[CRC ERROR] recebido:" << received_crc
+                                << " calculado:" << calculated_crc << "\n";
+
+                            // Escreve pacote completo em hexadecimal
+                            out << "Pacote recebido: ";
+                            for (int j = 0; j < packet_len; j++) {
+                                out << QString("%1 ").arg((uint8_t)buf[i + j], 2, 16, QLatin1Char('0')).toUpper();
+                            }
+                            out << "\n\n";
+                        }
+                    }
+                    else{ //CRC calculado corretamente
+                        valid_crc = true;
+                    }
+
+                    // avança para o próximo pacote
+                    i += packet_len;
+
+                } else {
+                    // não encontrou header, avança 1 byte
+                    i++;
+                }
+            }
+
             // LÓGICA DE EXTRAÇÃO E ENVIO MAVLINK
             // Verifica se o pacote tem o tamanho mínimo e o magic byte correto (0x42)
-            if (n > 30 && buf[7] == 0x42) {
+            if (n > 30&& buf[0] == 0x55 && buf[1] == 0x66 && buf[7] == 0x42 && valid_crc) {
 
                 // --- 1. EXTRAIR VALORES BRUTOS ---
                 // Canal 1
@@ -739,6 +809,87 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                     ) {
                     values_changed = true;
                 }
+
+                /* // Canal 1
+                if ((channels_override.chan1_raw > 2000 || channels_override.chan1_raw < 900) && previous_channels.chan1_raw != 65535) {
+                    channels_override.chan1_raw = previous_channels.chan1_raw;
+                }
+
+                // Canal 2
+                if ((channels_override.chan2_raw > 2000 || channels_override.chan2_raw < 900) && previous_channels.chan2_raw != 65535) {
+                    channels_override.chan2_raw = previous_channels.chan2_raw;
+                }
+
+                // Canal 3
+                if ((channels_override.chan3_raw > 2000 || channels_override.chan3_raw < 900) && previous_channels.chan3_raw != 65535) {
+                    channels_override.chan3_raw = previous_channels.chan3_raw;
+                }
+
+                // Canal 4
+                if ((channels_override.chan4_raw > 2000 || channels_override.chan4_raw < 900) && previous_channels.chan4_raw != 65535) {
+                    channels_override.chan4_raw = previous_channels.chan4_raw;
+                }
+
+                // Canal 5
+                if ((channels_override.chan5_raw > 2000 || channels_override.chan5_raw < 900) && previous_channels.chan5_raw != 65535) {
+                    channels_override.chan5_raw = previous_channels.chan5_raw;
+                }
+
+                // Canal 6
+                if ((channels_override.chan6_raw > 2000 || channels_override.chan6_raw < 900) && previous_channels.chan6_raw != 65535) {
+                    channels_override.chan6_raw = previous_channels.chan6_raw;
+                }
+
+                // Canal 7
+                if ((channels_override.chan7_raw > 2000 || channels_override.chan7_raw < 900) && previous_channels.chan7_raw != 65535) {
+                    channels_override.chan7_raw = previous_channels.chan7_raw;
+                }
+
+                // Canal 8
+                if ((channels_override.chan8_raw > 2000 || channels_override.chan8_raw < 900) && previous_channels.chan8_raw != 65535) {
+                    channels_override.chan8_raw = previous_channels.chan8_raw;
+                }
+
+                // Canal 9
+                if ((channels_override.chan9_raw > 2000 || channels_override.chan9_raw < 900) && previous_channels.chan9_raw != 65535) {
+                    channels_override.chan9_raw = previous_channels.chan9_raw;
+                }
+
+                // Canal 10
+                if ((channels_override.chan10_raw > 2000 || channels_override.chan10_raw < 900) && previous_channels.chan10_raw != 65535) {
+                    channels_override.chan10_raw = previous_channels.chan10_raw;
+                }
+
+                // Canal 11
+                if ((channels_override.chan11_raw > 2000 || channels_override.chan11_raw < 900) && previous_channels.chan11_raw != 65535) {
+                    channels_override.chan11_raw = previous_channels.chan11_raw;
+                }
+
+                // Canal 12
+                if ((channels_override.chan12_raw > 2000 || channels_override.chan12_raw < 900) && previous_channels.chan12_raw != 65535) {
+                    channels_override.chan12_raw = previous_channels.chan12_raw;
+                }
+
+                // Canal 13
+                if ((channels_override.chan13_raw > 2000 || channels_override.chan13_raw < 900) && previous_channels.chan13_raw != 65535) {
+                    channels_override.chan13_raw = previous_channels.chan13_raw;
+                }
+
+                // Canal 14
+                if ((channels_override.chan14_raw > 2000 || channels_override.chan14_raw < 900) && previous_channels.chan14_raw != 65535) {
+                    channels_override.chan14_raw = previous_channels.chan14_raw;
+                }
+
+                // Canal 15
+                if ((channels_override.chan15_raw > 2000 || channels_override.chan15_raw < 900) && previous_channels.chan15_raw != 65535) {
+                    channels_override.chan15_raw = previous_channels.chan15_raw;
+                }
+
+                // Canal 16
+                if ((channels_override.chan16_raw > 2000 || channels_override.chan16_raw < 900) && previous_channels.chan16_raw != 65535) {
+                    channels_override.chan16_raw = previous_channels.chan16_raw;
+                }
+*/
 
                 current_time = QDateTime::currentMSecsSinceEpoch();
                 elapsed_time = current_time - last_sent_time;
@@ -1215,7 +1366,10 @@ void Vehicle::_commonInit()
     _addFact(&_GD_RPM4Fact,             _GD_RPM4FactName);
     _addFact(&_GD_RPM5Fact,             _GD_RPM5FactName);
     _addFact(&_GD_RPM6Fact,             _GD_RPM6FactName);
-    _addFact(&_GD_GeneratorRPMFact,         _GD_GeneratorRPMFactName);
+    _addFact(&_GD_GeneratorRPMFact,     _GD_GeneratorRPMFactName);
+    _addFact(&_GD_GimbalPitchFact ,     _GD_GimbalPitchFactName);
+    _addFact(&_GD_GimbalYawFact ,       _GD_GimbalYawFactName);
+    _addFact(&_GD_GimbalRollFact ,      _GD_GimbalRollFactName);
     _addFact(&_distanceToHomeFact,      _distanceToHomeFactName);
     _addFact(&_missionItemIndexFact,    _missionItemIndexFactName);
     _addFact(&_headingToNextWPFact,     _headingToNextWPFactName);
@@ -1650,15 +1804,21 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             UNKNOWN = 0,
             TEMP1,
             TEMP2,
-            TEMP3
+            TEMP3,
+            TEMPGD25,
+            RPM_WIND
         };
+
+
 
         mavlink_named_value_float_t msg_nvf;
         mavlink_msg_named_value_float_decode(&message, &msg_nvf);
         TempID id = UNKNOWN;
-        if (strncmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
-        else if (strncmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
-        else if (strncmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
+        if (strncasecmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
+        else if (strncasecmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
+        else if (strncasecmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
+        else if (strncasecmp(msg_nvf.name, "TempICE", 10) == 0) id = TEMPGD25;
+        else if (strncasecmp(msg_nvf.name, "PWM_VENTO", 10) == 0) id = RPM_WIND;
 
         switch(id) {
         case TEMP1:
@@ -1673,10 +1833,30 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
             _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
+        case TEMPGD25:
+            _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
+            break;
+        case RPM_WIND:
+            _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
+            break;
         default:
             //qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
             break;
         }
+        break;
+    }
+    case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
+    {
+        mavlink_gimbal_device_attitude_status_t stat_gimbal;
+        mavlink_msg_gimbal_device_attitude_status_decode(&message, &stat_gimbal);
+        QQuaternion quaternion(stat_gimbal.q[0],stat_gimbal.q[1],stat_gimbal.q[2],stat_gimbal.q[3]);
+        QVector3D euler_angles = quaternion.toEulerAngles();
+        _GD_GimbalRollFact.setRawValue(euler_angles.x());
+        _GD_GimbalPitchFact.setRawValue(euler_angles.y());
+        _GD_GimbalYawFact.setRawValue(euler_angles.z());
+
+        qDebug()<<"Quart "<<stat_gimbal.q[0]<<stat_gimbal.q[1]<<stat_gimbal.q[2]<<stat_gimbal.q[3];
+        qDebug()<<"euler "<<euler_angles.x()<<euler_angles.y()<<euler_angles.z();
         break;
     }
 
@@ -1777,7 +1957,9 @@ void Vehicle::_handleCameraImageCaptured(const mavlink_message_t& message)
     qCDebug(VehicleLog) << "_handleCameraFeedback coord:index" << imageCoordinate << feedback.image_index << feedback.capture_result;
     if (feedback.capture_result == 1) {
         _cameraTriggerPoints.append(new QGCQGeoCoordinate(imageCoordinate, this));
+
     }
+    emit photoTaken();
 }
 
 void Vehicle::_chunkedStatusTextTimeout(void)
@@ -5076,4 +5258,5 @@ void Vehicle::triggerSimpleCamera()
                    true,                        // show errors
                    0.0, 0.0, 0.0, 0.0,          // param 1-4 unused
                    1.0);                        // trigger camera
+    emit photoTaken();
 }

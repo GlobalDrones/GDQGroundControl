@@ -158,7 +158,7 @@ uint8_t crc_check_16bites(uint8_t* pbuf, uint32_t len,uint32_t* p_result)
 
 
 // Implementação direta do loop Python: crc16_ccitt_init0
-uint16_t calculate_crc16_python_style(const QByteArray &data)
+uint16_t SiYiCrcApi::calculate_crc16_python_style(const QByteArray &data)
 {
     uint16_t crc = 0x0000; // init = 0
     uint16_t poly = 0x1021;

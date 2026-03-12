@@ -1018,52 +1018,56 @@ Item {
                 ColumnLayout {
                     id: motorTempInfoColumn
                     anchors.fill: textBoxMotorTempInfo
-                    spacing:                0
+                    spacing: 0
                     visible: textBoxMotorTempInfo.visible
 
-
                     Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _motor_temp.toString()+"°C"
+                        id: textT2
+                        Layout.alignment: Text.AlignHCenter
+                        color: "white"
                         font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                    }
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   "RPM: "
-                        font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                    }
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _motor_rpm.toFixed(0)
-                        font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                    }
-                    Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   _motor_temp.toString()+"°C"
-                        font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                        visible: _GD60? true:false
+                        font.pixelSize: 15
+                        text: "T2: " + _activeVehicle._gd60_Sensor2Fact.rawValue.toString() + "°C"
                     }
 
                     Text {
-                        Layout.alignment:       Text.AlignHCenter
-                        verticalAlignment:      Text.AlignVCenter
-                        color:                  "White"
-                        text:                   "RPM: "+_motor_rpm.toFixed(0)
+                        id: textT3
+                        Layout.alignment: Text.AlignHCenter
+                        color: "white"
                         font.bold: true
-                        font.pixelSize:         (_GD60? 15:20)
-                        visible: _GD60? true:false
+                        font.pixelSize: 15
+                        text: "T3: " + _activeVehicle._gd60_Sensor3Fact.rawValue.toString() + "°C"
+                    }
+
+                    Text {
+                        id: textRPM
+                        Layout.alignment: Text.AlignHCenter
+                        color: "white"
+                        font.bold: true
+                        font.pixelSize: 15
+                        text: "RPM: " + _activeVehicle._gd60_Sensor1Fact.rawValue.toString()
+                    }
+
+                    // --- CONEXÕES ---
+                    Connections {
+                        target: _activeVehicle._gd60_Sensor2Fact
+                        onRawValueChanged: {
+                            textT2.text = "T2: " + _activeVehicle._gd60_Sensor2Fact.rawValue.toString() + "°C"
+                        }
+                    }
+
+                    Connections {
+                        target: _activeVehicle._gd60_Sensor3Fact
+                        onRawValueChanged: {
+                            textT3.text = "T3: " + _activeVehicle._gd60_Sensor3Fact.rawValue.toString() + "°C"
+                        }
+                    }
+
+                    Connections {
+                        target: _activeVehicle._gd60_Sensor1Fact
+                        onRawValueChanged: {
+                            textRPM.text = "RPM: " + _activeVehicle._gd60_Sensor1Fact.rawValue.toString()
+                        }
                     }
                 }
 
