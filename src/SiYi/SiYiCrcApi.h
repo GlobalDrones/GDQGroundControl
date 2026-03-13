@@ -15,6 +15,7 @@ public:
     static quint32 calculateCrc32(const QByteArray &bytes);
     QByteArray make_remote_channel_cmd(uint8_t cmd_type, uint8_t freq);
     uint16_t calculate_crc16_python_style(const QByteArray &data);
+    uint16_t calculate_crc16_pointer(const uint8_t* data, int len);
     uint16_t _nextSeq = 0; // Membro para rastrear a sequência
 };
 

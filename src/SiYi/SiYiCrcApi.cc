@@ -177,6 +177,29 @@ uint16_t SiYiCrcApi::calculate_crc16_python_style(const QByteArray &data)
     return crc & 0xFFFF;
 }
 
+uint16_t SiYiCrcApi::calculate_crc16_pointer(const uint8_t* data, int len)
+{
+    uint16_t crc = 0x0000; // init = 0
+    const uint16_t poly = 0x1021;
+
+    for (int i = 0; i < len; ++i) {
+        uint8_t b = data[i];
+        crc ^= (static_cast<uint16_t>(b) << 8);
+
+        for (int j = 0; j < 8; ++j) {
+            if (crc & 0x8000) {
+                crc = (crc << 1) ^ poly;
+            } else {
+                crc <<= 1;
+            }
+        }
+
+        crc &= 0xFFFF;
+    }
+
+    return crc;
+}
+
 QByteArray SiYiCrcApi::make_remote_channel_cmd(uint8_t cmd_type, uint8_t freq)
 {
     QByteArray header;
