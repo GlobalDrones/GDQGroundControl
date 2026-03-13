@@ -180,7 +180,7 @@ Item {
     property bool override_first_clicked: false;
 
     property var lastRcOverrideTimestamp;
-    property var activeOverrideID;
+    property var activeOverrideID: -1;
 
     property var gcsID: -1;
 
@@ -1913,43 +1913,43 @@ Item {
         }
 
         Rectangle {
-                    id: btnOverride
-                    width: parent.width*0.15
-                    height: parent.height*0.1
-                    radius: 5
-                    color: overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "red":"grey") : "green"  // cor dinâmica. Ativado mas
-                    border.color: "black"
-                    border.width: 1
-                    //anchors.horizontalCenter:  parent.horizontalCenter
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottom: parent.bottomz
-                    z: _fullItemZorder + 10
+                            id: btnOverride
+                            width: parent.width*0.15
+                            height: parent.height*0.1
+                            radius: 5
+                            color: overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "red":"grey") : "green"  // cor dinâmica. Ativado mas
+                            border.color: "black"
+                            border.width: 1
+                            //anchors.horizontalCenter:  parent.horizontalCenter
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottomz
+                            z: _fullItemZorder + 10
 
-                    // texto centralizado
-                    Text {
-                        anchors.centerIn: parent
-                        text:  overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "Stop Override": "Active by:"+activeOverrideID):"Override RC"
-                        color: "white"
-                        font.bold: true
-                    }
-
-                    // efeito de clique
-                    MouseArea {
-                            anchors.fill: parent
-                            hoverEnabled: (activeOverrideID===-1 || activeOverrideID===gcsID)
-                           //cursorShape: Qt.PointingHandCursor
-
-                            onClicked: {
-                                // botão apenas abre popup
-                               // if (activeOverrideID === -1 || activeOverrideID === gcsID) {
-                                        confirmOverridePopup.wantsToEnable = !overrideActive
-                                        confirmOverridePopup.open()
-                               //     } else {
-                               //         console.log("Clique bloqueado: Outro ID tem o controle:", activeOverrideID)
-                               //     }
+                            // texto centralizado
+                            Text {
+                                anchors.centerIn: parent
+                                text:  overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "Stop Override": "Active by:"+activeOverrideID):"Override RC"
+                                color: "white"
+                                font.bold: true
                             }
+
+                            // efeito de clique
+                            MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: (activeOverrideID===-1 || activeOverrideID===gcsID)
+                                   //cursorShape: Qt.PointingHandCursor
+
+                                    onClicked: {
+                                        // botão apenas abre popup
+                                        if (activeOverrideID === -1 || activeOverrideID === gcsID) {
+                                                confirmOverridePopup.wantsToEnable = !overrideActive
+                                                confirmOverridePopup.open()
+                                            } else {
+                                                console.log("Clique bloqueado: Outro ID tem o controle:", activeOverrideID)
+                                            }
+                                    }
+                                }
                         }
-                }
 
         Popup {
                     id: confirmOverridePopup

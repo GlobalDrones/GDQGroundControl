@@ -31,6 +31,7 @@ ApplicationWindow {
     visible:        true
 
     property SiYiCamera siYiCamera: SiYi.camera
+    property var versao_software: "Versão 0.7"
 
     Component.onCompleted: {
         //-- Full screen on mobile or tiny screens
@@ -458,7 +459,7 @@ ApplicationWindow {
 
                         QGCLabel {
                             id:                     versionLabel
-                            text:                   qsTr("%1 Version").arg(QGroundControl.appName)
+                            text:                   qsTr("QGroundControl GD30 - ")
                             font.pointSize:         ScreenTools.smallFontPointSize
                             wrapMode:               QGCLabel.WordWrap
                             Layout.maximumWidth:    parent.width
@@ -466,7 +467,7 @@ ApplicationWindow {
                         }
 
                         QGCLabel {
-                            text:                   QGroundControl.qgcVersion
+                            text:                   qsTr(versao_software)
                             font.pointSize:         ScreenTools.smallFontPointSize
                             wrapMode:               QGCLabel.WrapAnywhere
                             Layout.maximumWidth:    parent.width

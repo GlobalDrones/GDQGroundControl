@@ -427,7 +427,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
     _overrideRunning = true;
 
     setJoystickEnabled(false);
-    _joystickManager->activeJoystick()->terminate();
+    //_joystickManager->activeJoystick()->terminate();
 
     // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
     mavlink_rc_channels_override_t rc_reset;
@@ -604,100 +604,81 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
 
             int n = recvfrom(sock, buf, sizeof(buf), 0, (sockaddr*)&from, &fromLen);
-            if (n > 0) {
-                QString hex;
-                for (int i = 0; i < n; i++) {
-                    hex += QString("%1 ")
-                    .arg(buf[i], 2, 16, QLatin1Char('0'));
-                }
-                qWarning() << "[UDP RX]" << hex;
-            }
-            else if (n == 0) {
-                qWarning() << "[UDP RX] datagrama vazio (0 bytes)";
-            }
-            else { // n < 0
+
+            if (n < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    // normal em socket não-bloqueante
+                    QThread::msleep(20);
+                    continue;
                 } else {
-                    qWarning() << "[UDP RX ERROR]" << strerror(errno);
+                    QThread::msleep(20);
+                    continue;
                 }
             }
 
+            count_no_rcv = 0;
 
 
 
-            //if(n>0){
-            //QString hex;
-            //for (int i = 0; i < n; i++) {
-            //    hex += QString("%1 ").arg(buf[i], 2, 16, QLatin1Char('0'));
 
-            //}
-            //hex += QString(" | N = %1").arg(n);
-            //qDebug() << "[SERIAL HEX]" << hex;}
 
-            // CRC recebido (últimos 2 bytes)
-            // tamanho mínimo para header + CRC
-            if (n < 10) {
-                qWarning() << "[PACKET TOO SMALL]" << n;
-                continue;
-            }
+           // tamanho mínimo para header + CRC
+               if (n < 10) {
+                   qWarning() << "[PACKET TOO SMALL]" << n;
+                   continue;
+               }
 
-            // valida header
-            if (buf[0] != 0x55 || buf[1] != 0x66) {
-                qWarning() << "[HEADER ERROR]";
-                continue;
-            }
+               // valida header
+               if (buf[0] != 0x55 || buf[1] != 0x66) {
+                   qWarning() << "[HEADER ERROR]";
+                   continue;
+               }
 
-            // CRC recebido e validação do pacote
-            bool valid_crc = false;
-            int i = 0; // índice dentro do buffer
-            while (i + 42 <= n) { // precisa ter pelo menos 42 bytes para um pacote completo
-                // procura header 0x55 0x66
-                if ((uint8_t)buf[i] == 0x55 && (uint8_t)buf[i+1] == 0x66) {
+               // CRC recebido e validação do pacote
+               bool valid_crc = false;
 
-                    const int packet_len = 42; // tamanho fixo do pacote
+                   if (n > 256) n = 256;
 
-                    // lê CRC recebido (últimos 2 bytes do pacote)
-                    uint16_t received_crc = ((uint8_t)buf[i + packet_len - 1] << 8) | (uint8_t)buf[i + packet_len - 2];
+                   if (n < 42)
+                       continue;
 
-                    // extrai pacote sem os 2 bytes de CRC
-                    QByteArray packet(reinterpret_cast<char*>(buf + i), packet_len - 2);
+                   const int packet_len = 42;
 
-                    // calcula CRC
-                    uint16_t calculated_crc = crcAPI.calculate_crc16_python_style(packet);
+                   int i = 0;
 
-                    if (received_crc != calculated_crc) {
-                        qWarning() << "[CRC ERROR] recebido:" << received_crc
-                                   << "calculado:" << calculated_crc;
+                   while (i + packet_len <= n) {
 
-                        QFile file("/sdcard/qgc_debug.txt");
-                        if (file.open(QIODevice::Append)) {
-                            QTextStream out(&file);
+                       if (i + 1 >= n)
+                           break;
 
-                            // Escreve CRC
-                            out << "[CRC ERROR] recebido:" << received_crc
-                                << " calculado:" << calculated_crc << "\n";
+                       if ((uint8_t)buf[i] == 0x55 && (uint8_t)buf[i+1] == 0x66) {
 
-                            // Escreve pacote completo em hexadecimal
-                            out << "Pacote recebido: ";
-                            for (int j = 0; j < packet_len; j++) {
-                                out << QString("%1 ").arg((uint8_t)buf[i + j], 2, 16, QLatin1Char('0')).toUpper();
-                            }
-                            out << "\n\n";
-                        }
-                    }
-                    else{ //CRC calculado corretamente
-                        valid_crc = true;
-                    }
+                           uint16_t received_crc =
+                                   ((uint8_t)buf[i + packet_len - 1] << 8) |
+                                   (uint8_t)buf[i + packet_len - 2];
 
-                    // avança para o próximo pacote
-                    i += packet_len;
+                           uint16_t calculated_crc =
+                               crcAPI.calculate_crc16_pointer(buf + i, packet_len - 2);
 
-                } else {
-                    // não encontrou header, avança 1 byte
-                    i++;
-                }
-            }
+                           if (received_crc == calculated_crc) {
+                                valid_crc = true;
+                                break;
+                               //qWarning() << "[CRC ERROR] recebido:" << received_crc
+                               //           << "calculado:" << calculated_crc;
+
+
+                           }
+
+
+
+                           i += packet_len;
+
+                       } else {
+                           i++;
+                       }
+                   }
+
+
+
 
             // LÓGICA DE EXTRAÇÃO E ENVIO MAVLINK
             // Verifica se o pacote tem o tamanho mínimo e o magic byte correto (0x42)
@@ -810,90 +791,14 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                     values_changed = true;
                 }
 
-                /* // Canal 1
-                if ((channels_override.chan1_raw > 2000 || channels_override.chan1_raw < 900) && previous_channels.chan1_raw != 65535) {
-                    channels_override.chan1_raw = previous_channels.chan1_raw;
-                }
 
-                // Canal 2
-                if ((channels_override.chan2_raw > 2000 || channels_override.chan2_raw < 900) && previous_channels.chan2_raw != 65535) {
-                    channels_override.chan2_raw = previous_channels.chan2_raw;
-                }
-
-                // Canal 3
-                if ((channels_override.chan3_raw > 2000 || channels_override.chan3_raw < 900) && previous_channels.chan3_raw != 65535) {
-                    channels_override.chan3_raw = previous_channels.chan3_raw;
-                }
-
-                // Canal 4
-                if ((channels_override.chan4_raw > 2000 || channels_override.chan4_raw < 900) && previous_channels.chan4_raw != 65535) {
-                    channels_override.chan4_raw = previous_channels.chan4_raw;
-                }
-
-                // Canal 5
-                if ((channels_override.chan5_raw > 2000 || channels_override.chan5_raw < 900) && previous_channels.chan5_raw != 65535) {
-                    channels_override.chan5_raw = previous_channels.chan5_raw;
-                }
-
-                // Canal 6
-                if ((channels_override.chan6_raw > 2000 || channels_override.chan6_raw < 900) && previous_channels.chan6_raw != 65535) {
-                    channels_override.chan6_raw = previous_channels.chan6_raw;
-                }
-
-                // Canal 7
-                if ((channels_override.chan7_raw > 2000 || channels_override.chan7_raw < 900) && previous_channels.chan7_raw != 65535) {
-                    channels_override.chan7_raw = previous_channels.chan7_raw;
-                }
-
-                // Canal 8
-                if ((channels_override.chan8_raw > 2000 || channels_override.chan8_raw < 900) && previous_channels.chan8_raw != 65535) {
-                    channels_override.chan8_raw = previous_channels.chan8_raw;
-                }
-
-                // Canal 9
-                if ((channels_override.chan9_raw > 2000 || channels_override.chan9_raw < 900) && previous_channels.chan9_raw != 65535) {
-                    channels_override.chan9_raw = previous_channels.chan9_raw;
-                }
-
-                // Canal 10
-                if ((channels_override.chan10_raw > 2000 || channels_override.chan10_raw < 900) && previous_channels.chan10_raw != 65535) {
-                    channels_override.chan10_raw = previous_channels.chan10_raw;
-                }
-
-                // Canal 11
-                if ((channels_override.chan11_raw > 2000 || channels_override.chan11_raw < 900) && previous_channels.chan11_raw != 65535) {
-                    channels_override.chan11_raw = previous_channels.chan11_raw;
-                }
-
-                // Canal 12
-                if ((channels_override.chan12_raw > 2000 || channels_override.chan12_raw < 900) && previous_channels.chan12_raw != 65535) {
-                    channels_override.chan12_raw = previous_channels.chan12_raw;
-                }
-
-                // Canal 13
-                if ((channels_override.chan13_raw > 2000 || channels_override.chan13_raw < 900) && previous_channels.chan13_raw != 65535) {
-                    channels_override.chan13_raw = previous_channels.chan13_raw;
-                }
-
-                // Canal 14
-                if ((channels_override.chan14_raw > 2000 || channels_override.chan14_raw < 900) && previous_channels.chan14_raw != 65535) {
-                    channels_override.chan14_raw = previous_channels.chan14_raw;
-                }
-
-                // Canal 15
-                if ((channels_override.chan15_raw > 2000 || channels_override.chan15_raw < 900) && previous_channels.chan15_raw != 65535) {
-                    channels_override.chan15_raw = previous_channels.chan15_raw;
-                }
-
-                // Canal 16
-                if ((channels_override.chan16_raw > 2000 || channels_override.chan16_raw < 900) && previous_channels.chan16_raw != 65535) {
-                    channels_override.chan16_raw = previous_channels.chan16_raw;
-                }
-*/
 
                 current_time = QDateTime::currentMSecsSinceEpoch();
                 elapsed_time = current_time - last_sent_time;
                 // bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
+                if (elapsed_time < MIN_LOOP_MS) {
+                    continue;
+                }
                 needs_send = values_changed || (elapsed_time >= MIN_LOOP_MS);
                 //if (values_changed || safety_interval_passed) { //Aqui é o IF original caso seja necessário um envio periódico mesmo que redundante
                 if (needs_send) { //esse aqui śo leva em conta o envio de mudanças, sem redundancias
@@ -906,31 +811,37 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                         &channels_override // ENVIAR O ESTADO ATUAL!
                         );
 
-                    sendMessageOnLinkThreadSafe(vehicleLinkManager()->primaryLink().lock().get(),msg);
+                    auto link = vehicleLinkManager()->primaryLink().lock();
+                    if (!link) {
+                        QThread::msleep(20);
+                        continue;
+                    }
+
+                    sendMessageOnLinkThreadSafe(link.get(), msg);
 
                     // 3d. Atualizar o estado e o tempo SOMENTE se houver envio
                     previous_channels = channels_override; // O estado atual se torna o estado anterior
                     last_sent_time = current_time; // Atualiza o tempo do último envio
 
                     // Log dos dados (opcional, mas útil para debug)
-                    qWarning() << "[MAVLink RC OUT] Ch1/Ch2/Ch3/Ch4:"
-                               << channels_override.chan1_raw << "/"
-                               << channels_override.chan2_raw << "/"
-                               << channels_override.chan3_raw << "/"
-                               << channels_override.chan4_raw << "/"
-                               << channels_override.chan5_raw << "/"
-                               << channels_override.chan6_raw << "/"
-                               << channels_override.chan7_raw << "/"
-                               << channels_override.chan8_raw << "/"
-                               << channels_override.chan9_raw << "/"
-                               << channels_override.chan10_raw << "/"
-                               << channels_override.chan11_raw << "/"
-                               << channels_override.chan12_raw << "/"
-                               << channels_override.chan13_raw << "/"
-                               << channels_override.chan14_raw << "/"
-                               << channels_override.chan15_raw << "/"
-                               << channels_override.chan16_raw
-                               << (values_changed ? " (MUDANÇA)" : " (KEEP-ALIVE)");
+                    //qWarning() << "[MAVLink RC OUT] Ch1/Ch2/Ch3/Ch4:"
+                    //           << channels_override.chan1_raw << "/"
+                    //           << channels_override.chan2_raw << "/"
+                    //           << channels_override.chan3_raw << "/"
+                    //           << channels_override.chan4_raw << "/"
+                    //           << channels_override.chan5_raw << "/"
+                    //           << channels_override.chan6_raw << "/"
+                    //           << channels_override.chan7_raw << "/"
+                    //           << channels_override.chan8_raw << "/"
+                    //           << channels_override.chan9_raw << "/"
+                    //           << channels_override.chan10_raw << "/"
+                    //           << channels_override.chan11_raw << "/"
+                    //           << channels_override.chan12_raw << "/"
+                    //           << channels_override.chan13_raw << "/"
+                    //           << channels_override.chan14_raw << "/"
+                    //           << channels_override.chan15_raw << "/"
+                    //           << channels_override.chan16_raw
+                    //           << (values_changed ? " (MUDANÇA)" : " (KEEP-ALIVE)");
                 }
                 // --- FIM DA LÓGICA DE ENVIO OTIMIZADA ---
 
@@ -941,6 +852,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             else{
                 count_no_rcv++;
                 if(count_no_rcv>=4){ //200ms sem receber dados na porta serial -> reenviar start da porta
+                    count_no_rcv=0;
                     for (int i = 0; i < 3; i++) {
                         sendto(sock, openCmd.data(), openCmd.size(), 0, (sockaddr*)&unirc, sizeof(unirc));
                         usleep(20000);
@@ -949,7 +861,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             }
 
             // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio) deletar para teste depois
-            QThread::msleep(1);
+            QThread::msleep(20);
         }
         close(sock);
 
@@ -1129,9 +1041,9 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override) {
 
         unsigned char buf[256];
 
-        // =====================================================
-        // WINDOWS (WIN32)
-        // =====================================================
+// =====================================================
+// WINDOWS (WIN32)
+// =====================================================
         const char* dev = "COM3"; // AJUSTE AQUI
 
         HANDLE hSerial = CreateFileA(
@@ -1805,24 +1717,20 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             TEMP1,
             TEMP2,
             TEMP3,
-            TEMPGD25,
-            RPM_WIND
+            TEMPGD25
         };
-
-
 
         mavlink_named_value_float_t msg_nvf;
         mavlink_msg_named_value_float_decode(&message, &msg_nvf);
         TempID id = UNKNOWN;
-        if (strncasecmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
-        else if (strncasecmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
-        else if (strncasecmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
-        else if (strncasecmp(msg_nvf.name, "TempICE", 10) == 0) id = TEMPGD25;
-        else if (strncasecmp(msg_nvf.name, "PWM_VENTO", 10) == 0) id = RPM_WIND;
+        if (strncmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
+        else if (strncmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
+        else if (strncmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
+        else if (strncmp(msg_nvf.name, "TempICE", 10) == 0) id = TEMPGD25;
 
         switch(id) {
         case TEMP1:
-            // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
+           // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
         case TEMP2:
@@ -1834,9 +1742,6 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
         case TEMPGD25:
-            _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
-            break;
-        case RPM_WIND:
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
         default:
