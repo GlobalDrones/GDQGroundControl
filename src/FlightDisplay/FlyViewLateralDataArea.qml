@@ -29,14 +29,17 @@ import "qrc:/qml/QGroundControl/FlightDisplay"
 
 Item {
     id: lateralDataArea
-
-    // ================================
-    // INPUTS
-    // ================================
     property real toolsMargin
     property bool _androidBuild
     property var  _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
-
+    property int horas_restantes:0
+    property int minutos_restantes:0
+    property int segundos_restantes:0
+    property string horas_restantes_string:"00"
+    property string minutos_restantes_string:"00"
+    property string segundos_restantes_string:"00"
+    property var _gasolina
+    property int _gasolineIndex: 1
     property real sectionHeight: height / 7
 
     function safeValue(fact, unit) {
@@ -49,6 +52,29 @@ Item {
         if (!_activeVehicle || !fact || fact.value === undefined || isNaN(fact.value))
             return NaN
         return fact.value
+    }
+    Timer{
+        id: gasolineValuesUpdater
+        interval: 100
+        running: true
+        repeat: true
+
+        onTriggered:{
+            _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.value
+            horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
+            minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
+            segundos_restantes = (7200 * (_gasolina/100))%60
+
+
+
+            if(horas_restantes<10) {horas_restantes_string = "0"+horas_restantes.toString()}
+            else {horas_restantes_string = horas_restantes.toString()}
+            if(minutos_restantes < 10){ minutos_restantes_string = "0" +minutos_restantes.toString()}
+            else {minutos_restantes_string = minutos_restantes.toString()}
+            if(segundos_restantes <10) {segundos_restantes_string = "0" + segundos_restantes.toString()}
+            else {segundos_restantes_string = segundos_restantes.toString()}
+
+        }
     }
 
     Rectangle {
@@ -317,7 +343,7 @@ Item {
         }
     }
 
-    Text {
+    /*Text {
         id: minSpeedText
         text: "Min Speed: 0km/h"
         anchors.left: parent.left
@@ -339,7 +365,7 @@ Item {
         color: qgcPal.toolbarBackground
         z:1000
         Component.onCompleted: aircraftAndRotorsLoader.active = true
-    }
+    }*/
 
 
 

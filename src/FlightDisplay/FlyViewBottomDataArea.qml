@@ -11,16 +11,10 @@ import QGroundControl.Vehicle 1.0
 Item {
     id: bottomDataArea
 
-    // ================================
-    // INPUTS
-    // ================================
     property real toolsMargin
     property bool _androidBuild
     property var  _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
 
-    // ================================
-    // CACHE (UPDATED VIA CONNECTIONS)
-    // ================================
     property real battery1Pct: 0
     property real battery1Voltage: 0
     property real battery1Current: 0
