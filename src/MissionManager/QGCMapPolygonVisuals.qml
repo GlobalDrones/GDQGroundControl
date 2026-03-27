@@ -227,13 +227,17 @@ Item {
         }
     }
 
-    Popup { // Changed from QGCPopup to standard Qt Quick Controls Popup
+    Popup {
         id: spacingInputPopup
+
         modal: true
         focus: true
-        //title: qsTr("Set Polygon Spacing")
-        width: 300 // Use fixed size since ScreenTools may not be available outside QGC controls
-        height: 200
+
+        width: Overlay.overlay.width * 0.4
+        height: Overlay.overlay.height * 0.25
+
+        x: (Overlay.overlay.width - width) / 2   // center horizontally
+        y: Overlay.overlay.height * 0.05         // near top
 
         property var selectedFile: "" // To store the file path temporarily
 
@@ -243,15 +247,20 @@ Item {
             spacing: 10
             //padding: 15
 
-            Label { // Standard QtQuick.Controls Label
-                text: qsTr("Enter desired spacing value:")
+            Label {
+                text: qsTr("Enter desired spacing value(m):")
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignHCenter
+                horizontalAlignment: Text.AlignHCenter   // centers the text itself
             }
 
-            TextInput { // Changed from QGCTextInput to standard TextInput
+            TextField  { // Changed from QGCTextInput to standard TextInput
                 id: spacingTextInput
                 Layout.fillWidth: true
+                Layout.alignment: Qt.AlignHCenter
+                horizontalAlignment: TextInput.AlignHCenter
                 //placeholderText: qsTr("e.g., 5.0 meters")
-                text: "5.0" // Suggested default value
+                text: "5" // Suggested default value
                 font.pixelSize: 15 // Set font size manually for visibility
 
                 // Note: Use TextField instead of TextInput if you need a visible border/background by default.

@@ -1183,8 +1183,8 @@ void QGCMapPolygon::selectVertex(int index)
     } else {
         if (!qgcApp()->runningUnitTests()) {
             qCWarning(ParameterManagerLog)
-                    << QString("QGCMapPolygon: Selected vertex index (%1) is out of bounds! "
-                               "Polygon vertices indexes range is [%2..%3].").arg(index).arg(0).arg(count()-1);
+            << QString("QGCMapPolygon: Selected vertex index (%1) is out of bounds! "
+                       "Polygon vertices indexes range is [%2..%3].").arg(index).arg(0).arg(count()-1);
         }
         _selectedVertexIndex = -1;   // deselect vertex
     }
