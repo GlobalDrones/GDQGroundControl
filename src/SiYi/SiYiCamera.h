@@ -183,10 +183,11 @@ private:
     void messageHandle0xb0(const QByteArray &msg);
     void messageHandle0xba(const QByteArray &msg);
     void messageHandle0xbb(const QByteArray &msg);
+    void messageHandle0x0b(const QByteArray &msg);
 
 private:
     bool isRecording_{false};
-    bool isRecording(){return isRecording_;}
+    bool isRecording()const {return isRecording_;}
     //Q_SIGNAL void isRecordingChanged();
 
     int zoomMultiple_{1};
