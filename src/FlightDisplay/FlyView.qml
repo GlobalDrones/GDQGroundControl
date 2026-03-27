@@ -166,6 +166,9 @@ Item {
     property var res_y: parent.height
     property real radianPI: Math.PI/180
 
+    property var activeOverrideID: -1;
+    property var gcsID: gcsID = QGroundControl.mavlinkSystemID.valueOf();
+
     property string popUp_breachAlert
     property string _breachAlertColor
 
@@ -1164,39 +1167,42 @@ Item {
 
         Rectangle {
                     id: btnOverride
-                    property bool overriding: false
                     width: parent.width*0.75
                     height: parent.height*0.1
                     radius: 5
-                    color: overrideActive ? "red" : "green"  // cor dinâmica
+                    color: overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "red":"grey") : "green"  // cor dinâmica. Ativado mas
                     border.color: "black"
                     border.width: 1
-                    anchors.horizontalCenter:  parent.horizontalCenter
+                    //anchors.horizontalCenter:  parent.horizontalCenter
+                    anchors.horizontalCenter: parent.horizontalCenter
                     anchors.bottom: parent.bottom
-                    anchors.bottomMargin: _toolsMargin
                     z: _fullItemZorder + 10
 
-                           // texto centralizado
-                           Text {
-                               anchors.centerIn: parent
-                               text: overrideActive? "Stop Override":"Override RC"
-                               color: "white"
-                               font.bold: true
-                           }
+                    // texto centralizado
+                    Text {
+                        anchors.centerIn: parent
+                        text:  overrideActive ? ((activeOverrideID===-1 || activeOverrideID===gcsID) ? "Stop Override": "Active by:"+activeOverrideID):"Override RC"
+                        color: "white"
+                        font.bold: true
+                    }
 
-                           // efeito de clique
-                           MouseArea {
-                                   anchors.fill: parent
-                                   hoverEnabled: true
-                                  //cursorShape: Qt.PointingHandCursor
+                    // efeito de clique
+                    MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: (activeOverrideID===-1 || activeOverrideID===gcsID)
+                           //cursorShape: Qt.PointingHandCursor
 
-                                   onClicked: {
-                                       // botão apenas abre popup
-                                       confirmOverridePopup.wantsToEnable = !overrideActive
-                                       confirmOverridePopup.open()
-                                   }
-                               }
-                       }
+                            onClicked: {
+                                // botão apenas abre popup
+                                if (activeOverrideID === -1 || activeOverrideID === gcsID) {
+                                        confirmOverridePopup.wantsToEnable = !overrideActive
+                                        confirmOverridePopup.open()
+                                    } else {
+                                        console.log("Clique bloqueado: Outro ID tem o controle:", activeOverrideID)
+                                    }
+                            }
+                        }
+                }
 
 
 
@@ -1302,24 +1308,25 @@ Item {
 
                                     onClicked: {
                                         //array_valores_rc
+
                                         var arrayInt = array_valores_rc.map(v => Number(v) | 0)
                                         if (!overrideActive) {
-                                            if(!override_first_clicked){
-                                                var try_override = _activeVehicle.validateRCChannels(arrayInt);
-                                                console.log("RESULTADO TRY_OVERRIDE: ",try_override)
-                                                if(try_override!==""){
-                                                    _alertaForceOverride.text = "ATENÇÃO: "+try_override
-                                                    override_first_clicked = true;
-                                                    _simText.color = "black"
-                                                    btnYes.color = "yellow"
-                                                }
-                                                else{
-                                                    overrideActive = true
-                                                    confirmOverridePopup.close()
-                                                }
-                                                //confirmOverridePopup.wantsToEnable = false
-                                            }
-                                            else{
+                                            //if(!override_first_clicked && _activeVehicle.firmwareMajorVersion.toString() == "255"){
+                                            //    var try_override = _activeVehicle.validateRCChannels(arrayInt);
+                                            //    console.log("RESULTADO TRY_OVERRIDE: ",try_override)
+                                            //    if(try_override!==""){
+                                            //        _alertaForceOverride.text = "ATENÇÃO: "+try_override
+                                            //        override_first_clicked = true;
+                                            //        _simText.color = "black"
+                                            //        btnYes.color = "yellow"
+                                            //    }
+                                            //    else{
+                                            //        overrideActive = true
+                                            //        confirmOverridePopup.close()
+                                            //    }
+                                            //    //confirmOverridePopup.wantsToEnable = false
+                                            //}
+                                            //else{
                                                 console.log("FORÇANDO OVERRIDE")
                                                 _activeVehicle.overwriteRC(arrayInt, true)
                                                 overrideActive = true
@@ -1328,7 +1335,7 @@ Item {
                                                 btnYes.color = "#66bb6a"
                                                 _alertaForceOverride.text = ""
                                                 confirmOverridePopup.close()
-                                            }
+                                            //}
 
                                         } else {
                                             _activeVehicle.stopRCOverride()

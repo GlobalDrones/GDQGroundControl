@@ -46,62 +46,23 @@ AnalyzePage {
     property real _RPM_MOTOR:0
     property real _TEMP_MOTOR:0
     property var array_valores_rc_MV: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    property var servo_output14: 0;
-    property var servo_output16: 0;
 
     MAVLinkInspectorController {
         id: controller
     }
 
+    /* //Parte legado do código, manter comentado apenas como referência caso algo surja que só possa ser acessado dessa forma (dúvido muito)
     Timer {
-            interval: 500; running: true; repeat: true
+            interval: 500; running: false; repeat: true
             onTriggered: { //IMPORTANTE: O INDICE DO CURSYSTEM.SELECTED MUDA. TEM QUE FAZER UMA FUNÇÃO PRA VASCULHAR.
 
                 //console.log("Teste novo")
                 //console.log(controller.activeSystem.messages.count)
                 for (var i = 0; i < controller.activeSystem.messages.count; i++){
 
-                    if(controller.activeSystem.messages.get(i).name === "ESC_TELEMETRY_1_TO_4"){
-                        curSystem.selected = i
-                       // console.log(controller.activeSystem.messages.get(i).fields.get(4).name, controller.activeSystem.messages.get(i).fields.get(4).value)
-                        _RPM_FULL1 = controller.activeSystem.messages.get(i).fields.get(4).value
-                         _RPM_FULL1 = String(_RPM_FULL1).split(",")
-                        _RPM_R1 = parseInt(_RPM_FULL1[0].trim())
-                        _RPM_R2 = parseInt(_RPM_FULL1[1].trim())
-                        _RPM_R3 = parseInt(_RPM_FULL1[2].trim())
-                        _RPM_R4 = parseInt(_RPM_FULL1[3].trim())
-                        //_RPM_R5 = _RPM_FULL1[4]
-                       // _RPM_R6 = _RPM_FULL1[5]
-                        /*_RPM_R1 = controller.activeSystem.messages.get(i).fields.get(4).value[0]
-                        _RPM_R2 = controller.activeSystem.messages.get(i).fields.get(4).value[1]
-                        _RPM_R3 = controller.activeSystem.messages.get(i).fields.get(4).value[2]
-                        _RPM_R4 = controller.activeSystem.messages.get(i).fields.get(4).value[3]
-                        _RPM_R5 = controller.activeSystem.messages.get(i).fields.get(4).value[4]
-                        _RPM_R6 = controller.activeSystem.messages.get(i).fields.get(4).value[5]*/
-                        //console.log("RPMs: ",_RPM_R1,_RPM_R2,_RPM_R3,_RPM_R4,_RPM_R5,_RPM_R6, "MAVINSPECTOR")
 
-                    }
 
-                    if(controller.activeSystem.messages.get(i).name === "ESC_TELEMETRY_5_TO_8"){
-                        curSystem.selected = i
-                       // console.log(controller.activeSystem.messages.get(i).fields.get(4).name, controller.activeSystem.messages.get(i).fields.get(4).value)
-                        _RPM_FULL2 = controller.activeSystem.messages.get(i).fields.get(4).value
-                        _RPM_FULL2 = String(_RPM_FULL2).split(",")
-                        _RPM_R5 = parseInt(_RPM_FULL2[0].trim())
-                        _RPM_R6 = parseInt(_RPM_FULL2[1].trim())
-                    }
-                    if(controller.activeSystem.messages.get(i).name === "RPM"){
-                        curSystem.selected = i
-                        _RPM_MOTOR = controller.activeSystem.messages.get(i).fields.get(0).value
-                        // console.log(controller.activeSystem.messages.get(i).fields.get(4).name, controller.activeSystem.messages.get(i).fields.get(4).value)
-                        /*_RPM_R1 = controller.activeSystem.messages.get(i).fields.get(0).value
-                        _RPM_R2 = controller.activeSystem.messages.get(i).fields.get(1).value
-                        _RPM_R3 = controller.activeSystem.messages.get(i).fields.get(2).value
-                        _RPM_R4 = controller.activeSystem.messages.get(i).fields.get(3).value
-                        _RPM_R5 = controller.activeSystem.messages.get(i).fields.get(4).value
-                        _RPM_R6 = controller.activeSystem.messages.get(i).fields.get(5).value*/
-                    }
-                    if(controller.activeSystem.messages.get(i).name === "RC_CHANNELS"){
+                    if(controller.activeSystem.messages.get(i).name === "RC_CHANNELS"){ //falta adaptar pro Vehicle pra fazer os securities checks de RC_OVERRIDE
                         curSystem.selected = i
                         for(var j = 2; j<18;j++){
                             array_valores_rc_MV[j-2] = controller.activeSystem.messages.get(i).fields.get(j).value
@@ -109,50 +70,12 @@ AnalyzePage {
                         }
                         //console.log("ARRAY_VALORES_MV = ", array_valores_rc_MV)
                     }
-
-                    if(controller.activeSystem.messages.get(i).name === "SERVO_OUTPUT_RAW"){
-                        curSystem.selected = i
-                        servo_output14 = controller.activeSystem.messages.get(i).fields.get(15).value
-                        servo_output16 = controller.activeSystem.messages.get(i).fields.get(17).value
-                        console.log("SERVO_OUTPUT_RAW",servo_output14,servo_output16)
-                    }
-                    /*if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){
-                        curSystem.selected = i
-                        //console.log(controller.activeSystem.messages.get(i).fields.get(1).name, controller.activeSystem.messages.get(i).fields.get(2).value)
-                       // console.log(controller.activeSystem.messages.get(i).fields.get(1).value)
-                        if(controller.activeSystem.messages.get(i).fields.get(1).value === "ICE_RPM"){
-                            //_RPM_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value;;
-                        }
-                        else{
-                            _TEMP_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
-                        }
-                    }*/
-                    if(controller.activeSystem.messages.get(i).name === "NAMED_VALUE_FLOAT"){
-                      //  curSystem.selected = i;
-                        var temperature_name = controller.activeSystem.messages.get(i).fields.get(1).value
-                        var temperature_value = controller.activeSystem.messages.get(i).fields.get(2).value
-                        console.log(temperature_name)
-                        if(temperature_name === "Temp1"){
-                            console.log("MAVLINKINSPECTOR TEMP1 ",temperature_value)
-                        }
-                        if(temperature_name === "Temp2"){
-                            console.log("MAVLINKINSPECTOR TEMP2 ",temperature_value)
-                        }
-                        if(temperature_name === "Temp3"){
-                            console.log("MAVLINKINSPECTOR TEMP3 ",temperature_value)
-                        }
-                        _TEMP_MOTOR = controller.activeSystem.messages.get(i).fields.get(2).value
-
-
-
-                        }
-
-                    }
-
                 }
 
             }
 
+        }
+    */
 
     Component {
         id:  headerComponent

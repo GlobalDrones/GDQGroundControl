@@ -13,6 +13,8 @@ class SiYiCrcApi : public QObject
 public:
     SiYiCrcApi(QObject *parent = Q_NULLPTR);
     static quint32 calculateCrc32(const QByteArray &bytes);
+    QByteArray make_remote_channel_cmd(uint8_t cmd_type, uint8_t freq);
+    uint16_t _nextSeq = 0; // Membro para rastrear a sequência
 };
 
 #endif

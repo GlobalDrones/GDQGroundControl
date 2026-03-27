@@ -257,6 +257,7 @@ public:
     Q_PROPERTY(bool                 requiresGpsFix              READ requiresGpsFix                                                 NOTIFY requiresGpsFixChanged)
     Q_PROPERTY(double               loadProgress                READ loadProgress                                                   NOTIFY loadProgressChanged)
     Q_PROPERTY(bool                 initialConnectComplete      READ isInitialConnectComplete                                       NOTIFY initialConnectComplete)
+    Q_PROPERTY(QVariantList         gd_rcchannels               READ gd_rcchannels                                                  NOTIFY gd_rcchannelsChanged)
 
     // The following properties relate to Orbit status
     Q_PROPERTY(bool             orbitActive     READ orbitActive        NOTIFY orbitActiveChanged)
@@ -309,6 +310,18 @@ public:
     Q_PROPERTY(Fact* gd60_Sensor1       READ gd60_Sensor1       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor2       READ gd60_Sensor2       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor3       READ gd60_Sensor3       CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM1           READ _GD_RPM1           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM2           READ _GD_RPM2           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM3           READ _GD_RPM3           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM4           READ _GD_RPM4           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM5           READ _GD_RPM5           CONSTANT)
+    Q_PROPERTY(Fact* _GD_RPM6           READ _GD_RPM6           CONSTANT)
+    Q_PROPERTY(Fact* _GD_GeneratorRPM   READ _GD_GeneratorRPM   CONSTANT)
+    Q_PROPERTY(Fact* _GD_GimbalPitch    READ _GD_GimbalPitch    CONSTANT)
+    Q_PROPERTY(Fact* _GD_GimbalYaw      READ _GD_GimbalYaw      CONSTANT)
+    Q_PROPERTY(Fact* _GD_GimbalRoll     READ _GD_GimbalRoll     CONSTANT)
+
+
 
     Q_PROPERTY(FactGroup*           gps             READ gpsFactGroup               CONSTANT)
     Q_PROPERTY(FactGroup*           gps2            READ gps2FactGroup              CONSTANT)
@@ -666,6 +679,16 @@ public:
     Fact* gd60_Sensor1                      () { return &_gd60_Sensor1Fact;}
     Fact* gd60_Sensor2                      () { return &_gd60_Sensor2Fact;}
     Fact* gd60_Sensor3                      () { return &_gd60_Sensor3Fact;}
+    Fact* _GD_RPM1                          () { return &_GD_RPM1Fact;}
+    Fact* _GD_RPM2                          () { return &_GD_RPM2Fact;}
+    Fact* _GD_RPM3                          () { return &_GD_RPM3Fact;}
+    Fact* _GD_RPM4                          () { return &_GD_RPM4Fact;}
+    Fact* _GD_RPM5                          () { return &_GD_RPM5Fact;}
+    Fact* _GD_RPM6                          () { return &_GD_RPM6Fact;}
+    Fact* _GD_GeneratorRPM                  () {return &_GD_GeneratorRPMFact;}
+    Fact* _GD_GimbalPitch                   () {return &_GD_GimbalPitchFact;}
+    Fact* _GD_GimbalYaw                     () {return &_GD_GimbalYawFact;}
+    Fact* _GD_GimbalRoll                    () {return &_GD_GimbalRollFact;}
 
     FactGroup* gpsFactGroup                 () { return &_gpsFactGroup; }
     FactGroup* gps2FactGroup                () { return &_gps2FactGroup; }
@@ -779,6 +802,9 @@ public:
     quint64 vehicleUID() const { return _uid; }
     QString vehicleUIDStr();
 
+
+    QVariantList gd_rcchannels() const { return _gd_rcchannels; }
+
     bool soloFirmware() const { return _soloFirmware; }
     void setSoloFirmware(bool soloFirmware);
 
@@ -810,6 +836,7 @@ public:
     const QVariantList&         toolIndicators      ();
     const QVariantList&         modeIndicators      ();
     const QVariantList&         staticCameraList    () const;
+
 
     bool capabilitiesKnown      () const { return _capabilityBitsKnown; }
     uint64_t capabilityBits     () const { return _capabilityBits; }    // Change signalled by capabilityBitsChanged
@@ -915,6 +942,8 @@ signals:
     void readyToFlyChanged              (bool readyToFy);
     void allSensorsHealthyChanged       (bool allSensorsHealthy);
     void requiresGpsFixChanged          ();
+    void gd_rcchannelsChanged();
+    void photoTaken();
 
     void firmwareVersionChanged         ();
     void firmwareCustomVersionChanged   ();
@@ -1056,6 +1085,11 @@ private:
     int     _id;                    ///< Mavlink system id
     int     _defaultComponentId;
     bool    _offlineEditingVehicle = false; ///< true: This Vehicle is a "disconnected" vehicle for ui use while offline editing
+
+
+
+    QVariantList _gd_rcchannels;
+
 
     MAV_AUTOPILOT       _firmwareType;
     MAV_TYPE            _vehicleType;
@@ -1322,6 +1356,16 @@ private:
     Fact _gd60_Sensor1Fact;
     Fact _gd60_Sensor2Fact;
     Fact _gd60_Sensor3Fact;
+    Fact _GD_RPM1Fact;
+    Fact _GD_RPM2Fact;
+    Fact _GD_RPM3Fact;
+    Fact _GD_RPM4Fact;
+    Fact _GD_RPM5Fact;
+    Fact _GD_RPM6Fact;
+    Fact _GD_GeneratorRPMFact;
+    Fact _GD_GimbalPitchFact;
+    Fact _GD_GimbalYawFact;
+    Fact _GD_GimbalRollFact;
     Fact _distanceToHomeFact;
     Fact _missionItemIndexFact;
     Fact _headingToNextWPFact;
@@ -1379,6 +1423,16 @@ private:
     static const char* _gd60_Sensor1FactName;
     static const char* _gd60_Sensor2FactName;
     static const char* _gd60_Sensor3FactName;
+    static const char* _GD_RPM1FactName;
+    static const char* _GD_RPM2FactName;
+    static const char* _GD_RPM3FactName;
+    static const char* _GD_RPM4FactName;
+    static const char* _GD_RPM5FactName;
+    static const char* _GD_RPM6FactName;
+    static const char* _GD_GeneratorRPMFactName;
+    static const char* _GD_GimbalPitchFactName;
+    static const char* _GD_GimbalYawFactName;
+    static const char* _GD_GimbalRollFactName;
     static const char* _distanceToHomeFactName;
     static const char* _missionItemIndexFactName;
     static const char* _headingToNextWPFactName;
