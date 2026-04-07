@@ -423,17 +423,6 @@ Item {
                 generatorCurrentMed = result[1]
                 oldGeneratorMediamValue = generatorCurrentMed
 
-                if (flagAlertaGerador && canShowGeneratorAlert) {
-
-                    popUp_generatorAlert = "FALHA NO GERADOR DETECTADA"
-                    _generatorAlertColor = "red"
-
-                    generatorAlertPopup.open()
-
-                    canShowGeneratorAlert = false
-                    generatorCooldownTimer.start()
-                }
-
 
                 console.log("------ GERADOR MONITOR ------")
                 console.log("BatMed:", batteryCurrentArray)
@@ -894,33 +883,7 @@ Item {
                             }
                         }
                 }
-        Popup {
-            id: generatorAlertPopup
-            x: (parent.width - width) / 2
-            y: 10
-            width: parent.width / 4
-            height: 100
-            modal: false
-            focus: false
-            background: null
-            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-            visible: false
 
-            Rectangle {
-                anchors.fill: parent
-                color: _generatorAlertColor
-                border.color: "black"
-                visible: parent.opened
-
-                Text {
-                    anchors.centerIn: parent
-                    text: popUp_generatorAlert
-                    font.bold: true
-                    visible: parent.visible
-                    font.pixelSize: _androidBuild ? 16 : 20
-                }
-            }
-        }
 
         Popup {
                             id: confirmOverridePopup
