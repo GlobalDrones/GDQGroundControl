@@ -373,7 +373,7 @@ SetupPage {
                                     currentIndex = 3
                                     var compassId = sensorParams.rgCompassId[_compassIndex].rawValue
                                     for (var prioIndex=0; prioIndex<3; prioIndex++) {
-                                        console.log(`comparing ${compassId} with ${sensorParams.rgCompassPrio[prioIndex].rawValue} (index ${prioIndex})`)
+                                        //console.log(`comparing ${compassId} with ${sensorParams.rgCompassPrio[prioIndex].rawValue} (index ${prioIndex})`)
                                         if (compassId == sensorParams.rgCompassPrio[prioIndex].rawValue) {
                                             currentIndex = prioIndex
                                             break
