@@ -74,7 +74,7 @@ SetupPage {
                     followYawOk = _followYawBehavior.rawValue == _followYawBehaviorNone || _followYawBehavior.rawValue == _followYawBehaviorFace || _followYawBehavior.rawValue == _followYawBehaviorFlight
                 }
                 _supportedSetup = followOffsetOk && followAltOk && followYawOk && followSysIdOk
-                console.log("_supportedSetup", _supportedSetup, followSysIdOk, followOffsetOk, followAltOk, followYawOk)
+                //console.log("_supportedSetup", _supportedSetup, followSysIdOk, followOffsetOk, followAltOk, followYawOk)
                 return _supportedSetup
             }
 

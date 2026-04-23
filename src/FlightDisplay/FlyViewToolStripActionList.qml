@@ -29,7 +29,6 @@ ToolStripActionList {
             text: qsTr("+Info")
             iconSource: "/qmlimages/Gears.svg"
             onTriggered: {
-                //console.log("[A] modoEngenheiro_ActionList:",_root.modoEngenheiro)
                 modoEngenheiroToggle() //trigger do sinal
                 _modoEngenheiroChecked: !_modoEngenheiroChecked
             }

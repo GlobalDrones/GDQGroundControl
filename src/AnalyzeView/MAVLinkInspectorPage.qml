@@ -51,32 +51,6 @@ AnalyzePage {
         id: controller
     }
 
-    /* //Parte legado do código, manter comentado apenas como referência caso algo surja que só possa ser acessado dessa forma (dúvido muito)
-    Timer {
-            interval: 500; running: false; repeat: true
-            onTriggered: { //IMPORTANTE: O INDICE DO CURSYSTEM.SELECTED MUDA. TEM QUE FAZER UMA FUNÇÃO PRA VASCULHAR.
-
-                //console.log("Teste novo")
-                //console.log(controller.activeSystem.messages.count)
-                for (var i = 0; i < controller.activeSystem.messages.count; i++){
-
-
-
-                    if(controller.activeSystem.messages.get(i).name === "RC_CHANNELS"){ //falta adaptar pro Vehicle pra fazer os securities checks de RC_OVERRIDE
-                        curSystem.selected = i
-                        for(var j = 2; j<18;j++){
-                            array_valores_rc_MV[j-2] = controller.activeSystem.messages.get(i).fields.get(j).value
-                            //console.log("ch[",j-2,"]",controller.activeSystem.messages.get(i).fields.get(j).value, array_valores_rc_MV[j-2])
-                        }
-                        //console.log("ARRAY_VALORES_MV = ", array_valores_rc_MV)
-                    }
-                }
-
-            }
-
-        }
-    */
-
     Component {
         id:  headerComponent
         //-- Header

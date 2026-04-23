@@ -175,8 +175,6 @@ Item {
         function onIsRecordingChanged() {
             if (!camera) return
 
-            console.log("Recording state:", camera.isRecording())
-
             if (camera.isRecording) {
                 photoText.visible = true
             } else {
@@ -229,12 +227,10 @@ Item {
     }
 
     function dmsStringToRadians(input) {
-        //console.log(input);
         input=input.toString()
 
         // Step 1: Split by commas (to separate latitude and longitude)
         const parts = input.split(',');
-        //console.log(parts)
         if (parts.length < 2) {
             throw new Error("Invalid DMS input format");
         }
@@ -361,20 +357,6 @@ Item {
 
     }
 
-    Timer {
-        id: debugTimer
-        interval: 1000   // 0.5s → 10s janela com 20 amostras
-        running: true
-        repeat: true
-
-        onTriggered: {
-            console.log("GIMBAL PITCH: ",_activeVehicle._GD_GimbalPitch.value.toFixed(1),
-                        "| Yaw: ",_activeVehicle._GD_GimbalYaw.value.toFixed(1),
-                        "| Roll:",_activeVehicle._GD_GimbalRoll.value.toFixed(1))
-        }
-
-    }
-
 
     Timer {
         id: generatorMonitorTimer
@@ -422,13 +404,6 @@ Item {
                 flagAlertaGerador = result[0]
                 generatorCurrentMed = result[1]
                 oldGeneratorMediamValue = generatorCurrentMed
-
-
-                console.log("------ GERADOR MONITOR ------")
-                console.log("BatMed:", batteryCurrentArray)
-                console.log("GerMed:", generatorCurrentArray)
-                console.log("flag:", flagAlertaGerador)
-                console.log("medGer:", generatorCurrentMed)
             }
         }
     }
@@ -442,7 +417,6 @@ Item {
 
         onTriggered:{
             gcsID = QGroundControl.mavlinkSystemID.valueOf(); //tem que ficar atualizando. tem jeito melhor pra fazer mas isso é pequisa futura e o desempenho ta satisfatório pra agora
-            //console.log("ID DA GCS: ",gcsID);
             if(_activeVehicle.firmwareMajorVersion.toString() == "255"){ // Caso esteja rodando nosso Ardupilot custom (Major Version 255)
                 let allMessages = _activeVehicle.formattedMessages;
                     let lines = allMessages.split("<br/>").filter(line => line.trim() !== "");
@@ -481,7 +455,6 @@ Item {
                         if (diffMs > 7500) {
                             overrideActive = false;
                             activeOverrideID = -1;
-                            console.log("RC Override expirou por tempo (7.5s)");
                         }
                     }
                 }
@@ -490,7 +463,6 @@ Item {
 
             var breach_val = breachDetection()
             if (breach_val.level > -1 && canShowBreachAlert) {
-                console.log("VIOLACAO DE ESPAÇO AEREO NÍVEL ", breach_val.level + 1)
 
                 if (breach_val.level === 0) {
                     popUp_breachAlert = "Invasão do Volume de Contingência!"
@@ -561,7 +533,7 @@ Item {
 
         Component.onCompleted:{
             let now = new Date();
-            console.log("mainViewArea LOADED at " + now.toLocaleTimeString());lateralDataLoader.active = true; bottomArea.active = true;}
+            lateralDataLoader.active = true; bottomArea.active = true;}
 
         QGCToolInsets {
             id: _toolInsets
@@ -877,8 +849,6 @@ Item {
                                 if (activeOverrideID === -1 || activeOverrideID === gcsID) {
                                         confirmOverridePopup.wantsToEnable = !overrideActive
                                         confirmOverridePopup.open()
-                                    } else {
-                                        console.log("Clique bloqueado: Outro ID tem o controle:", activeOverrideID)
                                     }
                             }
                         }
@@ -948,24 +918,7 @@ Item {
                                                 //array_valores_rc
 
                                                 var arrayInt = array_valores_rc.map(v => Number(v) | 0)
-                                                if (!overrideActive) {
-                                                    //if(!override_first_clicked && _activeVehicle.firmwareMajorVersion.toString() == "255"){
-                                                    //    var try_override = _activeVehicle.validateRCChannels(arrayInt);
-                                                    //    console.log("RESULTADO TRY_OVERRIDE: ",try_override)
-                                                    //    if(try_override!==""){
-                                                    //        _alertaForceOverride.text = "ATENÇÃO: "+try_override
-                                                    //        override_first_clicked = true;
-                                                    //        _simText.color = "black"
-                                                    //        btnYes.color = "yellow"
-                                                    //    }
-                                                    //    else{
-                                                    //        overrideActive = true
-                                                    //        confirmOverridePopup.close()
-                                                    //    }
-                                                    //    //confirmOverridePopup.wantsToEnable = false
-                                                    //}
-                                                    //else{
-                                                        console.log("FORÇANDO OVERRIDE")
+                                                if (!overrideActive) {                                                
                                                         _activeVehicle.overwriteRC(arrayInt, true)
                                                         overrideActive = true
                                                         override_first_clicked = false;
@@ -973,7 +926,7 @@ Item {
                                                         btnYes.color = "#66bb6a"
                                                         _alertaForceOverride.text = ""
                                                         confirmOverridePopup.close()
-                                                    //}
+
 
                                                 } else {
                                                     _activeVehicle.stopRCOverride()
@@ -981,7 +934,6 @@ Item {
                                                     override_first_clicked = false;
                                                     confirmOverridePopup.close()
                                                 }
-                                                //confirmOverridePopup.close()
                                             }
                                             hoverEnabled: true
                                             onEntered: btnYes.selected = true
