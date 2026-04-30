@@ -2301,6 +2301,31 @@ Item {
                     z: parent.z + 20
                 }
             }
+            Item{
+                id: underBarraLateralDireita
+                anchors.top: barraLateralDireita.bottom
+                anchors.left: barraLateralDireita.left
+                width: barraLateralDireita.width
+                height:ScreenTools.defaultFontPixelHeight*1.2
+                clip: true
+
+                Rectangle{
+                    id: lidarSpeedValuetextBox
+                    anchors.fill:parent
+                    color:"black"
+                    anchors.topMargin: -2
+                    border.width: 2
+                    border.color: hudPaleGreen
+                }
+                Text {
+                    text: "LD: " + _activeVehicle.rangeFinderDist.value.toFixed(1).padStart(3,'0')
+                    color: hudPaleGreen
+                    font.pixelSize: _androidBuild? ScreenTools.defaultFontPixelWidth * 1.5 : ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+                    anchors.centerIn: lidarSpeedValuetextBox // Centraliza horizontal e verticalmente
+                    z: parent.z + 20
+                }
+            }
 
 
             Item{
