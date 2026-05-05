@@ -21,6 +21,10 @@ DEFINES += QGC_DISABLE_PX4_PLUGIN_FACTORY
 CONFIG += QGC_DISABLE_PX4_PLUGIN_FACTORY
 DEFINES += QGC_DISABLE_PX4_PLUGIN
 
+#não faz diferença no tamanho do arquivo então da pra deixar. O maior impeditivo é a arquitetura Arm64-v8a
+#CONFIG += QGC_DISABLE_MAVLINK_INSPECTOR
+#DEFINES += QGC_DISABLE_MAVLINK_INSPECTOR
+
 
 exists($${OUT_PWD}/qgroundcontrol.pro) {
     error("You must use shadow build (e.g. mkdir build; cd build; qmake ../qgroundcontrol.pro).")
