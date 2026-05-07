@@ -16,14 +16,23 @@ ToolStripActionList {
     id: _root
 
     signal displayPreFlightChecklist
-
+    signal modoEngenheiroToggle
+    property bool modoEngenheiro: false
     model: [
         ToolStripAction {
             text:           qsTr("Plan")
             iconSource:     "/qmlimages/Plan.svg"
             onTriggered:    mainWindow.showPlanView()
         },
-        PreFlightCheckListShowAction { onTriggered: displayPreFlightChecklist() }
+        PreFlightCheckListShowAction { onTriggered: displayPreFlightChecklist() },
+        ToolStripAction {
+            text: qsTr("+Info")
+            iconSource: "/qmlimages/Gears.svg"
+            onTriggered: {
+                _root.modoEngenheiro = !_root.modoEngenheiro
+                modoEngenheiroToggle() //trigger do sinal
+            }
+        }
         //GuidedActionTakeoff { },
         //GuidedActionLand { },
         //GuidedActionRTL { },

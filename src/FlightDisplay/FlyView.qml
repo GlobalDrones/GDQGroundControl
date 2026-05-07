@@ -671,7 +671,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM1= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*1.5);}}
+                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM1= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*1.5);}}
 
                     }
 
@@ -749,7 +749,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM2= mapValueToRadians(_aceleracao_rotor_2, 0, 5000, Math.PI*2, Math.PI*1.5)}}
+                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM2= mapValueToRadians(_aceleracao_rotor_2, 0, 5000, Math.PI*2, Math.PI*1.5)}}
 
                     }
 
@@ -824,7 +824,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM3= mapValueToRadians(_aceleracao_rotor_3, 0, 5000, Math.PI, Math.PI*0.5);}}
+                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM3= mapValueToRadians(_aceleracao_rotor_3, 0, 5000, Math.PI, Math.PI*0.5);}}
 
                     }
 
@@ -900,7 +900,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM4= mapValueToRadians(_aceleracao_rotor_4, 0, 5000, 0, Math.PI*0.5);}}
+                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM4= mapValueToRadians(_aceleracao_rotor_4, 0, 5000, 0, Math.PI*0.5);}}
 
                     }
 
@@ -963,7 +963,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output14, 800, 2200, Math.PI, Math.PI*2);}}
+                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output14, 800, 2200, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -1040,7 +1040,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 33;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output16, 800, 2200, Math.PI, Math.PI*2);}}
+                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output16, 800, 2200, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -1200,7 +1200,7 @@ Item {
                 spacing: ScreenTools.defaultFontPixelWidth
 
                 anchors.right: parent.right
-                anchors.bottom: parent.bottom   // <-- agora o Row acompanha o Item
+                anchors.bottom: parent.bottom
                 anchors.margins: 0
 
                 Rectangle {
@@ -1210,7 +1210,6 @@ Item {
 
                     anchors.verticalCenter: parent.verticalCenter
 
-                    // ✔ Tamanho FIXO (ajuste como quiser)
                     width: ScreenTools.defaultFontPixelWidth * 12
                     height: ScreenTools.defaultFontPixelHeight * 2
 
@@ -1234,11 +1233,9 @@ Item {
                         color: "white"
                         font.bold: true
 
-                        // ✔ ESSENCIAL: adapta ao espaço
                         elide: Text.ElideRight
                         wrapMode: Text.NoWrap
 
-                        // ✔ evita overflow
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
 
@@ -1724,8 +1721,8 @@ Item {
                         NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
                     }
 
-                    layer.enabled: true
-                    layer.smooth: true
+                    //layer.enabled: true
+                    //layer.smooth: true
                     layer.effect: DropShadow {
                         color: "black"
                         horizontalOffset: 0
@@ -1788,7 +1785,7 @@ Item {
 
                     // Atualização do roll vindo do veículo
                     Timer {
-                        interval: 33; running: true; repeat: true
+                        interval: 50; running: true; repeat: true
                         onTriggered: {
                             parent.requestPaint()
                             var rollDeg = _activeVehicle.roll.rawValue   // -150..150 possível
@@ -1818,8 +1815,8 @@ Item {
                     rotation: (rollArc.angleRoll * 180 / Math.PI) - 270
 
                     smooth: true
-                    layer.enabled: true
-                    layer.smooth: true
+                    //layer.enabled: true
+                    //layer.smooth: true
                     layer.effect: DropShadow {
                         color: "black"
                         horizontalOffset: 0
