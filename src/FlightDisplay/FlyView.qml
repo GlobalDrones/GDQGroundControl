@@ -671,7 +671,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM1= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*1.5);}}
+                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM1= mapValueToRadians(_aceleracao_rotor_1, 0, 5000, Math.PI, Math.PI*1.5);}}
 
                     }
 
@@ -749,7 +749,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM2= mapValueToRadians(_aceleracao_rotor_2, 0, 5000, Math.PI*2, Math.PI*1.5)}}
+                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM2= mapValueToRadians(_aceleracao_rotor_2, 0, 5000, Math.PI*2, Math.PI*1.5)}}
 
                     }
 
@@ -824,7 +824,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM3= mapValueToRadians(_aceleracao_rotor_3, 0, 5000, Math.PI, Math.PI*0.5);}}
+                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM3= mapValueToRadians(_aceleracao_rotor_3, 0, 5000, Math.PI, Math.PI*0.5);}}
 
                     }
 
@@ -900,7 +900,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM4= mapValueToRadians(_aceleracao_rotor_4, 0, 5000, 0, Math.PI*0.5);}}
+                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPM4= mapValueToRadians(_aceleracao_rotor_4, 0, 5000, 0, Math.PI*0.5);}}
 
                     }
 
@@ -963,7 +963,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output14, 800, 2200, Math.PI, Math.PI*2);}}
+                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output14, 800, 2200, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -1040,7 +1040,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 50;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output16, 800, 2200, Math.PI, Math.PI*2);}}
+                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output16, 800, 2200, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -1785,7 +1785,7 @@ Item {
 
                     // Atualização do roll vindo do veículo
                     Timer {
-                        interval: 50; running: true; repeat: true
+                        interval: 36; running: true; repeat: true
                         onTriggered: {
                             parent.requestPaint()
                             var rollDeg = _activeVehicle.roll.rawValue   // -150..150 possível
