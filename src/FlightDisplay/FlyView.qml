@@ -1163,6 +1163,120 @@ Item {
 
         }
 
+        Item {
+            id: cameraControlOverlay
+            z: QGroundControl.zOrderTopMost
+            visible: QGroundControl.videoManager.hasVideo
+
+            property int cameraIndex: 0
+
+            states: [
+                State {
+                    name: "full"
+                    when: !((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
+                    PropertyChanges {
+                        target: cameraControlOverlay
+
+                        anchors.top: null
+                        anchors.bottom: btnOverride.top
+                        anchors.bottomMargin: _toolsMargin * 2
+                        anchors.right: parent.right
+                        anchors.margins: 25
+
+                        visible: true
+                    }
+                },
+                State {
+                    name: "hidden"
+                    when: ((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
+                    PropertyChanges {
+                        target: cameraControlOverlay
+                        visible: false
+                    }
+                }
+            ]
+
+            Row {
+                spacing: ScreenTools.defaultFontPixelWidth
+
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom   // <-- agora o Row acompanha o Item
+                anchors.margins: 0
+
+                Rectangle {
+                    id: cameraTextBackground
+                    color: "#80000000"
+                    radius: 4
+
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    // ✔ Tamanho FIXO (ajuste como quiser)
+                    width: ScreenTools.defaultFontPixelWidth * 12
+                    height: ScreenTools.defaultFontPixelHeight * 2
+
+                    Text {
+                        id: cameraText
+
+                        anchors.fill: parent
+                        anchors.margins: ScreenTools.defaultFontPixelWidth * 0.5
+
+                        text: {
+                            if (QGroundControl.videoManager.streams.length > 0 &&
+                                cameraControlOverlay.cameraIndex < QGroundControl.videoManager.streams.length) {
+
+                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
+                                return element.alias ? element.alias : element.url
+                            } else {
+                                return "Sem câmeras"
+                            }
+                        }
+
+                        color: "white"
+                        font.bold: true
+
+                        // ✔ ESSENCIAL: adapta ao espaço
+                        elide: Text.ElideRight
+                        wrapMode: Text.NoWrap
+
+                        // ✔ evita overflow
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+
+                        fontSizeMode: Text.Fit
+                        minimumPixelSize: 8
+                    }
+                }
+
+                QGCColoredImage {
+                    id: cameraButton
+                    source: "/qmlimages/camera"
+                    width: ScreenTools.defaultFontPixelHeight * 2
+                    height: width
+                    fillMode: Image.PreserveAspectFit
+                    color: "white"
+
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            if (QGroundControl.videoManager.streams.length > 0) {
+                                cameraControlOverlay.cameraIndex =
+                                    (cameraControlOverlay.cameraIndex + 1) %
+                                    QGroundControl.videoManager.streams.length
+
+                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
+
+                                if (element.ip) {
+                                    QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = element.ip
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
 
 
         Rectangle {
@@ -2546,92 +2660,7 @@ Item {
 
 
 
-        Item {
-            id: cameraControlOverlay
-            z: QGroundControl.zOrderTopMost
-            visible: QGroundControl.videoManager.hasVideo
 
-            property int cameraIndex: 0
-
-            states: [
-                State {
-                    name: "full"
-                    when: !((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
-                    PropertyChanges {
-                        target: cameraControlOverlay
-                        anchors.top: parent.top
-                        anchors.bottom: null
-                        anchors.right: parent.right
-                        anchors.margins: 25
-                    }
-                },
-                State {
-                    name: "hidden"
-                    when: ((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
-                    PropertyChanges {
-                        target: cameraControlOverlay
-                        visible: false
-                    }
-                }
-            ]
-
-            Row {
-                spacing: ScreenTools.defaultFontPixelWidth
-                anchors.right: parent.right
-                anchors.top: parent.top
-
-                Rectangle {
-                    id: cameraTextBackground
-                    color: "#80000000"
-                    radius: 4
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: ScreenTools.defaultFontPixelWidth / 2
-                    anchors.rightMargin: ScreenTools.defaultFontPixelWidth / 2
-                    height: cameraText.implicitHeight + ScreenTools.defaultFontPixelHeight
-                    width: cameraText.implicitWidth + ScreenTools.defaultFontPixelWidth * 2
-
-                    Text {
-                        id: cameraText
-                        anchors.centerIn: parent
-                        text: {
-                            if (QGroundControl.videoManager.streams.length > 0 && cameraControlOverlay.cameraIndex < QGroundControl.videoManager.streams.length) {
-                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
-                                return element.alias ? element.alias : element.url
-                            } else {
-                                return "Sem câmeras"
-                            }
-                        }
-                        color: "white"
-                        font.bold: true
-                    }
-                }
-
-
-                QGCColoredImage {
-                    id: cameraButton
-                    source: "/qmlimages/camera"
-                    width: ScreenTools.defaultFontPixelHeight * 2
-                    height: width
-                    fillMode: Image.PreserveAspectFit
-                    color: "white"
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            //_activeVehicle.overwriteRC();
-                            if (QGroundControl.videoManager.streams.length > 0) {
-                                cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % QGroundControl.videoManager.streams.length
-
-                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
-                                if (element.ip) {
-                                    QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = element.ip
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
