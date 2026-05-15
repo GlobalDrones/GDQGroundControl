@@ -689,6 +689,8 @@ public:
     Fact* _GD_GimbalPitch                   () {return &_GD_GimbalPitchFact;}
     Fact* _GD_GimbalYaw                     () {return &_GD_GimbalYawFact;}
     Fact* _GD_GimbalRoll                    () {return &_GD_GimbalRollFact;}
+    Fact* _GD_RC_SCORE                      () {return &_GD_RC_SCOREFact ;}
+    Fact* _GD_NET_SCORE                     () {return &_GD_NET_SCOREFact;}
 
     FactGroup* gpsFactGroup                 () { return &_gpsFactGroup; }
     FactGroup* gps2FactGroup                () { return &_gps2FactGroup; }
@@ -1356,6 +1358,8 @@ private:
     Fact _gd60_Sensor1Fact;
     Fact _gd60_Sensor2Fact;
     Fact _gd60_Sensor3Fact;
+    Fact _GD_RC_SCOREFact;
+    Fact _GD_NET_SCOREFact;
     Fact _GD_RPM1Fact;
     Fact _GD_RPM2Fact;
     Fact _GD_RPM3Fact;
@@ -1423,6 +1427,8 @@ private:
     static const char* _gd60_Sensor1FactName;
     static const char* _gd60_Sensor2FactName;
     static const char* _gd60_Sensor3FactName;
+    static const char* _GD_RC_SCOREFactName;
+    static const char* _GD_NET_SCOREFactName;
     static const char* _GD_RPM1FactName;
     static const char* _GD_RPM2FactName;
     static const char* _GD_RPM3FactName;

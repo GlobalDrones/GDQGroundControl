@@ -183,8 +183,9 @@ Item {
         property: "flightTimeText"
         value: {
             if (!activeVehicle) return "Flighttime:"
-            if (activeVehicle.batteries.count <= 0) return "Altitude AMSL:"
+            if (activeVehicle.batteries.count <= 0) return "Flighttime:"
 
+            //TODO: descobrir porque o systime do 25 começa em 8 minutos
             var totalSeconds = activeVehicle.flightTimeCustom.rawValue
             var hours = Math.floor(totalSeconds / 3600)
             var minutes = Math.floor((totalSeconds % 3600) / 60)

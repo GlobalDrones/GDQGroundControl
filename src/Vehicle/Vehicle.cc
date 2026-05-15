@@ -116,6 +116,8 @@ const char* Vehicle::_flightTimeFactName =          "flightTime";
 const char* Vehicle::_gd60_Sensor1FactName =         "gd60_sensor1";
 const char* Vehicle::_gd60_Sensor2FactName =         "gd60_sensor2";
 const char* Vehicle::_gd60_Sensor3FactName =         "gd60_sensor3";
+const char* Vehicle::_GD_RC_SCOREFactName  =         "_GD_RC_SCORE";
+const char* Vehicle::_GD_NET_SCOREFactName =         "_GD_NET_SCORE";
 const char* Vehicle::_GD_RPM1FactName=               "_GD_RPM1";
 const char* Vehicle::_GD_RPM2FactName=               "_GD_RPM2";
 const char* Vehicle::_GD_RPM3FactName=               "_GD_RPM3";
@@ -350,6 +352,8 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _gd60_Sensor1Fact                      (0, _gd60_Sensor1FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor2Fact                      (0, _gd60_Sensor2FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor3Fact                      (0, _gd60_Sensor3FactName,      FactMetaData::valueTypeFloat)
+    , _GD_RC_SCOREFact                       (0, _GD_RC_SCOREFactName,       FactMetaData::valueTypeFloat)
+    , _GD_NET_SCOREFact                      (0, _GD_NET_SCOREFactName,      FactMetaData::valueTypeFloat)
     , _GD_RPM1Fact                           (0, _GD_RPM1FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM2Fact                           (0, _GD_RPM2FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM3Fact                           (0, _GD_RPM3FactName,           FactMetaData::valueTypeInt16)
@@ -1272,6 +1276,8 @@ void Vehicle::_commonInit()
     _addFact(&_gd60_Sensor1Fact,        _gd60_Sensor1FactName);
     _addFact(&_gd60_Sensor2Fact,        _gd60_Sensor2FactName);
     _addFact(&_gd60_Sensor3Fact,        _gd60_Sensor3FactName);
+    _addFact(&_GD_RC_SCOREFact,         _GD_RC_SCOREFactName);
+    _addFact(&_GD_NET_SCOREFact,         _GD_NET_SCOREFactName);
     _addFact(&_GD_RPM1Fact,             _GD_RPM1FactName);
     _addFact(&_GD_RPM2Fact,             _GD_RPM2FactName);
     _addFact(&_GD_RPM3Fact,             _GD_RPM3FactName);
@@ -1323,6 +1329,8 @@ void Vehicle::_commonInit()
     _gd60_Sensor1Fact.setRawValue(0);
     _gd60_Sensor2Fact.setRawValue(0);
     _gd60_Sensor3Fact.setRawValue(0);
+    _GD_RC_SCOREFact.setRawValue(33);
+    _GD_NET_SCOREFact.setRawValue(66);
     _GD_RPM1Fact.setRawValue(0);
     _GD_RPM2Fact.setRawValue(0);
     _GD_RPM3Fact.setRawValue(0);
@@ -1717,7 +1725,9 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             TEMP1,
             TEMP2,
             TEMP3,
-            TEMPGD25
+            TEMPGD25,
+            RC_SCORE,
+            NET_SCORE
         };
 
         mavlink_named_value_float_t msg_nvf;
@@ -1727,6 +1737,8 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         else if (strncmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
         else if (strncmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
         else if (strncmp(msg_nvf.name, "TempICE", 10) == 0) id = TEMPGD25;
+        else if (strncmp(msg_nvf.name, "RC_SCORE", 10) == 0) id = RC_SCORE;
+        else if (strncmp(msg_nvf.name, "NET_SCORE", 10) == 0) id = NET_SCORE;
 
         switch(id) {
         case TEMP1:
@@ -1735,14 +1747,22 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             break;
         case TEMP2:
             //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP2:" << msg_nvf.value;
-            _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
+
             break;
         case TEMP3:
             //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
-            _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
+
             break;
         case TEMPGD25:
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
+            break;
+        case RC_SCORE:
+            _GD_RC_SCOREFact.setRawValue(msg_nvf.value);
+            _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
+            break;
+        case NET_SCORE:
+            _GD_NET_SCOREFact.setRawValue(msg_nvf.value);
+            _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
         default:
             //qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
