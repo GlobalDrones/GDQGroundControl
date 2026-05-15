@@ -96,7 +96,7 @@ Item {
             anchors.top:        parent.top
             anchors.bottom:     parent.bottom
             sourceSize.height:  height
-            source:             "/qmlimages/RC.svg"
+            source:             "/qmlimages/SensorsComponentIcon.png"
             fillMode:           Image.PreserveAspectFit
             opacity:            _rcRSSIAvailable ? 1 : 0.5
             color:              qgcPal.buttonText
@@ -112,7 +112,7 @@ Item {
             anchors.top:        parent.top
             anchors.bottom:     parent.bottom
             sourceSize.height:  height
-            source:             "/qmlimages/RC.svg"
+            source:             "/qmlimages/wifi.svg"
             fillMode:           Image.PreserveAspectFit
             opacity:            _rcRSSIAvailable ? 1 : 0.5
             color:              qgcPal.buttonText

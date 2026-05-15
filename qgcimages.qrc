@@ -220,5 +220,6 @@
         <file alias="GD60_lowres.png">resources/gd60_whiteIcon.png</file>
         <file alias="trash.svg">resources/trash.svg</file>
         <file alias="rollPointer.svg">resources/rollPointer.svg</file>
+        <file>resources/wifi.svg</file>
     </qresource>
 </RCC>
