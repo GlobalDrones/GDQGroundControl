@@ -1595,7 +1595,7 @@ Item {
             anchors.horizontalCenter: borda_video.horizontalCenter
             width: borda_video.width*0.65
             height: borda_video.height*0.95
-            z: videoControl.z
+            z: _pipOverlay.z+20
             visible: !_mainWindowIsMap
 
 

@@ -108,7 +108,9 @@ Item {
                 anchors.bottom:     parent.bottom
                 width:              height
                 sourceSize.width:   width
-                source:             "/qmlimages/Battery.svg"
+                source: battery.id.rawValue === 3
+                            ? "/qmlimages/GasCan.svg"
+                            : "/qmlimages/Battery.svg"
                 fillMode:           Image.PreserveAspectFit
                 color:              getBatteryColor()
             }
