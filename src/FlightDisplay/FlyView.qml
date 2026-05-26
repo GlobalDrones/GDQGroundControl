@@ -1591,12 +1591,12 @@ Item {
 
         Item{
             id: pilotHUD
-            anchors.verticalCenter: borda_video.verticalCenter
-            anchors.horizontalCenter: borda_video.horizontalCenter
-            width: borda_video.width*0.65
-            height: borda_video.height*0.95
+            anchors.verticalCenter: mainViewArea.verticalCenter//borda_video.verticalCenter
+            anchors.horizontalCenter: mainViewArea.horizontalCenter//borda_video.horizontalCenter
+            width: mainViewArea.width*0.65
+            height: mainViewArea.height*0.95
             z: _pipOverlay.z+20
-            visible: !_mainWindowIsMap
+            visible: true//!_mainWindowIsMap
 
 
             Rectangle{ //delimitador de área só pra ver os limites. Apagar quando completo
@@ -1832,34 +1832,72 @@ Item {
 
             //_activeVehicle.headingToNextWP. rollPointer.svg
             /////COMEÇO DO HEADING
-            QGCColoredImage {
-                id: headingIndicator
-                width: parent.width *0.25
-                height: parent.width *0.25
+            /////COMEÇO DO HEADING
+
+            Item {
+                id: headingContainer
+                width: parent.width * 0.25
+                height: width
+
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: pitchArea.bottom
-                anchors.margins: _toolsMargin*0.5
-                source: "/qmlimages/compassInstrumentDial.svg"
-                color: hudPaleGreen
-                rotation: -_activeVehicle.heading.rawValue.toFixed(2)
-                layer.enabled: true
-                layer.smooth: true
-                layer.effect: DropShadow {
-                    color: "black"
-                    horizontalOffset: 0
-                    verticalOffset: 0
-                    radius: 1
-                    smooth: true
-                    samples: 32
-                    spread: 0.5 // Ajuste para tornar a borda mais definida (menos difusa)
+                anchors.margins: _toolsMargin * 0.5
+
+                // Fundo circular
+                Rectangle {
+                    id: headingBackground
+                    anchors.fill: parent
+                    radius: width / 2
+                    color: hudGrey
+                    opacity: 0.85
+
+                    border.color: hudPaleGreen
+                    border.width: 1
+
+                    layer.enabled: true
+                    layer.smooth: true
+
+                    layer.effect: DropShadow {
+                        color: "black"
+                        horizontalOffset: 0
+                        verticalOffset: 0
+                        radius: 2
+                        smooth: true
+                        samples: 32
+                        spread: 0.2
+                    }
+                }
+
+                QGCColoredImage {
+                    id: headingIndicator
+
+                    anchors.fill: parent
+
+                    source: "/qmlimages/compassInstrumentDial.svg"
+                    color: hudPaleGreen
+
+                    rotation: -_activeVehicle.heading.rawValue.toFixed(2)
+
+                    layer.enabled: true
+                    layer.smooth: true
+
+                    layer.effect: DropShadow {
+                        color: "black"
+                        horizontalOffset: 0
+                        verticalOffset: 0
+                        radius: 1
+                        smooth: true
+                        samples: 32
+                        spread: 0.5
+                    }
                 }
             }
             QGCColoredImage {
                 id: vehicleHeadingIcon
-                width: headingIndicator.width/2
-                height: headingIndicator.height/2
-                anchors.horizontalCenter: headingIndicator.horizontalCenter
-                anchors.verticalCenter: headingIndicator.verticalCenter
+                width: headingContainer.width/2
+                height: headingContainer.height/2
+                anchors.horizontalCenter: headingContainer.horizontalCenter
+                anchors.verticalCenter: headingContainer.verticalCenter
                 source: "/qmlimages/GD60_lowres.png"
                 color: hudPaleGreen
                 rotation: 180
@@ -1878,10 +1916,10 @@ Item {
             }
             QGCColoredImage {
                 id: pointerHeading
-                width: headingIndicator.width/5
+                width: headingContainer.width/5
                 height: width
-                anchors.horizontalCenter: headingIndicator.horizontalCenter
-                anchors.bottom: headingIndicator.top
+                anchors.horizontalCenter: headingContainer.horizontalCenter
+                anchors.bottom: headingContainer.top
                 anchors.bottomMargin: -_toolsMargin*0.5
                 color: hudPaleGreen
                 source: "/qmlimages/rollPointer.svg"
@@ -1901,7 +1939,7 @@ Item {
             }
             QGCColoredImage {
                 id: pointerHeadingWayPoint
-                width: headingIndicator.width / 7
+                width: headingContainer.width / 7
                 height: width
                 color: hudPaleBlue
                 source: "/qmlimages/rollPointer.svg"
@@ -1911,11 +1949,11 @@ Item {
                 layer.smooth: true
 
                 // centro da bússola
-                property real centerX: headingIndicator.x + headingIndicator.width / 2
-                property real centerY: headingIndicator.y + headingIndicator.height / 2
+                property real centerX: headingContainer.x + headingContainer.width / 2
+                property real centerY: headingContainer.y + headingContainer.height / 2
 
                 // raio interno
-                property real innerRadius: headingIndicator.width * 0.40
+                property real innerRadius: headingContainer.width * 0.40
 
                 // heading real do drone
                 property real headingActual: _activeVehicle.heading.rawValue
@@ -1953,7 +1991,7 @@ Item {
 
             QGCColoredImage {
                 id: pointerHeadingHome
-                width: headingIndicator.width / 7
+                width: headingContainer.width / 7
                 height: width
                 color: hudPalePurple
                 source: "/qmlimages/rollPointer.svg"
@@ -1963,11 +2001,11 @@ Item {
                 layer.smooth: true
 
                 // centro da bússola
-                property real centerX: headingIndicator.x + headingIndicator.width / 2
-                property real centerY: headingIndicator.y + headingIndicator.height / 2
+                property real centerX: headingContainer.x + headingContainer.width / 2
+                property real centerY: headingContainer.y + headingContainer.height / 2
 
                 // raio interno
-                property real innerRadius: headingIndicator.width * 0.40
+                property real innerRadius: headingContainer.width * 0.40
 
                 // heading real do drone
                 property real headingActual: _activeVehicle.heading.rawValue

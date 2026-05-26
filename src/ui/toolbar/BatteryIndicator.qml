@@ -108,11 +108,28 @@ Item {
                 anchors.bottom:     parent.bottom
                 width:              height
                 sourceSize.width:   width
-                source: battery.id.rawValue === 3
-                            ? "/qmlimages/GasCan.svg"
-                            : "/qmlimages/Battery.svg"
+                source: {
+                        switch (battery.id.rawValue) {
+                        case 2:
+                            return "/qmlimages/Generator.svg"
+                        case 3:
+                            return "/qmlimages/GasCan.svg"
+                        default:
+                            return "/qmlimages/Battery.svg"
+                        }
+                    }
                 fillMode:           Image.PreserveAspectFit
                 color:              getBatteryColor()
+                anchors.leftMargin: {
+                        switch (battery.id.rawValue) {
+                        case 2:
+                            return width*0.2
+                        case 3:
+                            return width*0.2
+                        default:
+                            return 0
+                        }
+                    }
             }
 
             QGCLabel {
