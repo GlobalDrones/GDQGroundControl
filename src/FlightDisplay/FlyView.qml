@@ -914,6 +914,7 @@ Item {
                     anchors.topMargin:    _toolsMargin*2
                     height: parent.width
                     width: height
+
                     Canvas {
                         anchors.fill: parent
                         id: rotorHORIZONTAL1Arc
@@ -963,7 +964,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output14, 800, 2200, Math.PI, Math.PI*2);}}
+                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_activeVehicle.gd60_Sensor1.rawValue, 800, 2200, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -977,7 +978,7 @@ Item {
                     anchors.top: dialRPMHORIZONTAL1.bottom
                     anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
                     font.pixelSize: _androidBuild? 20 : 18
-                    text: servo_output14 //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
+                    text: _activeVehicle.gd60_Sensor1.rawValue //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
                     color:"green"
                     font.bold: true
                     horizontalAlignment: parent.width

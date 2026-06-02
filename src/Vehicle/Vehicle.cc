@@ -116,6 +116,12 @@ const char* Vehicle::_flightTimeFactName =          "flightTime";
 const char* Vehicle::_gd60_Sensor1FactName =         "gd60_sensor1";
 const char* Vehicle::_gd60_Sensor2FactName =         "gd60_sensor2";
 const char* Vehicle::_gd60_Sensor3FactName =         "gd60_sensor3";
+const char* Vehicle::_gd60_ECU1_CTP1FactName =       "gd60_ECU1_CTP1";
+const char* Vehicle::_gd60_ECU1_CTP2FactName =       "gd60_ECU1_CTP2";
+const char* Vehicle::_gd60_ECU2_CTP1FactName =       "gd60_ECU2_CTP1";
+const char* Vehicle::_gd60_ECU2_CTP2FactName =       "gd60_ECU2_CTP2";
+const char* Vehicle::_gd60_RPM_M1FactName    =       "gd60_RPM_M1";
+const char* Vehicle::_gd60_RPM_M2FactName    =       "gd60_RPM_M2";
 const char* Vehicle::_GD_RPM1FactName=               "_GD_RPM1";
 const char* Vehicle::_GD_RPM2FactName=               "_GD_RPM2";
 const char* Vehicle::_GD_RPM3FactName=               "_GD_RPM3";
@@ -350,6 +356,12 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _gd60_Sensor1Fact                      (0, _gd60_Sensor1FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor2Fact                      (0, _gd60_Sensor2FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor3Fact                      (0, _gd60_Sensor3FactName,      FactMetaData::valueTypeFloat)
+    , _gd60_ECU1_CTP1Fact                    (0, _gd60_ECU1_CTP1FactName,    FactMetaData::valueTypeFloat)
+    , _gd60_ECU1_CTP2Fact                    (0, _gd60_ECU1_CTP2FactName,    FactMetaData::valueTypeFloat)
+    , _gd60_ECU2_CTP1Fact                    (0, _gd60_ECU2_CTP1FactName,    FactMetaData::valueTypeFloat)
+    , _gd60_ECU2_CTP2Fact                    (0, _gd60_ECU2_CTP2FactName,    FactMetaData::valueTypeFloat)
+    , _gd60_RPM_M1Fact                       (0, _gd60_RPM_M1FactName,       FactMetaData::valueTypeFloat)
+    , _gd60_RPM_M2Fact                       (0, _gd60_RPM_M2FactName,       FactMetaData::valueTypeFloat)
     , _GD_RPM1Fact                           (0, _GD_RPM1FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM2Fact                           (0, _GD_RPM2FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM3Fact                           (0, _GD_RPM3FactName,           FactMetaData::valueTypeInt16)
@@ -1272,6 +1284,12 @@ void Vehicle::_commonInit()
     _addFact(&_gd60_Sensor1Fact,        _gd60_Sensor1FactName);
     _addFact(&_gd60_Sensor2Fact,        _gd60_Sensor2FactName);
     _addFact(&_gd60_Sensor3Fact,        _gd60_Sensor3FactName);
+    _addFact(&_gd60_ECU1_CTP1Fact,      _gd60_ECU1_CTP1FactName);
+    _addFact(&_gd60_ECU1_CTP2Fact,      _gd60_ECU1_CTP2FactName);
+    _addFact(&_gd60_ECU2_CTP1Fact,      _gd60_ECU2_CTP1FactName);
+    _addFact(&_gd60_ECU2_CTP2Fact,      _gd60_ECU2_CTP2FactName);
+    _addFact(&_gd60_RPM_M1Fact,         _gd60_RPM_M1FactName);
+    _addFact(&_gd60_RPM_M2Fact,         _gd60_RPM_M2FactName);
     _addFact(&_GD_RPM1Fact,             _GD_RPM1FactName);
     _addFact(&_GD_RPM2Fact,             _GD_RPM2FactName);
     _addFact(&_GD_RPM3Fact,             _GD_RPM3FactName);
@@ -1712,43 +1730,83 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     }
     case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
     {
-        enum TempID {
+        enum NVFID {
             UNKNOWN = 0,
             TEMP1,
             TEMP2,
             TEMP3,
-            TEMPGD25
+            TEMPGD25,
+            TEMP_M1_CILINDRO1,
+            TEMP_M1_CILINDRO2,
+            TEMP_M2_CILINDRO1,
+            TEMP_M2_CILINDRO2,
+            RPM_M1,
+            RPM_M2
         };
+
 
         mavlink_named_value_float_t msg_nvf;
         mavlink_msg_named_value_float_decode(&message, &msg_nvf);
-        TempID id = UNKNOWN;
+        NVFID id = UNKNOWN;
         if (strncmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
         else if (strncmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
         else if (strncmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
         else if (strncmp(msg_nvf.name, "TempICE", 10) == 0) id = TEMPGD25;
+        else if (strncmp(msg_nvf.name, "ECU1_CTP1", 10) == 0) id = TEMP_M1_CILINDRO1;
+        else if (strncmp(msg_nvf.name, "ECU1_CTP2", 10) == 0) id = TEMP_M1_CILINDRO2;
+        else if (strncmp(msg_nvf.name, "ECU2_CTP1", 10) == 0) id = TEMP_M2_CILINDRO1;
+        else if (strncmp(msg_nvf.name, "ECU2_CTP2", 10) == 0) id = TEMP_M2_CILINDRO2;
+        else if (strncmp(msg_nvf.name, "RPM_M1", 10) == 0) id = RPM_M1;
+        else if (strncmp(msg_nvf.name, "RPM_M2", 10) == 0) id = RPM_M2;
+
+        if(msg_nvf.value==32767){ //32767 is null
+            msg_nvf.value = 0;
+        }
 
         switch(id) {
         case TEMP1:
-            // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
+
         case TEMP2:
-            //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP2:" << msg_nvf.value;
             _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
             break;
+
         case TEMP3:
-            //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
             _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
+
         case TEMPGD25:
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
+
+        case TEMP_M1_CILINDRO1:
+            _gd60_ECU1_CTP1Fact.setRawValue(msg_nvf.value);
+            break;
+
+        case TEMP_M1_CILINDRO2:
+            _gd60_ECU1_CTP2Fact.setRawValue(msg_nvf.value);
+            break;
+
+        case TEMP_M2_CILINDRO1:
+            _gd60_ECU2_CTP1Fact.setRawValue(msg_nvf.value);
+            break;
+
+        case TEMP_M2_CILINDRO2:
+            _gd60_ECU2_CTP2Fact.setRawValue(msg_nvf.value);
+            break;
+
+        case RPM_M1:
+            _gd60_RPM_M1Fact.setRawValue(msg_nvf.value);
+            break;
+
+        case RPM_M2:
+            _gd60_RPM_M2Fact.setRawValue(msg_nvf.value);
+            break;
+
         default:
-            //qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
             break;
         }
-        break;
     }
     case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
     {

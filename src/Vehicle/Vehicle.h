@@ -310,6 +310,12 @@ public:
     Q_PROPERTY(Fact* gd60_Sensor1       READ gd60_Sensor1       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor2       READ gd60_Sensor2       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor3       READ gd60_Sensor3       CONSTANT)
+    Q_PROPERTY(Fact* gd60_ECU1_CTP1     READ gd60_ECU1_CTP1     CONSTANT)
+    Q_PROPERTY(Fact* gd60_ECU1_CTP2     READ gd60_ECU1_CTP2     CONSTANT)
+    Q_PROPERTY(Fact* gd60_ECU2_CTP1     READ gd60_ECU2_CTP1     CONSTANT)
+    Q_PROPERTY(Fact* gd60_ECU2_CTP2     READ gd60_ECU2_CTP2     CONSTANT)
+    Q_PROPERTY(Fact* gd60_RPM_M1        READ gd60_RPM_M1        CONSTANT)
+    Q_PROPERTY(Fact* gd60_RPM_M2        READ gd60_RPM_M2        CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM1           READ _GD_RPM1           CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM2           READ _GD_RPM2           CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM3           READ _GD_RPM3           CONSTANT)
@@ -679,6 +685,12 @@ public:
     Fact* gd60_Sensor1                      () { return &_gd60_Sensor1Fact;}
     Fact* gd60_Sensor2                      () { return &_gd60_Sensor2Fact;}
     Fact* gd60_Sensor3                      () { return &_gd60_Sensor3Fact;}
+    Fact* gd60_ECU1_CTP1()                      { return &_gd60_ECU1_CTP1Fact; }
+    Fact* gd60_ECU1_CTP2()                      { return &_gd60_ECU1_CTP2Fact; }
+    Fact* gd60_ECU2_CTP1()                      { return &_gd60_ECU2_CTP1Fact; }
+    Fact* gd60_ECU2_CTP2()                      { return &_gd60_ECU2_CTP2Fact; }
+    Fact* gd60_RPM_M1()                         { return &_gd60_RPM_M1Fact; }
+    Fact* gd60_RPM_M2()                         { return &_gd60_RPM_M2Fact; }
     Fact* _GD_RPM1                          () { return &_GD_RPM1Fact;}
     Fact* _GD_RPM2                          () { return &_GD_RPM2Fact;}
     Fact* _GD_RPM3                          () { return &_GD_RPM3Fact;}
@@ -1356,6 +1368,12 @@ private:
     Fact _gd60_Sensor1Fact;
     Fact _gd60_Sensor2Fact;
     Fact _gd60_Sensor3Fact;
+    Fact _gd60_ECU1_CTP1Fact;
+    Fact _gd60_ECU1_CTP2Fact;
+    Fact _gd60_ECU2_CTP1Fact;
+    Fact _gd60_ECU2_CTP2Fact;
+    Fact _gd60_RPM_M1Fact;
+    Fact _gd60_RPM_M2Fact;
     Fact _GD_RPM1Fact;
     Fact _GD_RPM2Fact;
     Fact _GD_RPM3Fact;
@@ -1423,6 +1441,12 @@ private:
     static const char* _gd60_Sensor1FactName;
     static const char* _gd60_Sensor2FactName;
     static const char* _gd60_Sensor3FactName;
+    static const char* _gd60_ECU1_CTP1FactName;
+    static const char* _gd60_ECU1_CTP2FactName;
+    static const char* _gd60_ECU2_CTP1FactName;
+    static const char* _gd60_ECU2_CTP2FactName;
+    static const char* _gd60_RPM_M1FactName;
+    static const char* _gd60_RPM_M2FactName;
     static const char* _GD_RPM1FactName;
     static const char* _GD_RPM2FactName;
     static const char* _GD_RPM3FactName;
