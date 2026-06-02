@@ -1740,6 +1740,15 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         else if (strncmp(msg_nvf.name, "RC_SCORE", 10) == 0) id = RC_SCORE;
         else if (strncmp(msg_nvf.name, "NET_SCORE", 10) == 0) id = NET_SCORE;
 
+        /*char nameBuffer[11] = {};
+        memcpy(nameBuffer, msg_nvf.name, 10);
+
+        QFile file("named_value_float_log.txt");
+        if (file.open(QIODevice::Append | QIODevice::Text)) {
+            QTextStream out(&file);
+            out << nameBuffer << " : " << msg_nvf.value << "\n";
+        }*/
+
         switch(id) {
         case TEMP1:
            // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;

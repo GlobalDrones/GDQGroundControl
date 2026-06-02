@@ -147,10 +147,10 @@ Item {
     property var res_y: parent.height
     property real radianPI: Math.PI/180
 
-    property string popUp_breachAlert
-    property string _breachAlertColor
+   /* property string popUp_breachAlert
+    property string _breachAlertColor*/
 
-    property bool canShowBreachAlert: true
+    //property bool canShowBreachAlert: true
     property var array_valores_rc: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     property bool override_first_clicked: false;
 
@@ -201,13 +201,13 @@ Item {
 
 
 
-    Timer {
+    /*Timer {
         id: breachCooldownTimer
         interval: 10000 // cooldown de 10 segundos
         running: false
         repeat: false
         onTriggered: canShowBreachAlert = true
-    }
+    }*/
     Timer {
         id: generatorCooldownTimer
         interval: 10000   // 10 segundos de cooldown
@@ -461,7 +461,7 @@ Item {
 
 
 
-            var breach_val = breachDetection()
+            /*var breach_val = breachDetection()
             if (breach_val.level > -1 && canShowBreachAlert) {
 
                 if (breach_val.level === 0) {
@@ -473,11 +473,11 @@ Item {
                     _breachAlertColor = "Orange"
                 }
 
-                breachAlertPopup.open()
-                breachAlertPopup.visible = true
+               // breachAlertPopup.open()
+               // breachAlertPopup.visible = true
                 canShowBreachAlert = false
                 breachCooldownTimer.start()
-            }
+            }*/
 
         }
     }
@@ -634,7 +634,7 @@ Item {
                       || mapControl.pipState.state === mapControl.pipState.pipState)
         }
 
-        Popup {
+        /*Popup {
             id: breachAlertPopup
             x: (parent.width - width) / 2
             y: 10  // optional: vertical position
@@ -660,7 +660,7 @@ Item {
                      font.pixelSize: _androidBuild? 16 : 20
                 }
             }
-        }
+        }*/
 
         Item {
             id: cameraControlOverlay

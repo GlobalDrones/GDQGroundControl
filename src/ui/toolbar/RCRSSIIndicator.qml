@@ -96,22 +96,6 @@ Item {
             anchors.top:        parent.top
             anchors.bottom:     parent.bottom
             sourceSize.height:  height
-            source:             "/qmlimages/SensorsComponentIcon.png"
-            fillMode:           Image.PreserveAspectFit
-            opacity:            _rcRSSIAvailable ? 1 : 0.5
-            color:              qgcPal.buttonText
-        }
-
-        QGCLabel {
-            font.bold:true
-            anchors.verticalCenter: parent.verticalCenter
-            text: _activeVehicle ? (_activeVehicle.gd60_Sensor2.rawValue.toFixed(0) + "%") : "NaN"
-        }
-        QGCColoredImage {
-            width:              height
-            anchors.top:        parent.top
-            anchors.bottom:     parent.bottom
-            sourceSize.height:  height
             source:             "/qmlimages/wifi.svg"
             fillMode:           Image.PreserveAspectFit
             opacity:            _rcRSSIAvailable ? 1 : 0.5
@@ -123,6 +107,24 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: _activeVehicle ? (_activeVehicle.gd60_Sensor3.rawValue.toFixed(0) + "%") : "NaN"
         }
+
+        QGCColoredImage {
+            width:              height
+            anchors.top:        parent.top
+            anchors.bottom:     parent.bottom
+            sourceSize.height:  height
+            source:             "/qmlimages/SensorsComponentIcon.png"
+            fillMode:           Image.PreserveAspectFit
+            opacity:            _rcRSSIAvailable ? 1 : 0.5
+            color:              qgcPal.buttonText
+        }
+
+        QGCLabel {
+            font.bold:true
+            anchors.verticalCenter: parent.verticalCenter
+            text: _activeVehicle ? (_activeVehicle.gd60_Sensor2.rawValue.toFixed(0) + "%") : "NaN"
+        }
+
 
 
         /*SignalStrength {
