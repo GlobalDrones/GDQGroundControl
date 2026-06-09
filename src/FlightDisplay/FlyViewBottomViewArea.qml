@@ -36,6 +36,7 @@ Item {
 
     property real _gasolina
     property real _motor_temp
+    property real _GD_GeneratorRPM
     property var _heading
     property var _gimbal_yaw
     property var _old_gimbal_yaw: 0
@@ -112,6 +113,18 @@ Item {
         }
     }
 
+    Binding {
+        target: bottomDataArea
+        property: "_GD_GeneratorRPM"
+        value: {
+            if (!activeVehicle) return 0
+            // Ajuste o caminho da propriedade conforme a estrutura do seu objeto activeVehicle
+            if (!activeVehicle._GD_GeneratorRPM) return 0
+
+            return activeVehicle._GD_GeneratorRPM.rawValue.toFixed(0)
+        }
+    }
+
     property string batteryVoltageText: ""
     Binding {
         target: bottomDataArea
@@ -169,13 +182,13 @@ Item {
         target: bottomDataArea
         property: "altLIDARText"
         value: {
-            if (!activeVehicle) return "Altitude:"
-            if (activeVehicle.batteries.count <= 0) return "Altitude:"
+            if (!activeVehicle) return "Altitude LIDAR:"
+            if (activeVehicle.batteries.count <= 0) return "Altitude LIDAR:"
 
             /*return "Altitude LIDAR: " +
                        activeVehicle.rangeFinderDist.value.toFixed(1)+"m"*/
-            return "Altitude: " +
-                       activeVehicle.altitudeRelative.value.toFixed(1)+"m"
+            return "Altitude LIDAR: " +
+                       activeVehicle.rangeFinderDist.value.toFixed(1)+"m"
         }
     }
 
@@ -291,7 +304,7 @@ Item {
 
         source: "/qmlimages/MotorTemp.svg"
         fillMode: Image.PreserveAspectFit
-        color: "white"
+        color: (_GD_GeneratorRPM <= 0) ? "red" : "white"
     }
 
     QGCColoredImage {
@@ -301,10 +314,10 @@ Item {
         fillMode: Image.PreserveAspectFit
 
         color: _motor_temp > 110 ?
-               (_motor_temp > 150 ?
-                (_motor_temp >= 200 ? "red" : "orange")
-                : "yellow")
-               : "white"
+                   (_motor_temp > 150 ?
+                    (_motor_temp >= 200 ? "red" : "orange")
+                    : "yellow")
+                   : "white"
     }
 
     Rectangle {
@@ -589,7 +602,7 @@ Item {
                                             text: altLIDARText
                                             font.bold: true
                                             font.pointSize: _dataBox._fontSize
-                                            color: activeVehicle? (activeVehicle.altitudeRelative.value.toFixed(1) > 120 ? "red":"white"):"white"
+                                            color: activeVehicle? (activeVehicle.rangeFinderDist.value.toFixed(1) > 120 ? "red":"white"):"white"
                                         }
                                     }
                                 }

@@ -1708,6 +1708,15 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         mavlink_rpm_t msg_rpm;
         mavlink_msg_rpm_decode(&message, &msg_rpm);
         _GD_GeneratorRPMFact.setRawValue(msg_rpm.rpm1);
+        if((msg_rpm.rpm1>0) && !generator_started){
+                _flightTimer.start();
+                _flightTimeUpdater.start();
+                generator_started=true;
+            }
+        if((msg_rpm.rpm1<=0) && generator_started){
+            _flightTimeUpdater.stop();
+            generator_started=false;
+        }
         break;
     }
 
@@ -1715,7 +1724,8 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     {
         mavlink_system_time_t msg_systime;
         mavlink_msg_system_time_decode(&message, &msg_systime);
-        _flightTimeFact.setRawValue(msg_systime.time_boot_ms/1000);//em segundos
+        //_flightTimeFact.setRawValue(msg_systime.time_boot_ms/1000);//em segundos
+        _updateFlightTime();
         break;
     }
     case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
@@ -3363,7 +3373,6 @@ void Vehicle::_flightTimerStart()
     _flightTimer.start();
     _flightTimeUpdater.start();
     _flightDistanceFact.setRawValue(0);
-    _flightTimeFact.setRawValue(0);
 }
 
 void Vehicle::_flightTimerStop()
@@ -3373,7 +3382,14 @@ void Vehicle::_flightTimerStop()
 
 void Vehicle::_updateFlightTime()
 {
-    _flightTimeFact.setRawValue((double)_flightTimer.elapsed() / 1000.0);
+    static bool first_start = false;
+    if(generator_started){
+        if(!first_start) first_start = true;
+        _flightTimeFact.setRawValue((double)_flightTimer.elapsed() / 1000.0);
+    }
+    if(!first_start){
+        _flightTimeFact.setRawValue(0);
+    }
 }
 
 void Vehicle::_gotProgressUpdate(float progressValue)

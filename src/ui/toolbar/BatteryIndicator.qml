@@ -111,9 +111,9 @@ Item {
                 source: {
                         switch (battery.id.rawValue) {
                         case 2:
-                            return "/qmlimages/Generator.svg"
+                            return "/qmlimages/Battery.svg"
                         case 1:
-                            return "/qmlimages/GasCan.svg"
+                            return "/qmlimages/Battery.svg"
                         default:
                             return "/qmlimages/Battery.svg"
                         }

@@ -465,6 +465,7 @@ public:
     bool    takeoffVehicleSupported () const;
     QString gotoFlightMode          () const;
 
+
     // Property accessors
 
     QGeoCoordinate coordinate() { return _coordinate; }
@@ -623,6 +624,8 @@ public:
     bool            requiresGpsFix              () const { return static_cast<bool>(_onboardControlSensorsPresent & SysStatusSensorGPS); }
     bool            hilMode                     () const { return _base_mode & MAV_MODE_FLAG_HIL_ENABLED; }
     Actuators*      actuators                   () const { return _actuators; }
+
+    bool            generator_started = false;
 
     /// Get the maximum MAVLink protocol version supported
     /// @return the maximum version
