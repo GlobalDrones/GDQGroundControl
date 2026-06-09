@@ -147,10 +147,10 @@ Item {
     property var res_y: parent.height
     property real radianPI: Math.PI/180
 
-   /* property string popUp_breachAlert
-    property string _breachAlertColor*/
+    property string popUp_breachAlert
+    property string _breachAlertColor
 
-    //property bool canShowBreachAlert: true
+    property bool canShowBreachAlert: true
     property var array_valores_rc: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     property bool override_first_clicked: false;
 
@@ -201,13 +201,13 @@ Item {
 
 
 
-    /*Timer {
+    Timer {
         id: breachCooldownTimer
-        interval: 10000 // cooldown de 10 segundos
+        interval: 30000 // cooldown de 30 segundos
         running: false
         repeat: false
         onTriggered: canShowBreachAlert = true
-    }*/
+    }
     Timer {
         id: generatorCooldownTimer
         interval: 10000   // 10 segundos de cooldown
@@ -461,7 +461,7 @@ Item {
 
 
 
-            /*var breach_val = breachDetection()
+            var breach_val = breachDetection()
             if (breach_val.level > -1 && canShowBreachAlert) {
 
                 if (breach_val.level === 0) {
@@ -469,15 +469,15 @@ Item {
                     _breachAlertColor = "Yellow"
                 }
                 if (breach_val.level === 1) {
-                    popUp_breachAlert = "Invasão do Volume de Ground Risk Buffer!"
+                    popUp_breachAlert = "Invasão de Ground Risk Buffer!"
                     _breachAlertColor = "Orange"
                 }
 
-               // breachAlertPopup.open()
-               // breachAlertPopup.visible = true
+                breachAlertPopup.open()
+                breachAlertPopup.visible = true
                 canShowBreachAlert = false
                 breachCooldownTimer.start()
-            }*/
+            }
 
         }
     }
@@ -551,6 +551,35 @@ Item {
             parentToolInsets: _toolInsets
             mapControl: _mapControl
             visible: !QGroundControl.videoManager.fullScreen
+        }
+
+        Item {
+            id: crosshair
+            width: parent.width*0.04
+            height: width
+            anchors.centerIn: parent // Garante que a mira fique no centro do elemento pai
+            visible: widgetLayer.crosshair_visible
+            z: 1000000000000
+
+            // Linha Horizontal
+            Rectangle {
+                width: parent.width
+                height: 5
+                color: "red"
+                //border.color: "black"
+                //border.width: 1
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            // Linha Vertical
+            Rectangle {
+                width: 5
+                height: parent.height
+                color: "red"
+                //border.color: "black"
+                //border.width: 1
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
         }
 
 
@@ -634,7 +663,7 @@ Item {
                       || mapControl.pipState.state === mapControl.pipState.pipState)
         }
 
-        /*Popup {
+        Popup {
             id: breachAlertPopup
             x: (parent.width - width) / 2
             y: 10  // optional: vertical position
@@ -660,7 +689,7 @@ Item {
                      font.pixelSize: _androidBuild? 16 : 20
                 }
             }
-        }*/
+        }
 
         Item {
             id: cameraControlOverlay

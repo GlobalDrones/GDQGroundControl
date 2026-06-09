@@ -57,6 +57,7 @@ Item {
     property SiYiCamera camera: siyi.camera
     property int iconLeftMargin: toolStrip.width + toolStrip.anchors.leftMargin
     property bool visible_custom_telemetry: false
+    property bool crosshair_visible: false
 
     QGCToolInsets {
         id: _totalToolInsets
@@ -362,6 +363,12 @@ Item {
 
         onModoEngenheiroToggle:{
             visible_custom_telemetry = !visible_custom_telemetry
+        }
+        onCrosshairToggle:{
+            crosshair_visible = !crosshair_visible
+        }
+        onCamControlToggle: {
+            SiYi.hideWidgets = !SiYi.hideWidgets
         }
 
         property real leftInset: x + width

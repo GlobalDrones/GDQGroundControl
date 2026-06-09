@@ -169,11 +169,13 @@ Item {
         target: bottomDataArea
         property: "altLIDARText"
         value: {
-            if (!activeVehicle) return "Altitude LIDAR:"
-            if (activeVehicle.batteries.count <= 0) return "Altitude LIDAR:"
+            if (!activeVehicle) return "Altitude:"
+            if (activeVehicle.batteries.count <= 0) return "Altitude:"
 
-            return "Altitude LIDAR: " +
-                       activeVehicle.rangeFinderDist.value.toFixed(1)+"m"
+            /*return "Altitude LIDAR: " +
+                       activeVehicle.rangeFinderDist.value.toFixed(1)+"m"*/
+            return "Altitude: " +
+                       activeVehicle.altitudeRelative.value.toFixed(1)+"m"
         }
     }
 
@@ -497,7 +499,17 @@ Item {
                                             text: batteryVoltageText
                                             font.bold: true
                                             font.pointSize: _dataBox._fontSize
-                                            color: "white"
+                                            //color: "white"
+                                            color: (!activeVehicle
+                                                    || activeVehicle.batteries.count === 0
+                                                    || !activeVehicle.batteries.get(0)
+                                                    || isNaN(activeVehicle.batteries.get(0).voltage.rawValue))
+                                                   ? "white"
+                                                   : (activeVehicle.batteries.get(0).voltage.rawValue < 42
+                                                      ? "red"
+                                                      : activeVehicle.batteries.get(0).voltage.rawValue <= 47
+                                                        ? "yellow"
+                                                        : "white")
                                         }
                                     }
                                     Rectangle {
@@ -577,7 +589,7 @@ Item {
                                             text: altLIDARText
                                             font.bold: true
                                             font.pointSize: _dataBox._fontSize
-                                            color: activeVehicle? (activeVehicle.rangeFinderDist.value.toFixed(1) > 120 ? "red":"white"):"white"
+                                            color: activeVehicle? (activeVehicle.altitudeRelative.value.toFixed(1) > 120 ? "red":"white"):"white"
                                         }
                                     }
                                 }
