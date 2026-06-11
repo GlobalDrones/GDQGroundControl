@@ -16,6 +16,8 @@ import QtLocation 5.3
 import QtPositioning 5.3
 import QtQuick.Window 2.2
 import QtQml.Models 2.1
+import QtMultimedia 5.15
+
 
 import QGroundControl 1.0
 import QGroundControl.Airspace 1.0
@@ -31,6 +33,7 @@ import QGroundControl.ScreenTools 1.0
 import QGroundControl.Vehicle 1.0
 
 import QtGraphicalEffects 1.0
+import CustomVideo 1.0
 
 import SiYi.Object 1.0
 import "qrc:/qml/QGroundControl/Controls"
@@ -2629,6 +2632,47 @@ Item {
 
         }
 
+
+        Item {
+            id: secondaryVideoContainer
+            anchors.right:   parent.right
+            anchors.bottom:  parent.bottom
+            anchors.margins: 8
+            width:  320
+            height: 180
+            z:      videoControl.z + 10
+
+            Item {
+                id: secondaryVideoItem
+                anchors.fill: parent
+            }
+
+            Timer {
+                id: startTimer
+                interval: 5000
+                repeat:   false
+                running:  true
+                onTriggered: {
+                   /* secondaryVidMgr.start(
+                        "rtsp://192.168.144.25:8554/main.264",
+                        secondaryVideoItem
+                    )*/
+                    qWarning("timer fired but manager disabled")
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                color:        "transparent"
+                border.color: "#80ffffff"
+                border.width: 1
+                z: 1
+            }
+        }
+
+        SecondaryVideoManager {
+            id: secondaryVidMgr
+        }
 
 
 

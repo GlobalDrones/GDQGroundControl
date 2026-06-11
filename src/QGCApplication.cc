@@ -66,6 +66,7 @@
 #include "VideoManager.h"
 #include "VideoReceiver.h"
 #include "LogDownloadController.h"
+#include "SecondaryVideoManager.h"
 #if !defined(QGC_DISABLE_MAVLINK_INSPECTOR)
 #include "MAVLinkInspectorController.h"
 #endif
@@ -527,6 +528,8 @@ void QGCApplication::_initCommon()
 #if !defined(QGC_DISABLE_MAVLINK_INSPECTOR)
     qmlRegisterType<MAVLinkInspectorController>     (kQGCControllers,                       1, 0, "MAVLinkInspectorController");
 #endif
+    qmlRegisterType<SecondaryVideoManager>("CustomVideo", 1, 0, "SecondaryVideoManager");
+
 
     // Register Qml Singletons
     qmlRegisterSingletonType<QGroundControlQmlGlobal>   ("QGroundControl",                          1, 0, "QGroundControl",         qgroundcontrolQmlGlobalSingletonFactory);

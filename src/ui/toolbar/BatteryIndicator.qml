@@ -133,7 +133,14 @@ Item {
             }
 
             QGCLabel {
-                text:                   getBatteryTensionText()
+                text:{
+                        switch (battery.id.rawValue) {
+                        case 3:
+                            return getBatteryPercentageText()
+                        default:
+                            return getBatteryTensionText()
+                        }
+                    }
                 font.pointSize:         ScreenTools.mediumFontPointSize
                 color:                  getBatteryColor()
                 anchors.verticalCenter: parent.verticalCenter

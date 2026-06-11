@@ -163,3 +163,9 @@ VideoEnabled {
         message("Skipping support for video streaming (Unsupported platform)")
     }
 }
+
+HEADERS += \
+    $$PWD/SecondaryVideoManager.h
+
+SOURCES += \
+    $$PWD/SecondaryVideoManager.cpp
