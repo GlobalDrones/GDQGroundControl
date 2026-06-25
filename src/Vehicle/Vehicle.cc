@@ -1756,8 +1756,8 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         else if (strncmp(msg_nvf.name, "ECU1_CTP2", 10) == 0) id = TEMP_M1_CILINDRO2;
         else if (strncmp(msg_nvf.name, "ECU2_CTP1", 10) == 0) id = TEMP_M2_CILINDRO1;
         else if (strncmp(msg_nvf.name, "ECU2_CTP2", 10) == 0) id = TEMP_M2_CILINDRO2;
-        else if (strncmp(msg_nvf.name, "RPM_M1", 10) == 0) id = RPM_M1;
-        else if (strncmp(msg_nvf.name, "RPM_M2", 10) == 0) id = RPM_M2;
+        else if (strncmp(msg_nvf.name, "ECU1_RPM", 10) == 0) id = RPM_M1;
+        else if (strncmp(msg_nvf.name, "ECU2_RPM", 10) == 0) id = RPM_M2;
 
         if(msg_nvf.value==32767){ //32767 is null
             msg_nvf.value = 0;
@@ -1798,13 +1798,16 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
 
         case RPM_M1:
             _gd60_RPM_M1Fact.setRawValue(msg_nvf.value);
+            qDebug()<<"MENSAGEM RPM_M1 DE VALOR "<<msg_nvf.value;
             break;
 
         case RPM_M2:
             _gd60_RPM_M2Fact.setRawValue(msg_nvf.value);
+            qDebug()<<"MENSAGEM RPM_M2 DE VALOR "<<msg_nvf.value;
             break;
 
         default:
+            //qDebug()<<"MENSAGEM RECEBIDA DE NOME "<<msg_nvf.name;
             break;
         }
     }

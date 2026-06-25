@@ -967,7 +967,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_activeVehicle.gd60_Sensor1.rawValue, 800, 2200, Math.PI, Math.PI*2);}}
+                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_activeVehicle.gd60_RPM_M1.rawValue, 1900, 6500, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -981,7 +981,7 @@ Item {
                     anchors.top: dialRPMHORIZONTAL1.bottom
                     anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
                     font.pixelSize: _androidBuild? 20 : 18
-                    text: _activeVehicle.gd60_Sensor1.rawValue //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
+                    text: _activeVehicle.gd60_RPM_M1.rawValue //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
                     color:"green"
                     font.bold: true
                     horizontalAlignment: parent.width
@@ -1044,7 +1044,7 @@ Item {
                             ctx.lineTo(pointerX, pointerY) // Desenha até a borda do arco
                             ctx.stroke()
                         }
-                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(servo_output16, 800, 2200, Math.PI, Math.PI*2);}}
+                        Timer {interval: 36;running: true;repeat: true;onTriggered: {parent.requestPaint();parent.angleRPMGerador= mapValueToRadians(_activeVehicle.gd60_RPM_M2.rawValue, 1900, 6500, Math.PI, Math.PI*2);}}
                     }
 
 
@@ -1058,7 +1058,7 @@ Item {
                     anchors.top: dialRPMHORIZONTAL2.bottom
                     anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
                     font.pixelSize: _androidBuild? 20 : 18
-                    text: servo_output16 //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
+                    text: _activeVehicle.gd60_RPM_M2.rawValue //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
                     color:"green"
                     font.bold: true
                     horizontalAlignment: parent.width
@@ -2633,7 +2633,7 @@ Item {
         }
 
 
-        Item {
+        /*Item {
             id: secondaryVideoContainer
             anchors.right:   parent.right
             anchors.bottom:  parent.bottom
@@ -2641,6 +2641,7 @@ Item {
             width:  320
             height: 180
             z:      videoControl.z + 10
+            visible: true
 
             Item {
                 id: secondaryVideoItem
@@ -2653,11 +2654,11 @@ Item {
                 repeat:   false
                 running:  true
                 onTriggered: {
-                   /* secondaryVidMgr.start(
-                        "rtsp://192.168.144.25:8554/main.264",
+                    secondaryVidMgr.start(
+                        "rtsp://192.168.144.100:8554/drone",
                         secondaryVideoItem
-                    )*/
-                    qWarning("timer fired but manager disabled")
+                    )
+                    //qWarning("timer fired but manager disabled")
                 }
             }
 
@@ -2672,13 +2673,7 @@ Item {
 
         SecondaryVideoManager {
             id: secondaryVidMgr
-        }
-
-
-
-
-
-
+        }*/
 
 
         Popup {
