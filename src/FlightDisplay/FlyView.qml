@@ -909,7 +909,6 @@ Item {
 
                 }//fim RPM4
 
-                //RPM HORIZONTAL1 TODO: RPM DO HORIZONTAL1 NÃO EXISTE COMO INFO AINDA
                 Item{
                     id: dialRPMHORIZONTAL1
                     anchors.left: parent.left
@@ -981,13 +980,12 @@ Item {
                     anchors.top: dialRPMHORIZONTAL1.bottom
                     anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
                     font.pixelSize: _androidBuild? 20 : 18
-                    text: _activeVehicle.gd60_RPM_M1.rawValue //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
+                    text: _activeVehicle.gd60_RPM_M1.rawValue
                     color:"green"
                     font.bold: true
                     horizontalAlignment: parent.width
                 }
 
-                //RPM GERADOR TODO: RPM DO GERADOR NÃO EXISTE COMO INFO AINDA
                 Item{
                     id: dialRPMHORIZONTAL2
                     anchors.left: parent.left
@@ -1058,7 +1056,7 @@ Item {
                     anchors.top: dialRPMHORIZONTAL2.bottom
                     anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
                     font.pixelSize: _androidBuild? 20 : 18
-                    text: _activeVehicle.gd60_RPM_M2.rawValue //TODO: TROCAR PRA INFO DE RPM DO MOTOR CENTRAL
+                    text: _activeVehicle.gd60_RPM_M2.rawValue
                     color:"green"
                     font.bold: true
                     horizontalAlignment: parent.width
@@ -1632,7 +1630,7 @@ Item {
                     delegate: Item {
                         width: parent.width
                         height: pitchArea.lineSpacing
-                        rotation: _activeVehicle.roll.rawValue.toFixed(1)
+                        rotation:- _activeVehicle.roll.rawValue.toFixed(1)
                         property int angle: 90 - index * 5
 
                         y: index * pitchArea.lineSpacing + pitchArea.pitchOffsetY * -1
