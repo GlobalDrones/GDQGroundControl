@@ -95,7 +95,7 @@ Item {
     property int _gasolineIndex: _GD60? 0:1
     property int _generatorIndex: _GD60? 0:2
 
-
+    //_activeVehicle.wind.get(0).direction.rawValue
     property int _satCount: 0
     property int _satPDOP: 0
     property var _rcQuality: 0
@@ -183,6 +183,7 @@ Item {
     property color hudPaleGreen: "#9AFF75"
     property color hudPaleBlue: "#00ffff"
     property color hudPalePurple: "#ff00ff"
+    property color hudYellow: "#FFD700"
     property bool overrideActive: false
 
     property real start_roll_angle: Math.PI * 1.138 //1.08-> 195°
@@ -404,7 +405,6 @@ Item {
         repeat: true
 
         onTriggered:{
-
             //console.log("Listing all ESC Status Fact Names:")
 
                         // Iterate over all properties of the escStatus FactGroup
@@ -603,6 +603,7 @@ Item {
                     anchors.fill: parent
                     color:qgcPal.toolbarBackground
                 }
+
                 Text{
                     id: text_rpm1
                     width: 1
@@ -908,6 +909,30 @@ Item {
                     }
 
                 }//fim RPM4
+                QGCColoredImage {
+                    id: rpmHeadingIcon
+                    width: headingContainer.width / 1.5
+                    height: headingContainer.height / 1.5
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.horizontalCenterOffset: -parent.width*0.022
+                    anchors.verticalCenter: dialRPM1.verticalCenter
+                    anchors.verticalCenterOffset: parent.height*0.01
+                    source: "/qmlimages/GD60_lowres.png"
+                    color: "white"
+                    rotation: 180
+                    opacity: 0.4    // 0 = invisível, 1 = totalmente opaco
+                    layer.enabled: true
+                    layer.smooth: true
+                    layer.effect: DropShadow {
+                        color: "black"
+                        horizontalOffset: 0
+                        verticalOffset: 0
+                        radius: 1
+                        smooth: true
+                        samples: 32
+                        spread: 0.5
+                    }
+                }
 
                 Item{
                     id: dialRPMHORIZONTAL1
@@ -1761,7 +1786,7 @@ Item {
                         // -----------------------------------------
                         // Listras das marcações -60..60
                         // -----------------------------------------
-                        var marcacoes = [-60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60]
+                        var marcacoes = [-60, -45, -30, -20, -10, 10, 20, 30, 45, 60]
 
                         for (var i = 0; i < marcacoes.length; i++) {
                             var deg = marcacoes[i]
@@ -1800,6 +1825,38 @@ Item {
                         }
                     }
                 }
+                QGCColoredImage {
+                    id: pointer0Roll
+                    width: dialRoll.width / 20
+                    height: dialRoll.height / 2
+                    anchors.horizontalCenter: rollArc.horizontalCenter
+                    anchors.verticalCenter: rollArc.verticalCenter
+                    anchors.verticalCenterOffset: -dialRoll.height*0.95
+                    anchors.horizontalCenterOffset: -dialRoll.width*0.0215
+
+                    color: hudPaleGreen
+                    source: "/qmlimages/rollPointer.svg"
+                    transformOrigin: Item.Bottom
+
+                    // Converte radianos para graus e alinha o topo em 0°
+                    rotation: 175
+
+
+                    smooth: true
+                    //layer.enabled: true
+                    //layer.smooth: true
+                    layer.effect: DropShadow {
+                        color: "black"
+                        horizontalOffset: 0
+                        verticalOffset: 0
+                        radius: 2
+                        smooth: true
+                        samples: 32
+                        spread: 0.8
+                    }
+                }
+
+
 
                 // --------------------------
                 // PONTEIRO
@@ -1946,7 +2003,7 @@ Item {
                 id: pointerHeadingWayPoint
                 width: headingContainer.width / 7
                 height: width
-                color: hudPaleBlue
+                color: hudYellow
                 source: "/qmlimages/rollPointer.svg"
                 rotation: angle_fixed +90
                 smooth: true
@@ -2089,7 +2146,7 @@ Item {
 
                 Text {
                     text: " WP: "+_activeVehicle.headingToNextWP.rawValue.toFixed(0).padStart(3, '0') + "°"
-                    color: hudPaleBlue
+                    color: hudYellow
                     font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
                     anchors.centerIn: headingValuetextBox // Centraliza horizontal e verticalmente
@@ -2119,6 +2176,103 @@ Item {
                     font.bold: true
                     anchors.centerIn: headingValuetextBox // Centraliza horizontal e verticalmente
                     z: parent.z + 20
+                }
+            }
+            QGCColoredImage {
+                id: pointerHeadingWind
+
+                width: headingContainer.width / 7
+                height: width
+
+                color: hudPaleBlue    // amarelo
+                source: "/qmlimages/rollPointer.svg"
+
+                smooth: true
+                layer.enabled: true
+                layer.smooth: true
+
+                property real centerX: headingContainer.x + headingContainer.width / 2
+                property real centerY: headingContainer.y + headingContainer.height / 2
+
+                property real innerRadius: headingContainer.width * 0.40
+
+                property real headingActual: _activeVehicle.heading.rawValue
+                property real headingWind: _activeVehicle.wind.direction.rawValue
+
+                property real angle_fixed: headingWind - headingActual - 90
+                property real angleRad: angle_fixed * Math.PI / 180
+
+                x: centerX + innerRadius * Math.cos(angleRad) - width / 2
+                y: centerY + innerRadius * Math.sin(angleRad) - height / 2
+
+                transform: Rotation {
+                    origin.x: pointerHeadingWind.width / 2
+                    origin.y: pointerHeadingWind.height / 2
+                    angle: angle_fixed
+                }
+
+                layer.effect: DropShadow {
+                    color: "black"
+                    horizontalOffset: 0
+                    verticalOffset: 0
+                    radius: 1
+                    smooth: true
+                    samples: 32
+                    spread: 0.5
+                }
+            }
+            Item {
+                id: windDirectionBox
+
+                width: ScreenTools.defaultFontPixelWidth * 9
+                height: ScreenTools.defaultFontPixelHeight
+
+                anchors.top: headingContainer.bottom
+                anchors.topMargin: _toolsMargin * 0.5
+                anchors.right: headingContainer.horizontalCenter
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: "black"
+                    border.color: hudPaleGreen
+                    border.width: 1
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    color: hudPaleBlue
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+
+                    text: "WND " +
+                          _activeVehicle.wind.direction.rawValue.toFixed(1).padStart(3,'0') +
+                          "°"
+                }
+            }
+            Item {
+                id: windSpeedBox
+
+                width: ScreenTools.defaultFontPixelWidth * 9
+                height: ScreenTools.defaultFontPixelHeight
+
+                anchors.top: headingContainer.bottom
+                anchors.topMargin: _toolsMargin * 0.5
+                anchors.left: headingContainer.horizontalCenter
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: "black"
+                    border.color: hudPaleGreen
+                    border.width: 1
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    color: hudPaleBlue
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.bold: true
+
+                    text: _activeVehicle.wind.speed.rawValue.toFixed(1) + " kt"
                 }
             }
             ///// FIM DO HEADING
