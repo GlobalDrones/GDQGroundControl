@@ -2833,6 +2833,7 @@ void Vehicle::_handleRadioStatus(mavlink_message_t& message)
 
     int rssi    = rstatus.rssi;
     int remrssi = rstatus.remrssi;
+    qDebug()<<"REMRSSI "<<remrssi;
     int lnoise = (int)(int8_t)rstatus.noise;
     int rnoise = (int)(int8_t)rstatus.remnoise;
     //-- 3DR Si1k radio needs rssi fields to be converted to dBm
@@ -2860,6 +2861,7 @@ void Vehicle::_handleRadioStatus(mavlink_message_t& message)
     }
     if(_telemetryRRSSI != remrssi) {
         _telemetryRRSSI = remrssi;
+
         emit telemetryRRSSIChanged(_telemetryRRSSI);
     }
     if(_telemetryRXErrors != rstatus.rxerrors) {

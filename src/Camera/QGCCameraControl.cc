@@ -1692,17 +1692,17 @@ QGCCameraControl::currentStreamInstance()
 QGCVideoStreamInfo*
 QGCCameraControl::thermalStreamInstance()
 {
-    //-- For now, it will return the first thermal listed (if any)
     for(int i = 0; i < _streams.count(); i++) {
-        if(_streams[i]) {
-            QGCVideoStreamInfo* pStream = qobject_cast<QGCVideoStreamInfo*>(_streams[i]);
-            if(pStream) {
-                if(pStream->isThermal()) {
-                    return pStream;
-                }
-            }
+        auto pStream = qobject_cast<QGCVideoStreamInfo*>(_streams[i]);
+        if(pStream && pStream->isThermal()) {
+            return pStream;
         }
     }
+
+    if (_streams.count() > 1) {
+        return qobject_cast<QGCVideoStreamInfo*>(_streams[1]);
+    }
+
     return nullptr;
 }
 

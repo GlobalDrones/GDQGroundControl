@@ -63,6 +63,7 @@ Item {
 
                     QGCLabel { text: qsTr("RSSI:") }
                     QGCLabel { text: _activeVehicle ? (_activeVehicle.rcRSSI + "%") : 0 }
+
                 }
             }
         }

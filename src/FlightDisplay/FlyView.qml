@@ -377,7 +377,7 @@ Item {
                 batCurrent = _activeVehicle.batteries.get(0).current.rawValue
                 gerCurrent = _activeVehicle.batteries.get(2).current.rawValue
             } catch(e) {
-                console.log("Erro lendo baterias:", e)
+                //console.log("Erro lendo baterias:", e)
                 return
             }
 
