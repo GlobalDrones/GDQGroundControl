@@ -920,7 +920,7 @@ Item {
                     source: "/qmlimages/GD60_lowres.png"
                     color: "white"
                     rotation: 180
-                    opacity: 0.4    // 0 = invisível, 1 = totalmente opaco
+                    opacity: 0.2    // 0 = invisível, 1 = totalmente opaco
                     layer.enabled: true
                     layer.smooth: true
                     layer.effect: DropShadow {
@@ -2190,7 +2190,7 @@ Item {
                 smooth: true
                 layer.enabled: true
                 layer.smooth: true
-
+                rotation: angle_fixed + 90
                 property real centerX: headingContainer.x + headingContainer.width / 2
                 property real centerY: headingContainer.y + headingContainer.height / 2
 
@@ -2241,11 +2241,11 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     color: hudPaleBlue
-                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
+                    font.pixelSize: ScreenTools.defaultFontPixelWidth * 1.8
                     font.bold: true
 
                     text: "WND " +
-                          _activeVehicle.wind.direction.rawValue.toFixed(1).padStart(3,'0') +
+                          _activeVehicle.wind.direction.rawValue.toFixed(0).padStart(3,'0') +
                           "°"
                 }
             }
@@ -2272,7 +2272,7 @@ Item {
                     font.pixelSize: ScreenTools.defaultFontPixelWidth * 2
                     font.bold: true
 
-                    text: _activeVehicle.wind.speed.rawValue.toFixed(1) + " kt"
+                    text: _activeVehicle.wind.speed.rawValue.toFixed(1) + " m/s"
                 }
             }
             ///// FIM DO HEADING
@@ -2497,10 +2497,10 @@ Item {
                 anchors.leftMargin: _toolsMargin*20
                 clip: true
 
-                // 💨 Valor Atual: Usamos a altitude. Removemos o sinal '-' inicial, pois a rolagem é tratada no scrollOffsetY.
+                // Valor Atual
                 property real current_value: -_activeVehicle.altitudeRelative.rawValue.toFixed(1)
 
-                // 📏 Definições da Escala
+                // Definições da Escala
                 property real lineSpacing: height / 6
                 // Novo total de linhas: (200 - (-200)) / 10 + 1 = 41 linhas (de -200 a 200, incluindo 0)
                 readonly property int totalLines: 41
@@ -2508,7 +2508,7 @@ Item {
                 // O índice da linha que deve ter o valor 0 (index 20: -200 + 20*10 = 0)
                 readonly property int _ZERO_INDEX: 20
 
-                // 📐 Fatores de Rolagem
+                // Fatores de Rolagem
                 readonly property real unitsPerLineSpacing: 10
                 readonly property real pixelPerUnit: barraLateralDireita.lineSpacing / barraLateralDireita.unitsPerLineSpacing
 
@@ -2528,20 +2528,20 @@ Item {
                     color:hudGrey
                     border.color: hudPaleGreen
                     border.width: 2 // Borda padrão
-                    // Se precisar de borda esquerda 0, use: border.widths: [2, 2, 2, 0]
+
                 }
 
-                // ⚙️ Repeater para criar a escala de Altitude
+                //️ Repeater para criar a escala de Altitude
                 Repeater {
                     model: barraLateralDireita.totalLines
                     delegate: Item {
                         width: parent.width
                         height: barraLateralDireita.lineSpacing
 
-                        // 🌟 Cálculo do valor exibido: Começa em -200 e incrementa de 10 em 10
+                        // Cálculo do valor exibido: Começa em -200 e incrementa de 10 em 10
                         property int altitudeScale: 200 - index * 10
 
-                        // ⬇️ Cálculo da Posição Y da linha (Agora Corrigida)
+                        // ⬇Cálculo da Posição Y da linha (Agora Corrigida)
                         // = Posição Estática (do topo) + Deslocamento Rolante + Offset Fixo para Centralizar o '0'
                         y: ((index-0.5) * barraLateralDireita.lineSpacing) + barraLateralDireita.scrollOffsetY + barraLateralDireita.centerOffset
 
@@ -2655,7 +2655,7 @@ Item {
                 // lineSpacing: Se 3 unidades (3 m/s) preenchem a altura,
                 // e cada unidade tem 2 linhas de 0.5m/s,
                 // lineSpacing * 6 = height. lineSpacing é a altura de cada passo de 0.5 m/s.
-                property real lineSpacing: height / 6
+                property real lineSpacing: height / 10
 
                 // Novo total de linhas: (20 - (-20)) / 0.5 + 1 = 81 linhas
                 readonly property int totalLines: 81
