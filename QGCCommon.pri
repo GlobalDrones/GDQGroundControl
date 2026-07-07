@@ -217,9 +217,7 @@ AndroidBuild {
     greaterThan(PATCH_VERSION, 99) {
         error(Patch version larger than 2 digits: $${PATCH_VERSION})
     }
-    greaterThan(DEV_VERSION, 999) {
-        error(Dev version larger than 3 digits: $${DEV_VERSION})
-    }
+
 
     lessThan(PATCH_VERSION, 10) {
         PATCH_VERSION = $$join(PATCH_VERSION, "", "0")

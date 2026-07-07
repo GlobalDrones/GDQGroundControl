@@ -150,7 +150,7 @@ Item {
                    activeVehicle.batteries.get(0).current.rawValue.toFixed(1) + "A"
         }
     }
-
+/* //versão de original, comentada temporariamente
     property string generatorCurrentText: ""
     Binding {
         target: bottomDataArea
@@ -161,6 +161,18 @@ Item {
 
             return "Generator Current: " +
                    activeVehicle.batteries.get(2).current.rawValue.toFixed(1) + "A"
+        }
+    }*/
+
+    property string generatorCurrentText: ""
+    Binding {
+        target: bottomDataArea
+        property: "generatorCurrentText"
+        value: {
+            if (!activeVehicle) return "FlightDist:"
+
+            return "FlightDist: " +
+                   activeVehicle.flightDistance.rawValue.toFixed(1) + "m"
         }
     }
 
@@ -234,7 +246,7 @@ Item {
     // GASOLINA
     //**************************************************************************************************
 
-    Loader {
+   /* Loader {
         id: gasolineIconLoader
         anchors.top: parent.top
         anchors.left: parent.left
@@ -285,7 +297,7 @@ Item {
         text: _gasolina + "%"
         font.bold: true
         color: "white"
-    }
+    }*/
 
 
     //**************************************************************************************************
@@ -295,8 +307,8 @@ Item {
     QGCColoredImage {
         id: motorTemperatureInformationIcon
         anchors.top: parent.top
-        anchors.left: textBoxGasolinePercentage.right
-        anchors.leftMargin: toolsMargin*0.5
+        anchors.left: parent.leftz
+        anchors.leftMargin: toolsMargin*2
         anchors.topMargin: toolsMargin * 2
 
         width: height
@@ -304,7 +316,7 @@ Item {
 
         source: "/qmlimages/MotorTemp.svg"
         fillMode: Image.PreserveAspectFit
-        color: (_GD_GeneratorRPM <= 0) ? "red" : "white"
+        color: "white"// (_GD_GeneratorRPM <= 0) ? "red" : "white"
     }
 
     QGCColoredImage {
