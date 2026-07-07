@@ -401,7 +401,6 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
 
 void Vehicle::stopRCOverride() {
     if (!_overrideRunning) return;
-
     _overrideRunning = false;
 
 
@@ -433,34 +432,10 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
     setJoystickEnabled(false);
     //_joystickManager->activeJoystick()->terminate();
 
-    // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
-    mavlink_rc_channels_override_t rc_reset;
-
-    // Define TODOS os 18 canais para 65535 (IGNORAR)
-    rc_reset.chan1_raw  = 65535; rc_reset.chan2_raw  = 65535;
-    rc_reset.chan3_raw  = 65535; rc_reset.chan4_raw  = 65535;
-    rc_reset.chan5_raw  = 65535; rc_reset.chan6_raw  = 65535;
-    rc_reset.chan7_raw  = 65535; rc_reset.chan8_raw  = 65535;
-    rc_reset.chan9_raw  = 65535; rc_reset.chan10_raw = 65535;
-    rc_reset.chan11_raw = 65535; rc_reset.chan12_raw = 65535;
-    rc_reset.chan13_raw = 65535; rc_reset.chan14_raw = 65535;
-    rc_reset.chan15_raw = 65535; rc_reset.chan16_raw = 65535;
-    rc_reset.chan17_raw = 65535; rc_reset.chan18_raw = 65535;
-
-    rc_reset.target_system      = id();
-    rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
-
-    mavlink_message_t msg_out;
-    mavlink_msg_rc_channels_override_encode(
-        _mavlink->getSystemId(),
-        _mavlink->getComponentId(),
-        &msg_out,
-        &rc_reset
-        );
 
 
-    // Envia o comando de reset 3 vezes para garantir a entrega
-    sendMessageMultiple(msg_out);
+
+
 
     qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
 
@@ -827,25 +802,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                     previous_channels = channels_override; // O estado atual se torna o estado anterior
                     last_sent_time = current_time; // Atualiza o tempo do último envio
 
-                    // Log dos dados (opcional, mas útil para debug)
-                    //qWarning() << "[MAVLink RC OUT] Ch1/Ch2/Ch3/Ch4:"
-                    //           << channels_override.chan1_raw << "/"
-                    //           << channels_override.chan2_raw << "/"
-                    //           << channels_override.chan3_raw << "/"
-                    //           << channels_override.chan4_raw << "/"
-                    //           << channels_override.chan5_raw << "/"
-                    //           << channels_override.chan6_raw << "/"
-                    //           << channels_override.chan7_raw << "/"
-                    //           << channels_override.chan8_raw << "/"
-                    //           << channels_override.chan9_raw << "/"
-                    //           << channels_override.chan10_raw << "/"
-                    //           << channels_override.chan11_raw << "/"
-                    //           << channels_override.chan12_raw << "/"
-                    //           << channels_override.chan13_raw << "/"
-                    //           << channels_override.chan14_raw << "/"
-                    //           << channels_override.chan15_raw << "/"
-                    //           << channels_override.chan16_raw
-                    //           << (values_changed ? " (MUDANÇA)" : " (KEEP-ALIVE)");
                 }
                 // --- FIM DA LÓGICA DE ENVIO OTIMIZADA ---
 
@@ -864,9 +820,77 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                 }
             }
 
+            if (!_overrideRunning){
+                mavlink_rc_channels_override_t rc_reset;
+
+                // Define TODOS os 18 canais para 0 (RETURN CONTROL TO RADIO)
+                rc_reset.chan1_raw  = 0; rc_reset.chan2_raw  = 0;
+                rc_reset.chan3_raw  = 0; rc_reset.chan4_raw  = 0;
+                rc_reset.chan5_raw  = 0; rc_reset.chan6_raw  = 0;
+                rc_reset.chan7_raw  = 0; rc_reset.chan8_raw  = 0;
+                rc_reset.chan9_raw  = 65534; rc_reset.chan10_raw = 65534;
+                rc_reset.chan11_raw = 65534; rc_reset.chan12_raw = 65534;
+                rc_reset.chan13_raw = 65534; rc_reset.chan14_raw = 65534;
+                rc_reset.chan15_raw = 65534; rc_reset.chan16_raw = 65534;
+                rc_reset.chan17_raw = 65534; rc_reset.chan18_raw = 65534;
+
+                rc_reset.target_system      = id();
+                rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+                mavlink_message_t msg_out;
+                mavlink_msg_rc_channels_override_encode(
+                    _mavlink->getSystemId(),
+                    _mavlink->getComponentId(),
+                    &msg_out,
+                    &rc_reset
+                    );
+
+                auto link = vehicleLinkManager()->primaryLink().lock();
+                if (!link) {
+                   //QThread::msleep(20);
+                    continue;
+                }
+
+                sendMessageOnLinkThreadSafe(link.get(), msg);
+                /*******************************/
+            }
             // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio) deletar para teste depois
             QThread::msleep(20);
         }
+
+
+        /*************************************************/
+        // BLOCO DE RESET DE CONTROLE
+
+        mavlink_rc_channels_override_t rc_reset;
+
+        // Define TODOS os 18 canais para 0 (RETURN CONTROL TO RADIO)
+        rc_reset.chan1_raw  = 0; rc_reset.chan2_raw  = 0;
+        rc_reset.chan3_raw  = 0; rc_reset.chan4_raw  = 0;
+        rc_reset.chan5_raw  = 0; rc_reset.chan6_raw  = 0;
+        rc_reset.chan7_raw  = 0; rc_reset.chan8_raw  = 0;
+        rc_reset.chan9_raw  = 0; rc_reset.chan10_raw = 0;
+        rc_reset.chan11_raw = 0; rc_reset.chan12_raw = 0;
+        rc_reset.chan13_raw = 0; rc_reset.chan14_raw = 0;
+        rc_reset.chan15_raw = 0; rc_reset.chan16_raw = 0;
+        rc_reset.chan17_raw = 0; rc_reset.chan18_raw = 0;
+
+        rc_reset.target_system      = id();
+        rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+        mavlink_message_t msg_out;
+        mavlink_msg_rc_channels_override_encode(
+            _mavlink->getSystemId(),
+            _mavlink->getComponentId(),
+            &msg_out,
+            &rc_reset
+            );
+
+        sendMessageMultiple(msg_out);
+        sendMessageMultiple(msg_out);
+        sendMessageMultiple(msg_out);
+        sendMessageMultiple(msg_out);
+        /*************************************************/
         close(sock);
 
     });
@@ -927,7 +951,7 @@ QString Vehicle::validateRCChannels(const QVariantList &arrayRC)
     // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
     mavlink_rc_channels_override_t rc_reset;
 
-    // Define TODOS os 18 canais para 65535 (IGNORAR)
+    // Define TODOS os 18 canais para 0 (IGNORAR)
     rc_reset.chan1_raw  = 65535; rc_reset.chan2_raw  = 65535;
     rc_reset.chan3_raw  = 65535; rc_reset.chan4_raw  = 65535;
     rc_reset.chan5_raw  = 65535; rc_reset.chan6_raw  = 65535;
