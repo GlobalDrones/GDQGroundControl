@@ -399,23 +399,22 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
 
 }
 
-void Vehicle::stopRCOverride() {
-    if (!_overrideRunning) return;
+void Vehicle::stopRCOverride()
+{
+    if (!_overrideRunning) {
+        return;
+    }
+
     _overrideRunning = false;
+    if (_overrideFuture.isRunning()) {
+        _overrideFuture.waitForFinished();
+    }
 
-
+    _sendRCOverrideRelease();
 }
+
 #ifndef WIN32
 QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ //override.
-
-    // para testar no folder do ardupilot/Tools/autotest: python3 sim_vehicle.py -v copter --no-mavproxy -A "--serial0=udpclient:192.168.1.114:14550"
-    // 192.168.1.114:14550 <- IP e Porta que o controle ta escutando.
-    // OU
-    // python3 sim_vehicle.py -v copter --console --map -w
-    // e escreve no mavproxyterminal:  output add 192.168.1.114:14550
-    // =========================================================================
-    // MODIFICAÇÃO: INÍCIO DA THREAD DE LEITURA SERIAL E ENVIO MAVLINK
-    // =========================================================================
     if (_overrideRunning) {
         qWarning() << "Override já ativo";
         return "Override já ativo";
@@ -430,12 +429,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
     _overrideRunning = true;
 
     setJoystickEnabled(false);
-    //_joystickManager->activeJoystick()->terminate();
-
-
-
-
-
 
     qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
 
@@ -444,10 +437,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         //if(retorno!="") return retorno;
     }
 
-
-
-
-    //_mavlink->_status.buffer_overrun
     _overrideFuture = QtConcurrent::run([=]() {
 
 
@@ -488,21 +477,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
 
         SiYiCrcApi crcAPI;
-        // ================= FECHA STREAM =================
-        /*QByteArray closeCmd = crcAPI.make_remote_channel_cmd(
-            0x01, // CLOSE
-            0x00  // freq = 0
-            );
-
-        for (int i = 0; i < 3; i++) {
-            send(sock, closeCmd.data(), closeCmd.size(), 0);
-            usleep(20000);
-        }
-
-        qWarning() << "[SIYI] RemoteChannelData CLOSED";
-
-        usleep(100000); // 100 ms de folga (importante)*/
-
         QByteArray openCmd = crcAPI.make_remote_channel_cmd(
             0x00, // OPEN
             0x05  // 4 Hz (use 0x05 pra 20Hz depois)
@@ -577,11 +551,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         int  count_no_rcv=0;
         _overrideRunning = true;
         while (_overrideRunning) {
-            //qDebug("[DEBUG LOOP DA THREAD]");
             // LER DADOS DA SERIAL
-
-
-
             int n = recvfrom(sock, buf, sizeof(buf), 0, (sockaddr*)&from, &fromLen);
 
             if (n < 0) {
@@ -595,10 +565,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             }
 
             count_no_rcv = 0;
-
-
-
-
 
            // tamanho mínimo para header + CRC
                if (n < 10) {
@@ -641,9 +607,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                            if (received_crc == calculated_crc) {
                                 valid_crc = true;
                                 break;
-                               //qWarning() << "[CRC ERROR] recebido:" << received_crc
-                               //           << "calculado:" << calculated_crc;
-
 
                            }
 
@@ -655,8 +618,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                            i++;
                        }
                    }
-
-
 
 
             // LÓGICA DE EXTRAÇÃO E ENVIO MAVLINK
@@ -774,12 +735,10 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
                 current_time = QDateTime::currentMSecsSinceEpoch();
                 elapsed_time = current_time - last_sent_time;
-                // bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
                 if (elapsed_time < MIN_LOOP_MS) {
                     continue;
                 }
                 needs_send = values_changed || (elapsed_time >= MIN_LOOP_MS);
-                //if (values_changed || safety_interval_passed) { //Aqui é o IF original caso seja necessário um envio periódico mesmo que redundante
                 if (needs_send) { //esse aqui śo leva em conta o envio de mudanças, sem redundancias
 
                     // 3c. Codificar e Enviar a mensagem
@@ -807,7 +766,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
                 // O loop deve rodar em alta frequência para processar dados seriais rapidamente
                 // mas a pausa do envio é controlada pela lógica acima.
-                // QThread::msleep(MIN_LOOP_MS); // Removido daqui, pois a pausa já está no final do loop principal ou no 'n <= 0'.
             }
             else{
                 count_no_rcv++;
@@ -820,82 +778,67 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                 }
             }
 
-            if (!_overrideRunning){
-                mavlink_rc_channels_override_t rc_reset;
-
-                // Define TODOS os 18 canais para 0 (RETURN CONTROL TO RADIO)
-                rc_reset.chan1_raw  = 0; rc_reset.chan2_raw  = 0;
-                rc_reset.chan3_raw  = 0; rc_reset.chan4_raw  = 0;
-                rc_reset.chan5_raw  = 0; rc_reset.chan6_raw  = 0;
-                rc_reset.chan7_raw  = 0; rc_reset.chan8_raw  = 0;
-                rc_reset.chan9_raw  = 65534; rc_reset.chan10_raw = 65534;
-                rc_reset.chan11_raw = 65534; rc_reset.chan12_raw = 65534;
-                rc_reset.chan13_raw = 65534; rc_reset.chan14_raw = 65534;
-                rc_reset.chan15_raw = 65534; rc_reset.chan16_raw = 65534;
-                rc_reset.chan17_raw = 65534; rc_reset.chan18_raw = 65534;
-
-                rc_reset.target_system      = id();
-                rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
-
-                mavlink_message_t msg_out;
-                mavlink_msg_rc_channels_override_encode(
-                    _mavlink->getSystemId(),
-                    _mavlink->getComponentId(),
-                    &msg_out,
-                    &rc_reset
-                    );
-
-                auto link = vehicleLinkManager()->primaryLink().lock();
-                if (!link) {
-                   //QThread::msleep(20);
-                    continue;
-                }
-
-                sendMessageOnLinkThreadSafe(link.get(), msg);
-                /*******************************/
-            }
             // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio) deletar para teste depois
             QThread::msleep(20);
         }
-
-
-        /*************************************************/
-        // BLOCO DE RESET DE CONTROLE
-
-        mavlink_rc_channels_override_t rc_reset;
-
-        // Define TODOS os 18 canais para 0 (RETURN CONTROL TO RADIO)
-        rc_reset.chan1_raw  = 0; rc_reset.chan2_raw  = 0;
-        rc_reset.chan3_raw  = 0; rc_reset.chan4_raw  = 0;
-        rc_reset.chan5_raw  = 0; rc_reset.chan6_raw  = 0;
-        rc_reset.chan7_raw  = 0; rc_reset.chan8_raw  = 0;
-        rc_reset.chan9_raw  = 0; rc_reset.chan10_raw = 0;
-        rc_reset.chan11_raw = 0; rc_reset.chan12_raw = 0;
-        rc_reset.chan13_raw = 0; rc_reset.chan14_raw = 0;
-        rc_reset.chan15_raw = 0; rc_reset.chan16_raw = 0;
-        rc_reset.chan17_raw = 0; rc_reset.chan18_raw = 0;
-
-        rc_reset.target_system      = id();
-        rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
-
-        mavlink_message_t msg_out;
-        mavlink_msg_rc_channels_override_encode(
-            _mavlink->getSystemId(),
-            _mavlink->getComponentId(),
-            &msg_out,
-            &rc_reset
-            );
-
-        sendMessageMultiple(msg_out);
-        sendMessageMultiple(msg_out);
-        sendMessageMultiple(msg_out);
-        sendMessageMultiple(msg_out);
-        /*************************************************/
         close(sock);
 
     });
 
     return "";
+}
+
+void Vehicle::_sendRCOverrideRelease()
+{
+    if (!_mavlink) {
+        return;
+    }
+
+    mavlink_rc_channels_override_t release {};
+    release.target_system = id();
+    release.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+    release.chan1_raw = 0;
+    release.chan2_raw = 0;
+    release.chan3_raw = 0;
+    release.chan4_raw = 0;
+    release.chan5_raw = 0;
+    release.chan6_raw = 0;
+    release.chan7_raw = 0;
+    release.chan8_raw = 0;
+
+    static constexpr uint16_t releaseExtendedChannel = UINT16_MAX - 1;
+    release.chan9_raw = releaseExtendedChannel;
+    release.chan10_raw = releaseExtendedChannel;
+    release.chan11_raw = releaseExtendedChannel;
+    release.chan12_raw = releaseExtendedChannel;
+    release.chan13_raw = releaseExtendedChannel;
+    release.chan14_raw = releaseExtendedChannel;
+    release.chan15_raw = releaseExtendedChannel;
+    release.chan16_raw = releaseExtendedChannel;
+    release.chan17_raw = releaseExtendedChannel;
+    release.chan18_raw = releaseExtendedChannel;
+
+    auto link = vehicleLinkManager()->primaryLink().lock();
+    if (!link) {
+        qWarning() << "RC Override release: sem primary link, não enviado.";
+        return;
+    }
+
+    // Envia direto no primary link (mesmo caminho comprovado do loop de override),
+    // repetido algumas vezes para garantir a entrega da liberação.
+    mavlink_message_t msg;
+    for (int i = 0; i < 5; ++i) {
+        mavlink_msg_rc_channels_override_encode(
+            _mavlink->getSystemId(),
+            _mavlink->getComponentId(),
+            &msg,
+            &release
+            );
+        sendMessageOnLinkThreadSafe(link.get(), msg);
+        QThread::msleep(20);
+    }
+    qWarning() << "RC Override release enviado.";
 }
 
 QString Vehicle::validateRCChannels(const QVariantList &arrayRC)
@@ -1385,7 +1328,7 @@ void Vehicle::_commonInit()
 Vehicle::~Vehicle()
 {
     qCDebug(VehicleLog) << "~Vehicle" << this;
-
+    stopRCOverride();
     delete _missionManager;
     _missionManager = nullptr;
 

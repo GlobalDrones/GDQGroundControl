@@ -551,6 +551,7 @@ public:
     Q_INVOKABLE QString overwriteRC(const QVariantList &arrayRC, bool force_override);
     Q_INVOKABLE void stopRCOverride(void);
     Q_INVOKABLE QString validateRCChannels(const QVariantList &arrayRC);
+    Q_INVOKABLE void _sendRCOverrideRelease();
 
 
     // The follow method are used to turn on/off the tracking of settings updates for firmware/vehicle type on offline vehicles.
