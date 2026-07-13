@@ -8,6 +8,10 @@ import QGroundControl.Controls 1.0
 import QGroundControl.Palette 1.0
 import QGroundControl.Vehicle 1.0
 
+/*
+    UI do GD30 também foi fragmentada em arquivos menores para organizar melhor.
+    -Russi  17/03/2026
+*/
 Item {
     id: bottomDataArea
 
@@ -481,8 +485,8 @@ Item {
                     font.bold: true
                     font.pixelSize: 15
                     text: (_activeVehicle && _activeVehicle._gd60_Sensor2Fact)
-                          ? "T2: " + _activeVehicle._gd60_Sensor2Fact.rawValue + "°C"
-                          : "T2: --"
+                          ? "T1: " + _activeVehicle._gd60_Sensor2Fact.rawValue + "°C"
+                          : "T1: --"
                 }
 
                 Text {
@@ -490,8 +494,8 @@ Item {
                     font.bold: true
                     font.pixelSize: 15
                     text: (_activeVehicle && _activeVehicle._gd60_Sensor3Fact)
-                          ? "T3: " + _activeVehicle._gd60_Sensor3Fact.rawValue + "°C"
-                          : "T3: --"
+                          ? "T2: " + _activeVehicle._gd60_Sensor3Fact.rawValue + "°C"
+                          : "T2: --"
                 }
 
                 Text {
@@ -568,13 +572,12 @@ Item {
         Timer{//Atualiza os valores periodicamente [TODO: mudar interval depois]
             interval: 100; running: true; repeat: true
             onTriggered: {
-                accellRotorModel.set(0, { aceleracao: _activeVehicle._GD_RPM1.rawValue.toFixed(0)/3200 });
-                accellRotorModel.set(1, { aceleracao: _activeVehicle._GD_RPM2.rawValue.toFixed(0)/3200 });
-                accellRotorModel.set(2, { aceleracao: _activeVehicle._GD_RPM3.rawValue.toFixed(0)/3200 });
-                accellRotorModel.set(3, { aceleracao: _activeVehicle._GD_RPM4.rawValue.toFixed(0)/3200 });
-                accellRotorModel.set(4, { aceleracao: _activeVehicle._GD_RPM5.rawValue.toFixed(0)/3200 });
-                accellRotorModel.set(5, { aceleracao: _activeVehicle._GD_RPM6.rawValue.toFixed(0)/3200 });
-                console.log(_activeVehicle._GD_RPM1.rawValue.toFixed(0))
+                accellRotorModel.set(0, { aceleracao: _activeVehicle._GD_RPM1.rawValue.toFixed(0)/3500 });
+                accellRotorModel.set(1, { aceleracao: _activeVehicle._GD_RPM2.rawValue.toFixed(0)/3500 });
+                accellRotorModel.set(2, { aceleracao: _activeVehicle._GD_RPM3.rawValue.toFixed(0)/3500 });
+                accellRotorModel.set(3, { aceleracao: _activeVehicle._GD_RPM4.rawValue.toFixed(0)/3500 });
+                accellRotorModel.set(4, { aceleracao: _activeVehicle._GD_RPM5.rawValue.toFixed(0)/3500 });
+                accellRotorModel.set(5, { aceleracao: _activeVehicle._GD_RPM6.rawValue.toFixed(0)/3500 });
             }
         }
 

@@ -1724,9 +1724,9 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         mavlink_msg_named_value_float_decode(&message, &msg_nvf);
         TempID id = UNKNOWN;
         if (strncmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
-        else if (strncmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
-        else if (strncmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
-        else if (strncmp(msg_nvf.name, "TempICE", 10) == 0) id = TEMPGD25;
+        else if (strncmp(msg_nvf.name, "DLEC1", 10) == 0) id = TEMP2;
+        else if (strncmp(msg_nvf.name, "DLEC2", 10) == 0) id = TEMP3;
+        else if (strncmp(msg_nvf.name, "DLERPM", 10) == 0) id = TEMPGD25;
 
         switch(id) {
         case TEMP1:
@@ -1735,11 +1735,11 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             break;
         case TEMP2:
             //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP2:" << msg_nvf.value;
-            _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
+            _gd60_Sensor2Fact.setRawValue(msg_nvf.value/100);
             break;
         case TEMP3:
             //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
-            _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
+            _gd60_Sensor3Fact.setRawValue(msg_nvf.value/100);
             break;
         case TEMPGD25:
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);

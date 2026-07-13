@@ -31,7 +31,7 @@ ApplicationWindow {
     visible:        true
 
     property SiYiCamera siYiCamera: SiYi.camera
-    property var versao_software: "Versão 0.8"
+    property var versao_software: "Versão 1.0.0"//"Versão 0.8.1"
 
     Component.onCompleted: {
         //-- Full screen on mobile or tiny screens

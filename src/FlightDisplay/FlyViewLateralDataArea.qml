@@ -26,7 +26,10 @@ import QtGraphicalEffects 1.0
 import SiYi.Object 1.0
 import "qrc:/qml/QGroundControl/Controls"
 import "qrc:/qml/QGroundControl/FlightDisplay"
-
+/*
+    UI do GD30 também foi fragmentada em arquivos menores para organizar melhor.
+    -Russi  17/03/2026
+*/
 Item {
     id: lateralDataArea
     property real toolsMargin
