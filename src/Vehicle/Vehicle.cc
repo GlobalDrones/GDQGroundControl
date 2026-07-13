@@ -1724,9 +1724,9 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         mavlink_msg_named_value_float_decode(&message, &msg_nvf);
         TempID id = UNKNOWN;
         if (strncmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
-        else if (strncmp(msg_nvf.name, "DLEC1", 10) == 0) id = TEMP2;
-        else if (strncmp(msg_nvf.name, "DLEC2", 10) == 0) id = TEMP3;
-        else if (strncmp(msg_nvf.name, "DLERPM", 10) == 0) id = TEMPGD25;
+        else if (strncmp(msg_nvf.name, "DLE_C1", 10) == 0) id = TEMP2;
+        else if (strncmp(msg_nvf.name, "DLE_C2", 10) == 0) id = TEMP3;
+        else if (strncmp(msg_nvf.name, "DLE_RPM", 10) == 0) id = TEMPGD25;
 
         switch(id) {
         case TEMP1:

@@ -484,27 +484,22 @@ Item {
                     color: "white"
                     font.bold: true
                     font.pixelSize: 15
-                    text: (_activeVehicle && _activeVehicle._gd60_Sensor2Fact)
-                          ? "T1: " + _activeVehicle._gd60_Sensor2Fact.rawValue + "°C"
-                          : "T1: --"
+                    text:  "T1: " + _activeVehicle.gd60_Sensor2.rawValue.toString() + "°C"
+
                 }
 
                 Text {
                     color: "white"
                     font.bold: true
                     font.pixelSize: 15
-                    text: (_activeVehicle && _activeVehicle._gd60_Sensor3Fact)
-                          ? "T2: " + _activeVehicle._gd60_Sensor3Fact.rawValue + "°C"
-                          : "T2: --"
+                    text: "T2: " + _activeVehicle.gd60_Sensor3.rawValue.toString() + "°C"
                 }
 
                 Text {
                     color: "white"
                     font.bold: true
                     font.pixelSize: 15
-                    text: (_activeVehicle && _activeVehicle._gd60_Sensor1Fact)
-                          ? "RPM: " + _activeVehicle._gd60_Sensor1Fact.rawValue
-                          : "RPM: --"
+                    text: "RPM: " + _activeVehicle.gd60_Sensor1.rawValue.toString()
                 }
             }
     }
