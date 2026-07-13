@@ -996,19 +996,46 @@ Item {
 
 
                 }//fim RPM GERADOR
-
-                Text{
+                Row {
                     id: text_rpmHORIZONTAL1
-                    width: 1
-                    height: 1
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: dialRPMHORIZONTAL1.bottom
-                    anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
-                    font.pixelSize: _androidBuild? 20 : 18
-                    text: _activeVehicle.gd60_RPM_M1.rawValue
-                    color:"green"
-                    font.bold: true
-                    horizontalAlignment: parent.width
+                    anchors.topMargin: -parent.width * 0.45
+
+                    spacing: 0
+
+                    Text {
+                        width: 40
+                        horizontalAlignment: Text.AlignRight
+
+                        font.pixelSize: _androidBuild ? 20 : 18
+                        font.bold: true
+                        color: "white"
+
+                        text: _activeVehicle.gd60_ECU1_CTP1.rawValue.toFixed(0).toString()+ "°C"
+                    }
+
+                    Text {
+                        width: 60
+                        horizontalAlignment: Text.AlignHCenter
+
+                        font.pixelSize: _androidBuild ? 20 : 18
+                        font.bold: true
+                        color: "green"
+
+                        text: _activeVehicle.gd60_RPM_M1.rawValue
+                    }
+
+                    Text {
+                        width: 40
+                        horizontalAlignment: Text.AlignLeft
+
+                        font.pixelSize: _androidBuild ? 20 : 18
+                        font.bold: true
+                        color: "white"
+
+                        text: _activeVehicle.gd60_ECU1_CTP2.rawValue.toFixed(0).toString() + "°C"
+                    }
                 }
 
                 Item{
@@ -1072,27 +1099,52 @@ Item {
 
 
                 }//fim RPM GERADOR
-
-                Text{
+                Row {
                     id: text_rpmHORIZONTAL2
-                    width: 1
-                    height: 1
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: dialRPMHORIZONTAL2.bottom
-                    anchors.topMargin: -parent.width*0.45 // um pouco menos da metade para não ficar colado
-                    font.pixelSize: _androidBuild? 20 : 18
-                    text: _activeVehicle.gd60_RPM_M2.rawValue
-                    color:"green"
-                    font.bold: true
-                    horizontalAlignment: parent.width
-                }
+                    anchors.topMargin: -parent.width * 0.45
 
+                    spacing: 0
+
+                    Text {
+                        width: 40
+                        horizontalAlignment: Text.AlignRight
+
+                        font.pixelSize: _androidBuild ? 20 : 18
+                        font.bold: true
+                        color: "white"
+
+                        text: _activeVehicle.gd60_ECU2_CTP1.rawValue.toFixed(0).toString()+ "°C"
+                    }
+
+                    Text {
+                        width: 60
+                        horizontalAlignment: Text.AlignHCenter
+
+                        font.pixelSize: _androidBuild ? 20 : 18
+                        font.bold: true
+                        color: "green"
+
+                        text: _activeVehicle.gd60_RPM_M2.rawValue
+                    }
+
+                    Text {
+                        width: 40
+                        horizontalAlignment: Text.AlignLeft
+
+                        font.pixelSize: _androidBuild ? 20 : 18
+                        font.bold: true
+                        color: "white"
+
+                        text: _activeVehicle.gd60_ECU2_CTP2.rawValue.toFixed(0).toString() + "°C"
+                    }
+                }
                 Grid {
                     id: textMatrix2x2
-
                     // âncoras e dimensões mantidas
                     anchors.top: text_rpmHORIZONTAL2.bottom
-                    anchors.topMargin: _toolsMargin + (_androidBuild ? 24 : 22)
+                    anchors.topMargin: _toolsMargin
                     anchors.leftMargin: _toolsMargin
                     anchors.rightMargin: _toolsMargin
 
@@ -1121,7 +1173,7 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: _activeVehicle.gd60_Sensor1.rawValue.toFixed(0).toString() + "° \n TEMP1"       // 🌟 TEXTO NOVO
+                            text: _activeVehicle.escStatus["temperatureFirst"].value.toString() + "° \n ESC 1"       // 🌟 TEXTO NOVO
                             color: "white"          // 🌟 COR BRANCA
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18
@@ -1136,7 +1188,7 @@ Item {
                         implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
                         Text {
                             anchors.centerIn: parent
-                            text: _activeVehicle.gd60_Sensor2.rawValue.toFixed(0).toString() + "° \n TEMP2"       // 🌟 TEXTO NOVO
+                            text: _activeVehicle.escStatus["temperatureSecond"].value.toString() + "° \n ESC 2"       // 🌟 TEXTO NOVO
                             color: "white"
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18
@@ -1153,7 +1205,7 @@ Item {
                         implicitHeight: (textMatrix2x2.height - textMatrix2x2.spacing) / 2
                         Text {
                             anchors.centerIn: parent
-                            text: _activeVehicle.gd60_Sensor3.rawValue.toFixed(0).toString() + "° \n TEMP3"       // 🌟 TEXTO NOVO
+                            text:  _activeVehicle.escStatus["temperatureThird"].value.toString() + "° \n ESC 3"       // 🌟 TEXTO NOVO
                             color: "white"
                             font.bold: true
                             font.pixelSize: _androidBuild? 14 : 18
@@ -1173,7 +1225,7 @@ Item {
                                          _activeVehicle.escStatus["temperatureSecond"].value,
                                          _activeVehicle.escStatus["temperatureThird"].value,
                                          _activeVehicle.escStatus["temperatureFourth"].value);
-                                return max_temp.toString()+"° \n ESC";
+                                return _activeVehicle.escStatus["temperatureFourth"].value.toString()+"° \n ESC 4";
                             }
                             color: "white"
                             font.bold: true
