@@ -111,6 +111,7 @@ VideoManager::setToolbox(QGCToolbox *toolbox)
    connect(_videoSettings->udpPort(),       &Fact::rawValueChanged, this, &VideoManager::_udpPortChanged);
    connect(_videoSettings->rtspUrl(),       &Fact::rawValueChanged, this, &VideoManager::_rtspUrlChanged);
    connect(_videoSettings->tcpUrl(),        &Fact::rawValueChanged, this, &VideoManager::_tcpUrlChanged);
+   connect(_videoSettings->srtUrl(),        &Fact::rawValueChanged, this, &VideoManager::_srtUrlChanged);
    connect(_videoSettings->aspectRatio(),   &Fact::rawValueChanged, this, &VideoManager::_aspectRatioChanged);
    connect(_videoSettings->lowLatencyMode(),&Fact::rawValueChanged, this, &VideoManager::_lowLatencyModeChanged);
    MultiVehicleManager *pVehicleMgr = qgcApp()->toolbox()->multiVehicleManager();
@@ -596,6 +597,13 @@ VideoManager::_tcpUrlChanged()
 
 //-----------------------------------------------------------------------------
 void
+VideoManager::_srtUrlChanged()
+{
+    _restartVideo(0);
+}
+
+//-----------------------------------------------------------------------------
+void
 VideoManager::_lowLatencyModeChanged()
 {
     _restartAllVideos();
@@ -623,6 +631,7 @@ VideoManager::isGStreamer()
            videoSource == VideoSettings::videoSourceRTSP ||
            videoSource == VideoSettings::videoSourceTCP ||
            videoSource == VideoSettings::videoSourceMPEGTS ||
+           videoSource == VideoSettings::videoSourceSRT ||
            videoSource == VideoSettings::videoSource3DRSolo ||
            videoSource == VideoSettings::videoSourceParrotDiscovery ||
            videoSource == VideoSettings::videoSourceYuneecMantisG ||
@@ -788,6 +797,8 @@ VideoManager::_updateSettings(unsigned id)
         settingsChanged |= _updateVideoUri(0, _videoSettings->rtspUrl()->rawValue().toString());
     else if (source == VideoSettings::videoSourceTCP)
         settingsChanged |= _updateVideoUri(0, QStringLiteral("tcp://%1").arg(_videoSettings->tcpUrl()->rawValue().toString()));
+    else if (source == VideoSettings::videoSourceSRT)
+        settingsChanged |= _updateVideoUri(0, QStringLiteral("srt://%1").arg(_videoSettings->srtUrl()->rawValue().toString()));
     else if (source == VideoSettings::videoSource3DRSolo)
         settingsChanged |= _updateVideoUri(0, QStringLiteral("udp://0.0.0.0:5600"));
     else if (source == VideoSettings::videoSourceParrotDiscovery)

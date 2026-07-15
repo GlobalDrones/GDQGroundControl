@@ -697,6 +697,7 @@ GstVideoReceiver::_makeSource(const QString& uri)
     bool isUdp265   = uri.contains("udp265://", Qt::CaseInsensitive);
     bool isTcpMPEGTS= uri.contains("tcp://",    Qt::CaseInsensitive);
     bool isUdpMPEGTS= uri.contains("mpegts://", Qt::CaseInsensitive);
+    bool isSrtMPEGTS= uri.contains("srt://",    Qt::CaseInsensitive);
 
     GstElement* source  = nullptr;
     GstElement* buffer  = nullptr;
@@ -711,6 +712,10 @@ GstVideoReceiver::_makeSource(const QString& uri)
         if(isTcpMPEGTS) {
             if ((source = gst_element_factory_make("tcpclientsrc", "source")) != nullptr) {
                 g_object_set(static_cast<gpointer>(source), "host", qPrintable(url.host()), "port", url.port(), nullptr);
+            }
+        } else if (isSrtMPEGTS) {
+            if ((source = gst_element_factory_make("srtsrc", "source")) != nullptr) {
+                g_object_set(static_cast<gpointer>(source), "uri", qPrintable(uri), nullptr);
             }
         } else if (isRtsp) {
             if ((source = gst_element_factory_make("rtspsrc", "source")) != nullptr) {
@@ -764,7 +769,7 @@ GstVideoReceiver::_makeSource(const QString& uri)
 
         // FIXME: AV: Android does not determine MPEG2-TS via parsebin - have to explicitly state which demux to use
         // FIXME: AV: tsdemux handling is a bit ugly - let's try to find elegant solution for that later
-        if (isTcpMPEGTS || isUdpMPEGTS) {
+        if (isTcpMPEGTS || isUdpMPEGTS || isSrtMPEGTS) {
             if ((tsdemux = gst_element_factory_make("tsdemux", nullptr)) == nullptr) {
                 qCCritical(VideoReceiverLog) << "gst_element_factory_make('tsdemux') failed";
                 break;

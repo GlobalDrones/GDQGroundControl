@@ -57,6 +57,7 @@ Rectangle {
     property bool   _isRTSP:                    _isGst && _videoSource === _videoSettings.rtspVideoSource
     property bool   _isTCP:                     _isGst && _videoSource === _videoSettings.tcpVideoSource
     property bool   _isMPEGTS:                  _isGst && _videoSource === _videoSettings.mpegtsVideoSource
+    property bool   _isSRT:                     _isGst && _videoSource === _videoSettings.srtVideoSource
     property bool   _videoAutoStreamConfig:     QGroundControl.videoManager.autoStreamConfigured
     property bool   _showSaveVideoSettings:     _isGst || _videoAutoStreamConfig
     property bool   _disableAllDataPersistence: QGroundControl.settingsManager.appSettings.disableAllPersistence.rawValue
@@ -379,6 +380,17 @@ Rectangle {
                                 Layout.preferredWidth:  _comboFieldWidth
                                 fact:                   _videoSettings.tcpUrl
                                 visible:                tcpUrlLabel.visible
+                            }
+
+                            QGCLabel {
+                                id:         srtUrlLabel
+                                text:       qsTr("SRT URL")
+                                visible:    !_videoAutoStreamConfig && _isSRT && _videoSettings.srtUrl.visible
+                            }
+                            FactTextField {
+                                Layout.preferredWidth:  _comboFieldWidth
+                                fact:                   _videoSettings.srtUrl
+                                visible:                srtUrlLabel.visible
                             }
 
                             RowLayout {
