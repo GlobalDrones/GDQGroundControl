@@ -1781,19 +1781,19 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             break;
 
         case TEMP_M1_CILINDRO1:
-            _gd60_ECU1_CTP1Fact.setRawValue(msg_nvf.value);
+            _gd60_ECU1_CTP1Fact.setRawValue(msg_nvf.value/10); //dividir por 10 conforme orientação do professor Gabriel.
             break;
 
         case TEMP_M1_CILINDRO2:
-            _gd60_ECU1_CTP2Fact.setRawValue(msg_nvf.value);
+            _gd60_ECU1_CTP2Fact.setRawValue(msg_nvf.value/10); //dividir por 10 conforme orientação do professor Gabriel.
             break;
 
         case TEMP_M2_CILINDRO1:
-            _gd60_ECU2_CTP1Fact.setRawValue(msg_nvf.value);
+            _gd60_ECU2_CTP1Fact.setRawValue(msg_nvf.value/10); //dividir por 10 conforme orientação do professor Gabriel.
             break;
 
         case TEMP_M2_CILINDRO2:
-            _gd60_ECU2_CTP2Fact.setRawValue(msg_nvf.value);
+            _gd60_ECU2_CTP2Fact.setRawValue(msg_nvf.value/10); //dividir por 10 conforme orientação do professor Gabriel.
             break;
 
         case RPM_M1:
