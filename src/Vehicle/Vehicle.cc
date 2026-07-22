@@ -1296,8 +1296,8 @@ void Vehicle::_commonInit()
     _gd60_Sensor1Fact.setRawValue(0);
     _gd60_Sensor2Fact.setRawValue(0);
     _gd60_Sensor3Fact.setRawValue(0);
-    _GD_RC_SCOREFact.setRawValue(33);
-    _GD_NET_SCOREFact.setRawValue(66);
+    _GD_RC_SCOREFact.setRawValue(0);
+    _GD_NET_SCOREFact.setRawValue(0);
     _GD_RPM1Fact.setRawValue(0);
     _GD_RPM2Fact.setRawValue(0);
     _GD_RPM3Fact.setRawValue(0);
@@ -1766,8 +1766,8 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         _GD_GimbalPitchFact.setRawValue(euler_angles.y());
         _GD_GimbalYawFact.setRawValue(euler_angles.z());
 
-        qDebug()<<"Quart "<<stat_gimbal.q[0]<<stat_gimbal.q[1]<<stat_gimbal.q[2]<<stat_gimbal.q[3];
-        qDebug()<<"euler "<<euler_angles.x()<<euler_angles.y()<<euler_angles.z();
+        //qDebug()<<"Quart "<<stat_gimbal.q[0]<<stat_gimbal.q[1]<<stat_gimbal.q[2]<<stat_gimbal.q[3];
+        //qDebug()<<"euler "<<euler_angles.x()<<euler_angles.y()<<euler_angles.z();
         break;
     }
 

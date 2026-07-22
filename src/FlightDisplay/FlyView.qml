@@ -856,7 +856,7 @@ Item {
                     border.width: 1
                     //anchors.horizontalCenter:  parent.horizontalCenter
                     anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottom: parent.bottomz
+                    anchors.bottom: parent.bottom
                     z: _fullItemZorder + 10
 
                     // texto centralizado
