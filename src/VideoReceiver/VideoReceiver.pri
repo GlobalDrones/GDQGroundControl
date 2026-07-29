@@ -67,7 +67,7 @@ LinuxBuild {
 
     }
 } else:AndroidBuild {
-    #- gstreamer assumed to be installed in $$PWD/../../gstreamer-1.0-android-universal-1.18.5/***
+    #- gstreamer assumed to be installed in $$PWD/gstreamer-1.0-android-universal-1.18.6/***
     message("gstreamer assumed to be installed in $$PWD/gstreamer-1.0-android-universal-1.18.6/***")
     message("IF VIDEO OPTIONS NOT AVAILABLE, CHANGE PATH IN VIDEORECEIVER.PRI LINES 75 TO 83")
     INCLUDEPATH += \

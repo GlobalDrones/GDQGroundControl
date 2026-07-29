@@ -44,6 +44,10 @@ TARGET   = GD25_QGC_DEV
 TEMPLATE = app
 QGCROOT  = $$PWD
 
+# SRT_Test build: prevents the connected vehicle/controle from overriding the
+# manually selected video source (see VideoManager::_updateSettings).
+DEFINES += QGC_SRT_TEST_BUILD
+
 QML_IMPORT_PATH += $$PWD/src/QmlControls
 
 #

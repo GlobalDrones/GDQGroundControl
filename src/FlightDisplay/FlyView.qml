@@ -417,6 +417,11 @@ Item {
 
         onTriggered:{
             gcsID = QGroundControl.mavlinkSystemID.valueOf(); //tem que ficar atualizando. tem jeito melhor pra fazer mas isso é pequisa futura e o desempenho ta satisfatório pra agora
+
+            if (!_activeVehicle) {
+                return
+            }
+
             if(_activeVehicle.firmwareMajorVersion.toString() == "255"){ // Caso esteja rodando nosso Ardupilot custom (Major Version 255)
                 let allMessages = _activeVehicle.formattedMessages;
                     let lines = allMessages.split("<br/>").filter(line => line.trim() !== "");

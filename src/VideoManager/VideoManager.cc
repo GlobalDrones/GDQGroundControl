@@ -455,7 +455,9 @@ VideoManager::imageFile()
 bool
 VideoManager::autoStreamConfigured()
 {
-#if defined(QGC_GST_STREAMING)
+    //-- SRT_Test build: report no auto stream config so the connected vehicle
+    //-- never takes over the video UI (keeps the manual SRT URL field visible).
+#if defined(QGC_GST_STREAMING) && !defined(QGC_SRT_TEST_BUILD)
     if(_activeVehicle && _activeVehicle->cameraManager()) {
         QGCVideoStreamInfo* pInfo = _activeVehicle->cameraManager()->currentStreamInstance();
         if(pInfo) {
@@ -722,7 +724,10 @@ VideoManager::_updateSettings(unsigned id)
     _lowLatencyStreaming[id] = lowLatencyStreaming;
 
     //-- Auto discovery
-
+    //-- SRT_Test build: skip the vehicle-driven auto stream config so the
+    //-- manually selected video source (e.g. SRT) is never overridden by the
+    //-- connected vehicle/controle.
+#if !defined(QGC_SRT_TEST_BUILD)
     if(_activeVehicle && _activeVehicle->cameraManager()) {
         QGCVideoStreamInfo* pInfo = _activeVehicle->cameraManager()->currentStreamInstance();
         if(pInfo) {
@@ -786,6 +791,7 @@ VideoManager::_updateSettings(unsigned id)
             return settingsChanged;
         }
     }
+#endif // QGC_SRT_TEST_BUILD
     QString source = _videoSettings->videoSource()->rawValue().toString();
     if (source == VideoSettings::videoSourceUDPH264)
         settingsChanged |= _updateVideoUri(0, QStringLiteral("udp://0.0.0.0:%1").arg(_videoSettings->udpPort()->rawValue().toInt()));
