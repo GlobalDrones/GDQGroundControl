@@ -310,12 +310,6 @@ public:
     Q_PROPERTY(Fact* gd60_Sensor1       READ gd60_Sensor1       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor2       READ gd60_Sensor2       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor3       READ gd60_Sensor3       CONSTANT)
-    Q_PROPERTY(Fact* gd60_ECU1_CTP1     READ gd60_ECU1_CTP1     CONSTANT)
-    Q_PROPERTY(Fact* gd60_ECU1_CTP2     READ gd60_ECU1_CTP2     CONSTANT)
-    Q_PROPERTY(Fact* gd60_ECU2_CTP1     READ gd60_ECU2_CTP1     CONSTANT)
-    Q_PROPERTY(Fact* gd60_ECU2_CTP2     READ gd60_ECU2_CTP2     CONSTANT)
-    Q_PROPERTY(Fact* gd60_RPM_M1        READ gd60_RPM_M1        CONSTANT)
-    Q_PROPERTY(Fact* gd60_RPM_M2        READ gd60_RPM_M2        CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM1           READ _GD_RPM1           CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM2           READ _GD_RPM2           CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM3           READ _GD_RPM3           CONSTANT)
@@ -471,6 +465,7 @@ public:
     bool    takeoffVehicleSupported () const;
     QString gotoFlightMode          () const;
 
+
     // Property accessors
 
     QGeoCoordinate coordinate() { return _coordinate; }
@@ -556,6 +551,7 @@ public:
     Q_INVOKABLE QString overwriteRC(const QVariantList &arrayRC, bool force_override);
     Q_INVOKABLE void stopRCOverride(void);
     Q_INVOKABLE QString validateRCChannels(const QVariantList &arrayRC);
+    Q_INVOKABLE void _sendRCOverrideRelease();
 
 
     // The follow method are used to turn on/off the tracking of settings updates for firmware/vehicle type on offline vehicles.
@@ -630,6 +626,8 @@ public:
     bool            hilMode                     () const { return _base_mode & MAV_MODE_FLAG_HIL_ENABLED; }
     Actuators*      actuators                   () const { return _actuators; }
 
+    bool            generator_started = false;
+
     /// Get the maximum MAVLink protocol version supported
     /// @return the maximum version
     unsigned        maxProtoVersion         () const { return _maxProtoVersion; }
@@ -685,12 +683,6 @@ public:
     Fact* gd60_Sensor1                      () { return &_gd60_Sensor1Fact;}
     Fact* gd60_Sensor2                      () { return &_gd60_Sensor2Fact;}
     Fact* gd60_Sensor3                      () { return &_gd60_Sensor3Fact;}
-    Fact* gd60_ECU1_CTP1()                      { return &_gd60_ECU1_CTP1Fact; }
-    Fact* gd60_ECU1_CTP2()                      { return &_gd60_ECU1_CTP2Fact; }
-    Fact* gd60_ECU2_CTP1()                      { return &_gd60_ECU2_CTP1Fact; }
-    Fact* gd60_ECU2_CTP2()                      { return &_gd60_ECU2_CTP2Fact; }
-    Fact* gd60_RPM_M1()                         { return &_gd60_RPM_M1Fact; }
-    Fact* gd60_RPM_M2()                         { return &_gd60_RPM_M2Fact; }
     Fact* _GD_RPM1                          () { return &_GD_RPM1Fact;}
     Fact* _GD_RPM2                          () { return &_GD_RPM2Fact;}
     Fact* _GD_RPM3                          () { return &_GD_RPM3Fact;}
@@ -701,6 +693,8 @@ public:
     Fact* _GD_GimbalPitch                   () {return &_GD_GimbalPitchFact;}
     Fact* _GD_GimbalYaw                     () {return &_GD_GimbalYawFact;}
     Fact* _GD_GimbalRoll                    () {return &_GD_GimbalRollFact;}
+    Fact* _GD_RC_SCORE                      () {return &_GD_RC_SCOREFact ;}
+    Fact* _GD_NET_SCORE                     () {return &_GD_NET_SCOREFact;}
 
     FactGroup* gpsFactGroup                 () { return &_gpsFactGroup; }
     FactGroup* gps2FactGroup                () { return &_gps2FactGroup; }
@@ -1368,12 +1362,8 @@ private:
     Fact _gd60_Sensor1Fact;
     Fact _gd60_Sensor2Fact;
     Fact _gd60_Sensor3Fact;
-    Fact _gd60_ECU1_CTP1Fact;
-    Fact _gd60_ECU1_CTP2Fact;
-    Fact _gd60_ECU2_CTP1Fact;
-    Fact _gd60_ECU2_CTP2Fact;
-    Fact _gd60_RPM_M1Fact;
-    Fact _gd60_RPM_M2Fact;
+    Fact _GD_RC_SCOREFact;
+    Fact _GD_NET_SCOREFact;
     Fact _GD_RPM1Fact;
     Fact _GD_RPM2Fact;
     Fact _GD_RPM3Fact;
@@ -1441,12 +1431,8 @@ private:
     static const char* _gd60_Sensor1FactName;
     static const char* _gd60_Sensor2FactName;
     static const char* _gd60_Sensor3FactName;
-    static const char* _gd60_ECU1_CTP1FactName;
-    static const char* _gd60_ECU1_CTP2FactName;
-    static const char* _gd60_ECU2_CTP1FactName;
-    static const char* _gd60_ECU2_CTP2FactName;
-    static const char* _gd60_RPM_M1FactName;
-    static const char* _gd60_RPM_M2FactName;
+    static const char* _GD_RC_SCOREFactName;
+    static const char* _GD_NET_SCOREFactName;
     static const char* _GD_RPM1FactName;
     static const char* _GD_RPM2FactName;
     static const char* _GD_RPM3FactName;
