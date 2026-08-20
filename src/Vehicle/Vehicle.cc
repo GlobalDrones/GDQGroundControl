@@ -116,8 +116,12 @@ const char* Vehicle::_flightTimeFactName =          "flightTime";
 const char* Vehicle::_gd60_Sensor1FactName =         "gd60_sensor1";
 const char* Vehicle::_gd60_Sensor2FactName =         "gd60_sensor2";
 const char* Vehicle::_gd60_Sensor3FactName =         "gd60_sensor3";
-const char* Vehicle::_GD_RC_SCOREFactName  =         "_GD_RC_SCORE";
-const char* Vehicle::_GD_NET_SCOREFactName =         "_GD_NET_SCORE";
+const char* Vehicle::_gd60_ECU1_CTP1FactName =       "gd60_ECU1_CTP1";
+const char* Vehicle::_gd60_ECU1_CTP2FactName =       "gd60_ECU1_CTP2";
+const char* Vehicle::_gd60_ECU2_CTP1FactName =       "gd60_ECU2_CTP1";
+const char* Vehicle::_gd60_ECU2_CTP2FactName =       "gd60_ECU2_CTP2";
+const char* Vehicle::_gd60_RPM_M1FactName    =       "gd60_RPM_M1";
+const char* Vehicle::_gd60_RPM_M2FactName    =       "gd60_RPM_M2";
 const char* Vehicle::_GD_RPM1FactName=               "_GD_RPM1";
 const char* Vehicle::_GD_RPM2FactName=               "_GD_RPM2";
 const char* Vehicle::_GD_RPM3FactName=               "_GD_RPM3";
@@ -352,8 +356,12 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _gd60_Sensor1Fact                      (0, _gd60_Sensor1FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor2Fact                      (0, _gd60_Sensor2FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor3Fact                      (0, _gd60_Sensor3FactName,      FactMetaData::valueTypeFloat)
-    , _GD_RC_SCOREFact                       (0, _GD_RC_SCOREFactName,       FactMetaData::valueTypeFloat)
-    , _GD_NET_SCOREFact                      (0, _GD_NET_SCOREFactName,      FactMetaData::valueTypeFloat)
+    , _gd60_ECU1_CTP1Fact                    (0, _gd60_ECU1_CTP1FactName,    FactMetaData::valueTypeFloat)
+    , _gd60_ECU1_CTP2Fact                    (0, _gd60_ECU1_CTP2FactName,    FactMetaData::valueTypeFloat)
+    , _gd60_ECU2_CTP1Fact                    (0, _gd60_ECU2_CTP1FactName,    FactMetaData::valueTypeFloat)
+    , _gd60_ECU2_CTP2Fact                    (0, _gd60_ECU2_CTP2FactName,    FactMetaData::valueTypeFloat)
+    , _gd60_RPM_M1Fact                       (0, _gd60_RPM_M1FactName,       FactMetaData::valueTypeFloat)
+    , _gd60_RPM_M2Fact                       (0, _gd60_RPM_M2FactName,       FactMetaData::valueTypeFloat)
     , _GD_RPM1Fact                           (0, _GD_RPM1FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM2Fact                           (0, _GD_RPM2FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM3Fact                           (0, _GD_RPM3FactName,           FactMetaData::valueTypeInt16)
@@ -1243,8 +1251,12 @@ void Vehicle::_commonInit()
     _addFact(&_gd60_Sensor1Fact,        _gd60_Sensor1FactName);
     _addFact(&_gd60_Sensor2Fact,        _gd60_Sensor2FactName);
     _addFact(&_gd60_Sensor3Fact,        _gd60_Sensor3FactName);
-    _addFact(&_GD_RC_SCOREFact,         _GD_RC_SCOREFactName);
-    _addFact(&_GD_NET_SCOREFact,         _GD_NET_SCOREFactName);
+    _addFact(&_gd60_ECU1_CTP1Fact,      _gd60_ECU1_CTP1FactName);
+    _addFact(&_gd60_ECU1_CTP2Fact,      _gd60_ECU1_CTP2FactName);
+    _addFact(&_gd60_ECU2_CTP1Fact,      _gd60_ECU2_CTP1FactName);
+    _addFact(&_gd60_ECU2_CTP2Fact,      _gd60_ECU2_CTP2FactName);
+    _addFact(&_gd60_RPM_M1Fact,         _gd60_RPM_M1FactName);
+    _addFact(&_gd60_RPM_M2Fact,         _gd60_RPM_M2FactName);
     _addFact(&_GD_RPM1Fact,             _GD_RPM1FactName);
     _addFact(&_GD_RPM2Fact,             _GD_RPM2FactName);
     _addFact(&_GD_RPM3Fact,             _GD_RPM3FactName);
@@ -1296,8 +1308,6 @@ void Vehicle::_commonInit()
     _gd60_Sensor1Fact.setRawValue(0);
     _gd60_Sensor2Fact.setRawValue(0);
     _gd60_Sensor3Fact.setRawValue(0);
-    _GD_RC_SCOREFact.setRawValue(33);
-    _GD_NET_SCOREFact.setRawValue(66);
     _GD_RPM1Fact.setRawValue(0);
     _GD_RPM2Fact.setRawValue(0);
     _GD_RPM3Fact.setRawValue(0);
@@ -1675,15 +1685,6 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         mavlink_rpm_t msg_rpm;
         mavlink_msg_rpm_decode(&message, &msg_rpm);
         _GD_GeneratorRPMFact.setRawValue(msg_rpm.rpm1);
-        if((msg_rpm.rpm1>0) && !generator_started){
-                _flightTimer.start();
-                _flightTimeUpdater.start();
-                generator_started=true;
-            }
-        if((msg_rpm.rpm1<=0) && generator_started){
-            _flightTimeUpdater.stop();
-            generator_started=false;
-        }
         break;
     }
 
@@ -1691,70 +1692,91 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     {
         mavlink_system_time_t msg_systime;
         mavlink_msg_system_time_decode(&message, &msg_systime);
-        //_flightTimeFact.setRawValue(msg_systime.time_boot_ms/1000);//em segundos
-        _updateFlightTime();
+        _flightTimeFact.setRawValue(msg_systime.time_boot_ms/1000);//em segundos
         break;
     }
     case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
     {
-        enum TempID {
+        enum NVFID {
             UNKNOWN = 0,
             TEMP1,
             TEMP2,
             TEMP3,
             TEMPGD25,
-            RC_SCORE,
-            NET_SCORE
+            TEMP_M1_CILINDRO1,
+            TEMP_M1_CILINDRO2,
+            TEMP_M2_CILINDRO1,
+            TEMP_M2_CILINDRO2,
+            RPM_M1,
+            RPM_M2
         };
+
 
         mavlink_named_value_float_t msg_nvf;
         mavlink_msg_named_value_float_decode(&message, &msg_nvf);
-        TempID id = UNKNOWN;
+        NVFID id = UNKNOWN;
         if (strncmp(msg_nvf.name, "Temp1", 10) == 0) id = TEMP1;
         else if (strncmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
         else if (strncmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
         else if (strncmp(msg_nvf.name, "TempICE", 10) == 0) id = TEMPGD25;
-        else if (strncmp(msg_nvf.name, "RC_SCORE", 10) == 0) id = RC_SCORE;
-        else if (strncmp(msg_nvf.name, "NET_SCORE", 10) == 0) id = NET_SCORE;
+        else if (strncmp(msg_nvf.name, "ECU1_CTP1", 10) == 0) id = TEMP_M1_CILINDRO1;
+        else if (strncmp(msg_nvf.name, "ECU1_CTP2", 10) == 0) id = TEMP_M1_CILINDRO2;
+        else if (strncmp(msg_nvf.name, "ECU2_CTP1", 10) == 0) id = TEMP_M2_CILINDRO1;
+        else if (strncmp(msg_nvf.name, "ECU2_CTP2", 10) == 0) id = TEMP_M2_CILINDRO2;
+        else if (strncmp(msg_nvf.name, "ECU1_RPM", 10) == 0) id = RPM_M1;
+        else if (strncmp(msg_nvf.name, "ECU2_RPM", 10) == 0) id = RPM_M2;
 
-        /*char nameBuffer[11] = {};
-        memcpy(nameBuffer, msg_nvf.name, 10);
-
-        QFile file("named_value_float_log.txt");
-        if (file.open(QIODevice::Append | QIODevice::Text)) {
-            QTextStream out(&file);
-            out << nameBuffer << " : " << msg_nvf.value << "\n";
-        }*/
+        if(msg_nvf.value==32767){ //32767 is null
+            msg_nvf.value = 0;
+        }
 
         switch(id) {
         case TEMP1:
-           // qWarning() << "MEU SWITCH FUNCIONA PARA TEMP1:" << msg_nvf.value;
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
+
         case TEMP2:
-            //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP2:" << msg_nvf.value;
-
+            _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
             break;
+
         case TEMP3:
-            //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
-
+            _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
+
         case TEMPGD25:
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
             break;
-        case RC_SCORE:
-            _GD_RC_SCOREFact.setRawValue(msg_nvf.value);
-            _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
+
+        case TEMP_M1_CILINDRO1:
+            _gd60_ECU1_CTP1Fact.setRawValue(msg_nvf.value/10); //dividir por 10 conforme orientação do professor Gabriel.
             break;
-        case NET_SCORE:
-            _GD_NET_SCOREFact.setRawValue(msg_nvf.value);
-            _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
+
+        case TEMP_M1_CILINDRO2:
+            _gd60_ECU1_CTP2Fact.setRawValue(msg_nvf.value/10); //dividir por 10 conforme orientação do professor Gabriel.
             break;
+
+        case TEMP_M2_CILINDRO1:
+            _gd60_ECU2_CTP1Fact.setRawValue(msg_nvf.value/10); //dividir por 10 conforme orientação do professor Gabriel.
+            break;
+
+        case TEMP_M2_CILINDRO2:
+            _gd60_ECU2_CTP2Fact.setRawValue(msg_nvf.value/10); //dividir por 10 conforme orientação do professor Gabriel.
+            break;
+
+        case RPM_M1:
+            _gd60_RPM_M1Fact.setRawValue(msg_nvf.value);
+            qDebug()<<"MENSAGEM RPM_M1 DE VALOR "<<msg_nvf.value;
+            break;
+
+        case RPM_M2:
+            _gd60_RPM_M2Fact.setRawValue(msg_nvf.value);
+            qDebug()<<"MENSAGEM RPM_M2 DE VALOR "<<msg_nvf.value;
+            break;
+
         default:
-            //qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
+            //qDebug()<<"MENSAGEM RECEBIDA DE NOME "<<msg_nvf.name;
             break;
         }
-        break;
     }
     case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
     {
@@ -1766,8 +1788,8 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         _GD_GimbalPitchFact.setRawValue(euler_angles.y());
         _GD_GimbalYawFact.setRawValue(euler_angles.z());
 
-        qDebug()<<"Quart "<<stat_gimbal.q[0]<<stat_gimbal.q[1]<<stat_gimbal.q[2]<<stat_gimbal.q[3];
-        qDebug()<<"euler "<<euler_angles.x()<<euler_angles.y()<<euler_angles.z();
+        //qDebug()<<"Quart "<<stat_gimbal.q[0]<<stat_gimbal.q[1]<<stat_gimbal.q[2]<<stat_gimbal.q[3];
+        //qDebug()<<"euler "<<euler_angles.x()<<euler_angles.y()<<euler_angles.z();
         break;
     }
 
@@ -2800,7 +2822,6 @@ void Vehicle::_handleRadioStatus(mavlink_message_t& message)
 
     int rssi    = rstatus.rssi;
     int remrssi = rstatus.remrssi;
-    qDebug()<<"REMRSSI "<<remrssi;
     int lnoise = (int)(int8_t)rstatus.noise;
     int rnoise = (int)(int8_t)rstatus.remnoise;
     //-- 3DR Si1k radio needs rssi fields to be converted to dBm
@@ -2828,7 +2849,6 @@ void Vehicle::_handleRadioStatus(mavlink_message_t& message)
     }
     if(_telemetryRRSSI != remrssi) {
         _telemetryRRSSI = remrssi;
-
         emit telemetryRRSSIChanged(_telemetryRRSSI);
     }
     if(_telemetryRXErrors != rstatus.rxerrors) {
@@ -3342,6 +3362,7 @@ void Vehicle::_flightTimerStart()
     _flightTimer.start();
     _flightTimeUpdater.start();
     _flightDistanceFact.setRawValue(0);
+    _flightTimeFact.setRawValue(0);
 }
 
 void Vehicle::_flightTimerStop()
@@ -3351,14 +3372,7 @@ void Vehicle::_flightTimerStop()
 
 void Vehicle::_updateFlightTime()
 {
-    static bool first_start = false;
-    if(generator_started){
-        if(!first_start) first_start = true;
-        _flightTimeFact.setRawValue((double)_flightTimer.elapsed() / 1000.0);
-    }
-    if(!first_start){
-        _flightTimeFact.setRawValue(0);
-    }
+    _flightTimeFact.setRawValue((double)_flightTimer.elapsed() / 1000.0);
 }
 
 void Vehicle::_gotProgressUpdate(float progressValue)
