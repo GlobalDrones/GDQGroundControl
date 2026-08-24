@@ -123,6 +123,8 @@ protected:
     static gboolean _onBusMessage(GstBus* bus, GstMessage* message, gpointer user_data);
     static void _onNewPad(GstElement* element, GstPad* pad, gpointer data);
     static void _wrapWithGhostPad(GstElement* element, GstPad* pad, gpointer data);
+    static gint _autoplugSelect(GstElement* bin, GstPad* pad, GstCaps* caps, GstElementFactory* factory, gpointer data);
+    static gboolean _autoplugQuery(GstElement* bin, GstPad* pad, GstElement* child, GstQuery* query, gpointer data);
     static void _linkPad(GstElement* element, GstPad* pad, gpointer data);
     static gboolean _padProbe(GstElement* element, GstPad* pad, gpointer user_data);
     static GstPadProbeReturn _teeProbe(GstPad* pad, GstPadProbeInfo* info, gpointer user_data);

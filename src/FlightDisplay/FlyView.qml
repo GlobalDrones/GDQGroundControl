@@ -405,6 +405,10 @@ Item {
         repeat: true
 
         onTriggered:{
+            if (!_activeVehicle) {
+                return
+            }
+
             //console.log("Listing all ESC Status Fact Names:")
 
                         // Iterate over all properties of the escStatus FactGroup

@@ -31,7 +31,7 @@ message(Qt version $$[QT_VERSION])
 
 include(QGCCommon.pri)
 
-TARGET   = GD60_QGC_DEV
+TARGET   = GD60_QGC_DEV_SRT
 TEMPLATE = app
 QGCROOT  = $$PWD
 
@@ -61,7 +61,7 @@ WindowsBuild {
 # Branding
 #
 
-QGC_APP_NAME        = "SiYiQGroundControl"
+QGC_APP_NAME        = "GD60 QGC DEV_SRT"
 QGC_ORG_NAME        = "QGroundControl.org"
 QGC_ORG_DOMAIN      = "org.qgroundcontrol"
 QGC_APP_DESCRIPTION = "Open source ground control app provided by QGroundControl dev team"
@@ -358,7 +358,7 @@ CustomBuild {
         RESOURCES += $$PWD/resources/InstrumentValueIcons/InstrumentValueIcons.qrc
     }
 } else {
-    DEFINES += QGC_APPLICATION_NAME=\"\\\"QGroundControl\\\"\"
+    DEFINES += QGC_APPLICATION_NAME=\"\\\"GD60_QGC_DEV_SRT\\\"\"
     DEFINES += QGC_ORG_NAME=\"\\\"QGroundControl.org\\\"\"
     DEFINES += QGC_ORG_DOMAIN=\"\\\"org.qgroundcontrol\\\"\"
     RESOURCES += \
