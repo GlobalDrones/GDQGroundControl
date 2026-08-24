@@ -111,6 +111,7 @@ VideoManager::setToolbox(QGCToolbox *toolbox)
    connect(_videoSettings->udpPort(),       &Fact::rawValueChanged, this, &VideoManager::_udpPortChanged);
    connect(_videoSettings->rtspUrl(),       &Fact::rawValueChanged, this, &VideoManager::_rtspUrlChanged);
    connect(_videoSettings->tcpUrl(),        &Fact::rawValueChanged, this, &VideoManager::_tcpUrlChanged);
+   connect(_videoSettings->srtUrl(),        &Fact::rawValueChanged, this, &VideoManager::_srtUrlChanged);
    connect(_videoSettings->aspectRatio(),   &Fact::rawValueChanged, this, &VideoManager::_aspectRatioChanged);
    connect(_videoSettings->lowLatencyMode(),&Fact::rawValueChanged, this, &VideoManager::_lowLatencyModeChanged);
    MultiVehicleManager *pVehicleMgr = qgcApp()->toolbox()->multiVehicleManager();
@@ -455,6 +456,11 @@ bool
 VideoManager::autoStreamConfigured()
 {
 #if defined(QGC_GST_STREAMING)
+    if (_videoSettings &&
+        _videoSettings->videoSource()->rawValue().toString() == VideoSettings::videoSourceSRT) {
+        return false;
+    }
+
     if(_activeVehicle && _activeVehicle->cameraManager()) {
         QGCVideoStreamInfo* pInfo = _activeVehicle->cameraManager()->currentStreamInstance();
         if(pInfo) {
@@ -596,6 +602,13 @@ VideoManager::_tcpUrlChanged()
 
 //-----------------------------------------------------------------------------
 void
+VideoManager::_srtUrlChanged()
+{
+    _restartVideo(0);
+}
+
+//-----------------------------------------------------------------------------
+void
 VideoManager::_lowLatencyModeChanged()
 {
     _restartAllVideos();
@@ -623,6 +636,7 @@ VideoManager::isGStreamer()
            videoSource == VideoSettings::videoSourceRTSP ||
            videoSource == VideoSettings::videoSourceTCP ||
            videoSource == VideoSettings::videoSourceMPEGTS ||
+           videoSource == VideoSettings::videoSourceSRT ||
            videoSource == VideoSettings::videoSource3DRSolo ||
            videoSource == VideoSettings::videoSourceParrotDiscovery ||
            videoSource == VideoSettings::videoSourceYuneecMantisG ||
@@ -712,9 +726,11 @@ VideoManager::_updateSettings(unsigned id)
 
     _lowLatencyStreaming[id] = lowLatencyStreaming;
 
-    //-- Auto discovery
+    const QString source = _videoSettings->videoSource()->rawValue().toString();
+    const bool manualSrtSource = id == 0 && source == VideoSettings::videoSourceSRT;
 
-    if(_activeVehicle && _activeVehicle->cameraManager()) {
+    //-- Auto discovery
+    if(!manualSrtSource && _activeVehicle && _activeVehicle->cameraManager()) {
         QGCVideoStreamInfo* pInfo = _activeVehicle->cameraManager()->currentStreamInstance();
         if(pInfo) {
             if (id == 0) {
@@ -777,7 +793,6 @@ VideoManager::_updateSettings(unsigned id)
             return settingsChanged;
         }
     }
-    QString source = _videoSettings->videoSource()->rawValue().toString();
     if (source == VideoSettings::videoSourceUDPH264)
         settingsChanged |= _updateVideoUri(0, QStringLiteral("udp://0.0.0.0:%1").arg(_videoSettings->udpPort()->rawValue().toInt()));
     else if (source == VideoSettings::videoSourceUDPH265)
@@ -788,6 +803,8 @@ VideoManager::_updateSettings(unsigned id)
         settingsChanged |= _updateVideoUri(0, _videoSettings->rtspUrl()->rawValue().toString());
     else if (source == VideoSettings::videoSourceTCP)
         settingsChanged |= _updateVideoUri(0, QStringLiteral("tcp://%1").arg(_videoSettings->tcpUrl()->rawValue().toString()));
+    else if (source == VideoSettings::videoSourceSRT)
+        settingsChanged |= _updateVideoUri(0, QStringLiteral("srt://%1").arg(_videoSettings->srtUrl()->rawValue().toString()));
     else if (source == VideoSettings::videoSource3DRSolo)
         settingsChanged |= _updateVideoUri(0, QStringLiteral("udp://0.0.0.0:5600"));
     else if (source == VideoSettings::videoSourceParrotDiscovery)

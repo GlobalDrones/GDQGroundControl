@@ -88,6 +88,7 @@ G_BEGIN_DECLS
     GST_PLUGIN_STATIC_DECLARE(mpegtsdemux);
     GST_PLUGIN_STATIC_DECLARE(opengl);
     GST_PLUGIN_STATIC_DECLARE(tcp);
+    GST_PLUGIN_STATIC_DECLARE(srt);
 #if defined(__android__)
     GST_PLUGIN_STATIC_DECLARE(androidmedia);
 #elif defined(__ios__)
@@ -217,6 +218,7 @@ GStreamer::initialize(int argc, char* argv[], int debuglevel)
     GST_PLUGIN_STATIC_REGISTER(mpegtsdemux);
     GST_PLUGIN_STATIC_REGISTER(opengl);
     GST_PLUGIN_STATIC_REGISTER(tcp);
+    GST_PLUGIN_STATIC_REGISTER(srt);
 
 #if defined(__android__)
     GST_PLUGIN_STATIC_REGISTER(androidmedia);
