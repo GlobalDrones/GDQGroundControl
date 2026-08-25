@@ -179,12 +179,18 @@ exists ($$PWD/.git) {
 
     message(GIT_DESCRIBE $${GIT_DESCRIBE})
 
-    # Pull the version info from the last annotated version tag. Format: v#.#.#
+    # Pull the numeric version from tags such as v#.#.# or v#.#.#-PRODUCT.
+    # When git describe includes commits after the tag, use that numeric
+    # distance as the Android development version.
     contains(GIT_DESCRIBE, ^v[0-9]+.[0-9]+.[0-9]+.*) {
         #APP_VERSION_STR = $${GIT_DESCRIBE}
-        VERSION         = $$replace(GIT_DESCRIBE, "v", "")
-        VERSION         = $$replace(VERSION, "-", ".")
-        VERSION         = $$section(VERSION, ".", 0, 3)
+        VERSION_TAG     = $$section(GIT_DESCRIBE, "-", 0, 0)
+        VERSION         = $$replace(VERSION_TAG, "v", "")
+        GIT_DEV_VERSION = 0
+        contains(GIT_DESCRIBE, .+-[0-9]+-g[0-9a-f]+) {
+            GIT_DEV_VERSION = $$section(GIT_DESCRIBE, "-", -2, -2)
+        }
+        VERSION = $${VERSION}.$${GIT_DEV_VERSION}
     }
 
     DailyBuild {
