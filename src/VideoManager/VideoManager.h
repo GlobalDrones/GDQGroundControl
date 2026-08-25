@@ -56,6 +56,7 @@ public:
     Q_PROPERTY(bool             recording               READ    recording                                   NOTIFY recordingChanged)
     Q_PROPERTY(QSize            videoSize               READ    videoSize                                   NOTIFY videoSizeChanged)
     Q_PROPERTY(QVariantList     streams                 READ    streamsVar                                  NOTIFY streamsChanged)
+    Q_PROPERTY(int              currentStreamIndex      READ    currentStreamIndex                          NOTIFY currentStreamIndexChanged)
 
     virtual bool        hasVideo            ();
     virtual bool        isGStreamer         ();
@@ -114,10 +115,13 @@ public:
 
     // Expor para QML:
     Q_INVOKABLE QVariantList streamsVar() const;
-    Q_INVOKABLE void addStream(int index, const QString& ip, const QString& alias);
-    Q_INVOKABLE void addStream(const QString& ip, const QString& alias);
-    Q_INVOKABLE void updateStream(int index, const QString& ip, const QString& alias);
+    Q_INVOKABLE void addStream(int index, const QString& ip, const QString& alias, const QString& type);
+    Q_INVOKABLE void addStream(const QString& ip, const QString& alias, const QString& type);
+    Q_INVOKABLE void updateStream(int index, const QString& ip, const QString& alias, const QString& type);
     Q_INVOKABLE void removeStream(int index);
+    Q_INVOKABLE void selectStream(int index);
+
+    int currentStreamIndex() const { return _currentStreamIndex; }
 
 signals:
     void hasVideoChanged            ();
@@ -135,6 +139,7 @@ signals:
     void recordingStarted           ();
     void videoSizeChanged           ();
     void streamsChanged             ();
+    void currentStreamIndexChanged  ();
 
 protected slots:
     void _videoSourceChanged        ();
@@ -183,12 +188,14 @@ protected:
     QString                 _videoSourceID;
     bool                    _fullScreen             = false;
     Vehicle*                _activeVehicle          = nullptr;
-    struct StreamInfo { QString ip; QString alias; };
+    struct StreamInfo { QString ip; QString alias; QString type; };
     QVector<StreamInfo> _streams;
+    int                     _currentStreamIndex     = -1;
 
 private:
     void loadStreams();
     void saveStreams();
+    QString _uriForStreamEntry(const StreamInfo& stream) const;
 };
 
 #endif
