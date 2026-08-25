@@ -27,6 +27,7 @@ const char* VideoSettings::videoSourceUDPH265           = QT_TRANSLATE_NOOP("Vid
 const char* VideoSettings::videoSourceTCP               = QT_TRANSLATE_NOOP("VideoSettings", "TCP-MPEG2 Video Stream");
 const char* VideoSettings::videoSourceMPEGTS            = QT_TRANSLATE_NOOP("VideoSettings", "MPEG-TS (h.264) Video Stream");
 const char* VideoSettings::videoSourceSRT                = QT_TRANSLATE_NOOP("VideoSettings", "SRT Video Stream");
+const char* VideoSettings::videoSourceStreamsList        = QT_TRANSLATE_NOOP("VideoSettings", "Streams List");
 const char* VideoSettings::videoSource3DRSolo           = QT_TRANSLATE_NOOP("VideoSettings", "3DR Solo (requires restart)");
 const char* VideoSettings::videoSourceParrotDiscovery   = QT_TRANSLATE_NOOP("VideoSettings", "Parrot Discovery");
 const char* VideoSettings::videoSourceYuneecMantisG     = QT_TRANSLATE_NOOP("VideoSettings", "Yuneec Mantis G");
@@ -46,6 +47,7 @@ DECLARE_SETTINGGROUP(Video, "Video")
     videoSourceList.append(videoSourceTCP);
     videoSourceList.append(videoSourceMPEGTS);
     videoSourceList.append(videoSourceSRT);
+    videoSourceList.append(videoSourceStreamsList);
     videoSourceList.append(videoSource3DRSolo);
     videoSourceList.append(videoSourceParrotDiscovery);
     videoSourceList.append(videoSourceYuneecMantisG);
@@ -229,6 +231,12 @@ bool VideoSettings::streamConfigured(void)
     if(vSource == videoSourceMPEGTS) {
         qCDebug(VideoManagerLog) << "Testing configuration for MPEG-TS Stream:" << udpPort()->rawValue().toInt();
         return udpPort()->rawValue().toInt() != 0;
+    }
+    //-- If Streams List, check that an entry is actually selected
+    if(vSource == videoSourceStreamsList) {
+        const int currentStreamIndex = qgcApp()->toolbox()->videoManager()->currentStreamIndex();
+        qCDebug(VideoManagerLog) << "Testing configuration for Streams List:" << currentStreamIndex;
+        return currentStreamIndex >= 0;
     }
     return false;
 }
