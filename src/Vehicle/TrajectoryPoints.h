@@ -33,12 +33,15 @@ public slots:
 signals:
     void pointAdded     (QGeoCoordinate coordinate);
     void updateLastPoint(QGeoCoordinate coordinate);
+    void pointRemoved   (QGeoCoordinate coordinate);
     void pointsCleared  (void);
 
 private slots:
     void _vehicleCoordinateChanged(QGeoCoordinate coordinate);
 
 private:
+    void _trimTrail(void);
+
     Vehicle*        _vehicle;
     QVariantList    _points;
     QGeoCoordinate  _lastPoint;
@@ -46,4 +49,7 @@ private:
 
     static constexpr double _distanceTolerance = 2.0;
     static constexpr double _azimuthTolerance = 1.5;
+
+    // Caps the visible flight trail so it doesn't grow for the whole flight and clutter the map.
+    static constexpr int _maxTrailPoints = 500;
 };

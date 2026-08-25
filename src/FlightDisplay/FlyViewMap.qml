@@ -247,6 +247,7 @@ FlightMap {
             target:                 _activeVehicle ? _activeVehicle.trajectoryPoints : null
             onPointAdded:           trajectoryPolyline.addCoordinate(coordinate)
             onUpdateLastPoint:      trajectoryPolyline.replaceCoordinate(trajectoryPolyline.pathLength() - 1, coordinate)
+            onPointRemoved:         trajectoryPolyline.removeCoordinate(coordinate)
             onPointsCleared:        trajectoryPolyline.path = []
         }
     }

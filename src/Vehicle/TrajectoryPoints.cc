@@ -35,6 +35,7 @@ void TrajectoryPoints::_vehicleCoordinateChanged(QGeoCoordinate coordinate)
                 _lastPoint = coordinate;
                 _points.append(QVariant::fromValue(coordinate));
                 emit pointAdded(coordinate);
+                _trimTrail();
             } else {
                 // The new position IS colinear with the last segment. Don't add a new point, just update
                 // the last point to be the new position.
@@ -48,6 +49,17 @@ void TrajectoryPoints::_vehicleCoordinateChanged(QGeoCoordinate coordinate)
         _lastPoint = coordinate;
         _points.append(QVariant::fromValue(coordinate));
         emit pointAdded(coordinate);
+    }
+}
+
+void TrajectoryPoints::_trimTrail(void)
+{
+    // Drop the oldest points once the trail exceeds the max length, so the painted
+    // route stays a recent trail instead of growing for the whole flight.
+    while (_points.count() > _maxTrailPoints) {
+        QGeoCoordinate removed = _points.first().value<QGeoCoordinate>();
+        _points.removeFirst();
+        emit pointRemoved(removed);
     }
 }
 
