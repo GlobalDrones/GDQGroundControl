@@ -305,7 +305,12 @@ GstVideoReceiver::stop(void)
 
                 GstMessage* msg;
 
-                if((msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, (GstMessageType)(GST_MESSAGE_EOS|GST_MESSAGE_ERROR))) != nullptr) {
+                // Bounded wait: a hung/unresponsive source (e.g. a frozen RTSP/SRT camera) may
+                // never post EOS. This call runs on the receiver's single worker thread, so an
+                // unbounded wait here would stall every other queued start/stop/watchdog
+                // operation until the source unblocks on its own. Fall through to the
+                // unconditional GST_STATE_NULL below either way.
+                if((msg = gst_bus_timed_pop_filtered(bus, 2 * GST_SECOND, (GstMessageType)(GST_MESSAGE_EOS|GST_MESSAGE_ERROR))) != nullptr) {
                     if(GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
                         qCCritical(VideoReceiverLog) << "Error stopping pipeline!";
                     } else if(GST_MESSAGE_TYPE(msg) == GST_MESSAGE_EOS) {
@@ -315,7 +320,7 @@ GstVideoReceiver::stop(void)
                     gst_message_unref(msg);
                     msg = nullptr;
                 } else {
-                    qCCritical(VideoReceiverLog) << "gst_bus_timed_pop_filtered() failed";
+                    qCWarning(VideoReceiverLog) << "Timed out waiting for EOS while stopping, forcing pipeline to NULL" << _uri;
                 }
             }
 
