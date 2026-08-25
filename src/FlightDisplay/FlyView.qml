@@ -1249,9 +1249,10 @@ Item {
         Item {
             id: cameraControlOverlay
             z: QGroundControl.zOrderTopMost
-            visible: QGroundControl.videoManager.hasVideo
-
-            property int cameraIndex: 0
+            // Only shown while "Streams List" is the selected source. This keeps
+            // the selector from overriding a manually configured SRT/RTSP stream.
+            visible: QGroundControl.videoManager.hasVideo &&
+                     QGroundControl.settingsManager.videoSettings.videoSource.rawValue === QGroundControl.settingsManager.videoSettings.streamsListVideoSource
 
             states: [
                 State {
@@ -1303,13 +1304,13 @@ Item {
                         anchors.margins: ScreenTools.defaultFontPixelWidth * 0.5
 
                         text: {
-                            if (QGroundControl.videoManager.streams.length > 0 &&
-                                cameraControlOverlay.cameraIndex < QGroundControl.videoManager.streams.length) {
-
-                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
-                                return element.alias ? element.alias : element.url
+                            var streams = QGroundControl.videoManager.streams
+                            var idx = QGroundControl.videoManager.currentStreamIndex
+                            if (streams.length > 0 && idx >= 0 && idx < streams.length) {
+                                var element = streams[idx]
+                                return element.alias ? element.alias : element.ip
                             } else {
-                                return "Sem câmeras"
+                                return qsTr("Sem câmeras")
                             }
                         }
 
@@ -1340,16 +1341,10 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            if (QGroundControl.videoManager.streams.length > 0) {
-                                cameraControlOverlay.cameraIndex =
-                                    (cameraControlOverlay.cameraIndex + 1) %
-                                    QGroundControl.videoManager.streams.length
-
-                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
-
-                                if (element.ip) {
-                                    QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = element.ip
-                                }
+                            var streams = QGroundControl.videoManager.streams
+                            if (streams.length > 0) {
+                                var nextIndex = (QGroundControl.videoManager.currentStreamIndex + 1) % streams.length
+                                QGroundControl.videoManager.selectStream(nextIndex)
                             }
                         }
                     }
@@ -2909,149 +2904,6 @@ Item {
                     visible: false
                     // font.pixelSize: _androidBuild? 8 : 14
                 }
-            }
-        }
-
-        Item {
-            id: cameraControlOverlay
-            z: QGroundControl.zOrderTopMost
-            // Only shown (and only ever touches the video source) while "Streams List" is the
-            // selected Source in Settings - otherwise it must not interfere with whatever single
-            // source (RTSP/UDP/etc) is manually configured there.
-            visible: QGroundControl.videoManager.hasVideo &&
-                     QGroundControl.settingsManager.videoSettings.videoSource.rawValue === QGroundControl.settingsManager.videoSettings.streamsListVideoSource
-
-            // Lista com pares: texto + URL correspondente
-            /*property var cameraList: [
-                { name: "Video 1", url: "rtsp://192.168.144.25:8554/video1" },
-                { name: "Video 2", url: "rtsp://192.168.144.25:8554/video2" },
-                { name: "FPV",     url: "rtsp://192.168.144.26:554/main.264" }
-            ]*/
-
-            states: [
-                State {
-                    name: "full"
-                    when: !((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
-                    PropertyChanges {
-                        target: cameraControlOverlay
-                        anchors.top: parent.top
-                        anchors.bottom: null
-                        anchors.right: parent.right
-                        anchors.margins: 25
-                    }
-                },
-                State {
-                    name: "hidden"
-                    when: ((videoControl.pipState.state === videoControl.pipState.pipState) && (!_pipOverlay._isExpanded))
-                    PropertyChanges {
-                        target: cameraControlOverlay
-                        visible: false
-                    }
-                }
-            ]
-
-
-
-            Row {
-                spacing: ScreenTools.defaultFontPixelWidth
-                anchors.right: parent.right
-                anchors.top: parent.top
-
-                Rectangle {
-                    id: cameraTextBackground
-                    color: "#80000000"
-                    radius: 4
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: ScreenTools.defaultFontPixelWidth / 2
-                    anchors.rightMargin: ScreenTools.defaultFontPixelWidth / 2
-                    height: cameraText.implicitHeight + ScreenTools.defaultFontPixelHeight
-                    width: cameraText.implicitWidth + ScreenTools.defaultFontPixelWidth * 2
-
-                    Text {
-                        id: cameraText
-                        anchors.centerIn: parent
-                        text: {
-                            var streams = QGroundControl.videoManager.streams
-                            var idx = QGroundControl.videoManager.currentStreamIndex
-                            if (streams.length > 0 && idx >= 0 && idx < streams.length) {
-                                var element = streams[idx]
-                                return element.alias ? element.alias : element.ip
-                            } else {
-                                return qsTr("Sem câmeras")
-                            }
-                        }
-                        color: "white"
-                        font.bold: true
-                    }
-                }
-                QGCColoredImage {
-                    id: cameraButton
-                    source: "/qmlimages/camera"
-                    width: ScreenTools.defaultFontPixelHeight * 2
-                    height: width
-                    fillMode: Image.PreserveAspectFit
-                    color: "white"
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            var streams = QGroundControl.videoManager.streams
-                            if (streams.length > 0) {
-                                var nextIndex = (QGroundControl.videoManager.currentStreamIndex + 1) % streams.length
-                                QGroundControl.videoManager.selectStream(nextIndex)
-                            }
-                        }
-                    }
-                }
-                Item {
-                    id: cameraPitchIndication
-                    width: ScreenTools.defaultFontPixelHeight * 2.5
-                    height: width
-
-                    // container que gira tudo junto
-                    Item {
-                        id: rotatingGroup
-                        anchors.centerIn: parent
-                        width: parent.width
-                        height: parent.height
-
-                        rotation: {
-                            _filteredGimbalPitch
-                        }
-
-                        transformOrigin: Item.Center
-
-                        QGCColoredImage {
-                            id: cameraPitch
-                            source: "/qmlimages/camera_video"
-                            anchors.fill: parent
-                            fillMode: Image.PreserveAspectFit
-                            color: "white"
-                        }
-
-                        Rectangle {
-                            width: parent.width * 0.5
-                            height: parent.width * 0.4
-
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.horizontalCenterOffset: -parent.width * 0.15   // 👈 move para esquerda
-
-                            border.color: qgcPal.text
-                            color: "#80000000"
-                            z: _fullItemZorder + 10
-
-                            QGCLabel {
-                                text: Number(_filteredGimbalPitch).toFixed(0) + "°"
-                                anchors.centerIn: parent
-                                color: qgcPal.text
-                                font.pointSize: 8
-                            }
-                        }
-
-                    }
-                }
-
             }
         }
 
