@@ -117,6 +117,7 @@ protected:
     virtual void _shutdownDecodingBranch (void);
     virtual void _shutdownRecordingBranch(void);
 
+    void _prepareVideoSinkForDecoder(void);
     bool _needDispatch(void);
     void _dispatchSignal(std::function<void()> emitter);
 
