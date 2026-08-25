@@ -415,6 +415,7 @@ INCLUDEPATH += \
     src/QtLocationPlugin \
     src/QtLocationPlugin/QMLControl \
     src/Settings \
+    src/SiYi \
     src/Terrain \
     src/Vehicle \
     src/Audio \
