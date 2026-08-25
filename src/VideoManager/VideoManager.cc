@@ -36,6 +36,7 @@
 #include "Settings/SettingsManager.h"
 #include "Vehicle.h"
 #include "QGCCameraManager.h"
+#include "SiYi.h"
 
 #if defined(QGC_GST_STREAMING)
 #include "GStreamer.h"
@@ -901,6 +902,15 @@ VideoManager::_updateVideoUri(unsigned id, const QString& uri)
     }
 
     _videoUri[id] = uri;
+
+    // Keep the SiYi camera control channel (TCP, fixed port) pointed at whatever
+    // camera is actually streaming - it only knows the camera's ip, so it's derived
+    // from the main stream's uri whenever it changes (RTSP/SRT carry the camera's
+    // ip in the uri; the other sources are listen-style and have no camera ip to give).
+    if (id == 0 && (uri.startsWith(QStringLiteral("rtsp://"), Qt::CaseInsensitive) ||
+                     uri.startsWith(QStringLiteral("srt://"),  Qt::CaseInsensitive))) {
+        SiYi::instance()->cameraInstance()->analyzeIp(uri);
+    }
 
     return true;
 }
