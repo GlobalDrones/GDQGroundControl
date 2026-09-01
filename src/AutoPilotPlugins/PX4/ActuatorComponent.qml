@@ -370,7 +370,7 @@ SetupPage {
                                     title:      qsTr("Motor Order Identification and Assignment")
                                     text: actuators.motorAssignmentMessage
                                     onYes: {
-                                        console.log(actuators.motorAssignmentActive)
+                                        //console.log(actuators.motorAssignmentActive)
                                         actuators.startMotorAssignment()
                                     }
                                 }

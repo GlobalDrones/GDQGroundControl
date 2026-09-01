@@ -200,41 +200,6 @@ Item {
         }
 
 
-        //==============================================================
-        // ALT LIDAR
-        //==============================================================
-
-        Item {
-            width: parent.width
-            height: root.sectionHeight
-
-            ColumnLayout {
-                anchors.fill: parent
-
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "Alt. LIDAR"
-                    color: activeVehicle &&
-                           activeVehicle.rangeFinderDist.value > 120
-                           ? "red" : "white"
-                    font.pointSize: 14
-                    font.bold: true
-                }
-
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: activeVehicle ?
-                          safe(activeVehicle.rangeFinderDist.value, 2) + " m"
-                          : "--"
-                    color: activeVehicle &&
-                           activeVehicle.rangeFinderDist.value > 120
-                           ? "red" : "white"
-                    font.pointSize: 14
-                    font.bold: true
-                }
-            }
-        }
-
 
         //==============================================================
         // ALT AMSL

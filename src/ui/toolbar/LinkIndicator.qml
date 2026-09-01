@@ -59,8 +59,29 @@ Item {
         color:                  qgcPal.buttonText
 
         MouseArea {
-            anchors.fill:   parent
-            onClicked:      linkSelectionMenu.popup()
+            anchors.fill: parent
+
+            onClicked: {
+                if (!_activeVehicle || _rgLinkNames.length < 2)
+                    return
+
+                var current = _activeVehicle.vehicleLinkManager.primaryLinkName
+                var nextIndex = 0
+
+                // Encontra o link atual
+                for (var i = 0; i < _rgLinkNames.length; i++) {
+                    if (_rgLinkNames[i] === current) {
+                        nextIndex = (i + 1) % _rgLinkNames.length
+                        break
+                    }
+                }
+
+                console.log("Switching primary link:")
+                console.log("  Current:", current)
+                console.log("  Next:", _rgLinkNames[nextIndex])
+
+                _activeVehicle.vehicleLinkManager.primaryLinkName = _rgLinkNames[nextIndex]
+            }
         }
     }
 
@@ -69,7 +90,7 @@ Item {
     Component {
         id: linkSelectionMenuItemComponent
         QGCMenuItem {
-            onTriggered: _activeVehicle.vehicleLinkManager.primaryLinkName = text
+            onTriggered: _activeVehicle.vehicleLinkManager.primaryLinkName=text
         }
     }
 }

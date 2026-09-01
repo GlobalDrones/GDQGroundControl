@@ -63,7 +63,7 @@ Item {
             if (stStatus === XMLHttpRequest.DONE) {
                 var objectArray = JSON.parse(req.responseText);
                 if (objectArray.errors !== undefined) {
-                    console.log(qsTr("Error fetching WiFi Bridge Status: %1").arg(objectArray.errors[0].message))
+                    //console.log(qsTr("Error fetching WiFi Bridge Status: %1").arg(objectArray.errors[0].message))
                     stErrorCount = stErrorCount + 1
                     if(stErrorCount < 2)
                         timer.start()

@@ -75,6 +75,14 @@ Item {
     property bool flagAlertaGerador: false
     property var oldGeneratorMediamValue: 0
     property int  maxGeneratorCurrent: 120
+    property var generatorCurrentArray: []
+    property var batteryCurrentArray: []
+    property real generatorCurrentMed: 0
+    property string popUp_generatorAlert: ""
+    property string _generatorAlertColor: "red"
+    property bool canShowGeneratorAlert: true
+
+
     property var  _distanceToHome:     _activeVehicle.distanceToHome.rawValue.toFixed(2)
     property var  _distanceToWP: _activeVehicle.distanceToNextWP.rawValue.toFixed(2)
     property var _mavlinkLossPercent: _activeVehicle.mavlinkLossPercent.rawValue
@@ -139,10 +147,10 @@ Item {
     property var res_y: parent.height
     property real radianPI: Math.PI/180
 
-    property string popUp_breachAlert
-    property string _breachAlertColor
+   /* property string popUp_breachAlert
+    property string _breachAlertColor*/
 
-    property bool canShowBreachAlert: true
+    //property bool canShowBreachAlert: true
     property var array_valores_rc: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     property bool override_first_clicked: false;
 
@@ -154,13 +162,59 @@ Item {
     property real _groundSpeed: 0
     property real _altitudeAMSL: 0
     property int _flightTime:0
+    property real _filteredGimbalPitch: 0
 
-    Timer {
+    property var siyi: SiYi
+    property SiYiCamera camera: siyi.camera
+
+
+
+    Connections {
+        target: camera ? camera : null
+
+        function onIsRecordingChanged() {
+            if (!camera) return
+
+            if (camera.isRecording) {
+                photoText.visible = true
+            } else {
+                photoText.visible = false
+            }
+        }
+    }
+
+    Connections {
+        target: _activeVehicle ? _activeVehicle._GD_GimbalPitch : null
+
+        function onRawValueChanged() {
+            if (!_activeVehicle) return
+
+            var v = _activeVehicle._GD_GimbalPitch.rawValue
+
+            // ignora zeros espúrios (ajuste tolerância se quiser)
+            if (Math.abs(v) > 0.01) {
+                _filteredGimbalPitch = -v
+            }
+        }
+    }
+
+
+
+
+    /*Timer {
         id: breachCooldownTimer
         interval: 10000 // cooldown de 10 segundos
         running: false
         repeat: false
         onTriggered: canShowBreachAlert = true
+    }*/
+    Timer {
+        id: generatorCooldownTimer
+        interval: 10000   // 10 segundos de cooldown
+        running: false
+        repeat: false
+
+        onTriggered: canShowGeneratorAlert = true
     }
 
     function _calcCenterViewPort() {
@@ -173,12 +227,10 @@ Item {
     }
 
     function dmsStringToRadians(input) {
-        //console.log(input);
         input=input.toString()
 
         // Step 1: Split by commas (to separate latitude and longitude)
         const parts = input.split(',');
-        //console.log(parts)
         if (parts.length < 2) {
             throw new Error("Invalid DMS input format");
         }
@@ -270,33 +322,90 @@ Item {
     }
 
     //Bom incluir isso aqui, mas preciso de um log que presta pra testar então foda-se por enquanto
-    function generatorAlert(batValues, gerValues, oldGerMed){ //TODO: incluir condicional tensão da bateria < 44V
-        var medBat = 0;
-        var medGer = 0;
-        var flagAlert = false;
-        for (var i = 0; i<20; i++){
-            medBat = medBat + batValues[i];
-            medGer = medGer + gerValues[i];
-        }
-        medBat = medBat;
-        medGer = medGer;
+    function generatorAlert(batValues, gerValues, oldGerMed) {
 
-        //Se a média da corrente do gerador esta próxima de 0, levanta flag
-        if (Math.abs(medGer)<20){
-            flagAlert = true;
+        var medBat = 0
+        var medGer = 0
+        var flagAlert = false
+
+        for (var i = 0; i < 20; i++) {
+            medBat += batValues[i]
+            medGer += gerValues[i]
         }
-        //Se a media da corrente da bateria é maior que do gerador E a média do gerador está caindo, levanta flag
+
+        medBat = medBat / 20
+        medGer = medGer / 20
+
+        // Gerador perto de zero
+        if (Math.abs(medGer) < 20) {
+            flagAlert = true
+        }
+        // Bateria maior que gerador e gerador caindo
         else if (medBat > medGer && oldGerMed > medGer) {
-            flagAlert = true;
-            //console.log(medBat,medGer, oldGerMed)
+            flagAlert = true
         }
 
-        return [flagAlert, medGer];
+        if(!_activeVehicle.flying){
+            flagAlert=false
+        }
+        return [flagAlert, medGer]
     }
+
 
     function accelerationPercentageToRadius(percentage){
         return percentage*0.015
 
+    }
+
+
+    Timer {
+        id: generatorMonitorTimer
+        interval: 500   // 0.5s → 10s janela com 20 amostras
+        running: true
+        repeat: true
+
+        onTriggered: {
+
+            if (!_activeVehicle) {
+                return
+            }
+
+            var batCurrent = 0
+            var gerCurrent = 0
+
+            try {
+                batCurrent = _activeVehicle.batteries.get(0).current.rawValue
+                gerCurrent = _activeVehicle.batteries.get(2).current.rawValue
+            } catch(e) {
+                //console.log("Erro lendo baterias:", e)
+                return
+            }
+
+            // adiciona valores
+            batteryCurrentArray.push(batCurrent)
+            generatorCurrentArray.push(gerCurrent)
+
+            // mantém tamanho 20
+            if (batteryCurrentArray.length > 20)
+                batteryCurrentArray.shift()
+
+            if (generatorCurrentArray.length > 20)
+                generatorCurrentArray.shift()
+
+            // só roda quando buffer cheio
+            if (batteryCurrentArray.length === 20 &&
+                generatorCurrentArray.length === 20) {
+
+                var result = generatorAlert(
+                            batteryCurrentArray,
+                            generatorCurrentArray,
+                            oldGeneratorMediamValue)
+
+                flagAlertaGerador = result[0]
+                generatorCurrentMed = result[1]
+                oldGeneratorMediamValue = generatorCurrentMed
+            }
+        }
     }
 
 
@@ -308,7 +417,11 @@ Item {
 
         onTriggered:{
             gcsID = QGroundControl.mavlinkSystemID.valueOf(); //tem que ficar atualizando. tem jeito melhor pra fazer mas isso é pequisa futura e o desempenho ta satisfatório pra agora
-            //console.log("ID DA GCS: ",gcsID);
+
+            if (!_activeVehicle) {
+                return
+            }
+
             if(_activeVehicle.firmwareMajorVersion.toString() == "255"){ // Caso esteja rodando nosso Ardupilot custom (Major Version 255)
                 let allMessages = _activeVehicle.formattedMessages;
                     let lines = allMessages.split("<br/>").filter(line => line.trim() !== "");
@@ -347,16 +460,14 @@ Item {
                         if (diffMs > 7500) {
                             overrideActive = false;
                             activeOverrideID = -1;
-                            console.log("RC Override expirou por tempo (7.5s)");
                         }
                     }
                 }
 
 
 
-            var breach_val = breachDetection()
+            /*var breach_val = breachDetection()
             if (breach_val.level > -1 && canShowBreachAlert) {
-                console.log("VIOLACAO DE ESPAÇO AEREO NÍVEL ", breach_val.level + 1)
 
                 if (breach_val.level === 0) {
                     popUp_breachAlert = "Invasão do Volume de Contingência!"
@@ -367,11 +478,11 @@ Item {
                     _breachAlertColor = "Orange"
                 }
 
-                breachAlertPopup.open()
-                breachAlertPopup.visible = true
+               // breachAlertPopup.open()
+               // breachAlertPopup.visible = true
                 canShowBreachAlert = false
                 breachCooldownTimer.start()
-            }
+            }*/
 
         }
     }
@@ -393,7 +504,6 @@ Item {
         _androidBuild: _androidBuild
 
     }
-
 
     //**************************************************************************************************//
     //                          LATERAL VIEW AREA                                                       //
@@ -428,7 +538,7 @@ Item {
 
         Component.onCompleted:{
             let now = new Date();
-            console.log("mainViewArea LOADED at " + now.toLocaleTimeString());lateralDataLoader.active = true; bottomArea.active = true;}
+            lateralDataLoader.active = true; bottomArea.active = true;}
 
         QGCToolInsets {
             id: _toolInsets
@@ -448,6 +558,35 @@ Item {
             visible: !QGroundControl.videoManager.fullScreen
         }
 
+        Item {
+            id: crosshair
+            width: parent.width*0.04
+            height: width
+            anchors.centerIn: parent // Garante que a mira fique no centro do elemento pai
+            visible: widgetLayer.crosshair_visible
+            z: 1000000000000
+
+            // Linha Horizontal
+            Rectangle {
+                width: parent.width
+                height: 5
+                color: "red"
+                //border.color: "black"
+                //border.width: 1
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            // Linha Vertical
+            Rectangle {
+                width: 5
+                height: parent.height
+                color: "red"
+                //border.color: "black"
+                //border.width: 1
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+        }
+
 
         FlyViewCustomLayer {
             id: customOverlay
@@ -464,6 +603,7 @@ Item {
             actionList: _guidedActionList
             altitudeSlider: _guidedAltSlider
         }
+
 
 
         /*GuidedActionConfirm {
@@ -528,7 +668,7 @@ Item {
                       || mapControl.pipState.state === mapControl.pipState.pipState)
         }
 
-        Popup {
+        /*Popup {
             id: breachAlertPopup
             x: (parent.width - width) / 2
             y: 10  // optional: vertical position
@@ -554,12 +694,16 @@ Item {
                      font.pixelSize: _androidBuild? 16 : 20
                 }
             }
-        }
+        }*/
 
         Item {
             id: cameraControlOverlay
             z: QGroundControl.zOrderTopMost
-            visible: QGroundControl.videoManager.hasVideo
+            // Only shown (and only ever touches the video source) while "Streams List" is the
+            // selected Source in Settings - otherwise it must not interfere with whatever single
+            // source (RTSP/UDP/etc) is manually configured there.
+            visible: QGroundControl.videoManager.hasVideo &&
+                     QGroundControl.settingsManager.videoSettings.videoSource.rawValue === QGroundControl.settingsManager.videoSettings.streamsListVideoSource
 
             // Lista com pares: texto + URL correspondente
             /*property var cameraList: [
@@ -567,7 +711,6 @@ Item {
                 { name: "Video 2", url: "rtsp://192.168.144.25:8554/video2" },
                 { name: "FPV",     url: "rtsp://192.168.144.26:554/main.264" }
             ]*/
-            property int cameraIndex: 0
 
             states: [
                 State {
@@ -612,11 +755,13 @@ Item {
                         id: cameraText
                         anchors.centerIn: parent
                         text: {
-                            if (QGroundControl.videoManager.streams.length > 0 && cameraControlOverlay.cameraIndex < QGroundControl.videoManager.streams.length) {
-                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
-                                return element.alias ? element.alias : element.url
+                            var streams = QGroundControl.videoManager.streams
+                            var idx = QGroundControl.videoManager.currentStreamIndex
+                            if (streams.length > 0 && idx >= 0 && idx < streams.length) {
+                                var element = streams[idx]
+                                return element.alias ? element.alias : element.ip
                             } else {
-                                return "Sem câmeras"
+                                return qsTr("Sem câmeras")
                             }
                         }
                         color: "white"
@@ -634,18 +779,78 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            if (QGroundControl.videoManager.streams.length > 0) {
-                                cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % QGroundControl.videoManager.streams.length
-
-                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
-                                if (element.ip) {
-                                    QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = element.ip
-                                }
+                            var streams = QGroundControl.videoManager.streams
+                            if (streams.length > 0) {
+                                var nextIndex = (QGroundControl.videoManager.currentStreamIndex + 1) % streams.length
+                                QGroundControl.videoManager.selectStream(nextIndex)
                             }
                         }
                     }
                 }
+                Item {
+                    id: cameraPitchIndication
+                    width: ScreenTools.defaultFontPixelHeight * 2.5
+                    height: width
+
+                    // container que gira tudo junto
+                    Item {
+                        id: rotatingGroup
+                        anchors.centerIn: parent
+                        width: parent.width
+                        height: parent.height
+
+                        rotation: {
+                            _filteredGimbalPitch
+                        }
+
+                        transformOrigin: Item.Center
+
+                        QGCColoredImage {
+                            id: cameraPitch
+                            source: "/qmlimages/camera_video"
+                            anchors.fill: parent
+                            fillMode: Image.PreserveAspectFit
+                            color: "white"
+                        }
+
+                        Rectangle {
+                            width: parent.width * 0.5
+                            height: parent.width * 0.4
+
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.horizontalCenterOffset: -parent.width * 0.15   // 👈 move para esquerda
+
+                            border.color: qgcPal.text
+                            color: "#80000000"
+                            z: _fullItemZorder + 10
+
+                            QGCLabel {
+                                text: Number(_filteredGimbalPitch).toFixed(0) + "°"
+                                anchors.centerIn: parent
+                                color: qgcPal.text
+                                font.pointSize: 8
+                            }
+                        }
+
+                    }
+                }
+
             }
+        }
+        Text {
+            id: photoText
+            text: "📸 Photo Captured"
+            anchors.horizontalCenter: cameraControlOverlay.horizontalCenter
+            anchors.top: cameraControlOverlay.bottom
+            font.pixelSize: 24
+            visible: false
+        }
+
+        Timer {
+            id: photoTextTimer
+            interval: 1500
+            onTriggered: photoText.visible = false
         }
 
         Rectangle {
@@ -658,7 +863,7 @@ Item {
                     border.width: 1
                     //anchors.horizontalCenter:  parent.horizontalCenter
                     anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottom: parent.bottomz
+                    anchors.bottom: parent.bottom
                     z: _fullItemZorder + 10
 
                     // texto centralizado
@@ -680,12 +885,11 @@ Item {
                                 if (activeOverrideID === -1 || activeOverrideID === gcsID) {
                                         confirmOverridePopup.wantsToEnable = !overrideActive
                                         confirmOverridePopup.open()
-                                    } else {
-                                        console.log("Clique bloqueado: Outro ID tem o controle:", activeOverrideID)
                                     }
                             }
                         }
                 }
+
 
         Popup {
                             id: confirmOverridePopup
@@ -750,24 +954,7 @@ Item {
                                                 //array_valores_rc
 
                                                 var arrayInt = array_valores_rc.map(v => Number(v) | 0)
-                                                if (!overrideActive) {
-                                                    //if(!override_first_clicked && _activeVehicle.firmwareMajorVersion.toString() == "255"){
-                                                    //    var try_override = _activeVehicle.validateRCChannels(arrayInt);
-                                                    //    console.log("RESULTADO TRY_OVERRIDE: ",try_override)
-                                                    //    if(try_override!==""){
-                                                    //        _alertaForceOverride.text = "ATENÇÃO: "+try_override
-                                                    //        override_first_clicked = true;
-                                                    //        _simText.color = "black"
-                                                    //        btnYes.color = "yellow"
-                                                    //    }
-                                                    //    else{
-                                                    //        overrideActive = true
-                                                    //        confirmOverridePopup.close()
-                                                    //    }
-                                                    //    //confirmOverridePopup.wantsToEnable = false
-                                                    //}
-                                                    //else{
-                                                        console.log("FORÇANDO OVERRIDE")
+                                                if (!overrideActive) {                                                
                                                         _activeVehicle.overwriteRC(arrayInt, true)
                                                         overrideActive = true
                                                         override_first_clicked = false;
@@ -775,7 +962,7 @@ Item {
                                                         btnYes.color = "#66bb6a"
                                                         _alertaForceOverride.text = ""
                                                         confirmOverridePopup.close()
-                                                    //}
+
 
                                                 } else {
                                                     _activeVehicle.stopRCOverride()
@@ -783,7 +970,6 @@ Item {
                                                     override_first_clicked = false;
                                                     confirmOverridePopup.close()
                                                 }
-                                                //confirmOverridePopup.close()
                                             }
                                             hoverEnabled: true
                                             onEntered: btnYes.selected = true

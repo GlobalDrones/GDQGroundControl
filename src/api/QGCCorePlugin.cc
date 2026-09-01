@@ -251,7 +251,7 @@ bool QGCCorePlugin::adjustSettingMetaData(const QString& settingsGroup, FactMeta
 #if defined (__mobile__)
         if (metaData.name() == AppSettings::telemetrySaveName) {
             // Mobile devices have limited storage so don't turn on telemtry saving by default
-            metaData.setRawDefaultValue(false);
+            metaData.setRawDefaultValue(true);
             return true;
         }
 #endif

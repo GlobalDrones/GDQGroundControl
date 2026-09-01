@@ -17,7 +17,11 @@ ToolStripActionList {
 
     signal displayPreFlightChecklist
     signal modoEngenheiroToggle
+    signal crosshairToggle
+    signal camControlToggle
     property bool _modoEngenheiroChecked: false
+    property bool _crosshairChecked: false
+    property bool _camControlChecked: false
     model: [
         ToolStripAction {
             text:           qsTr("Plan")
@@ -29,12 +33,33 @@ ToolStripActionList {
             text: qsTr("+Info")
             iconSource: "/qmlimages/Gears.svg"
             onTriggered: {
-                //console.log("[A] modoEngenheiro_ActionList:",_root.modoEngenheiro)
                 modoEngenheiroToggle() //trigger do sinal
                 _modoEngenheiroChecked: !_modoEngenheiroChecked
             }
 
             checked: _modoEngenheiroChecked
+        },
+
+        ToolStripAction {
+            text: qsTr("Aim")
+            iconSource: "/qmlimages/MapAddMission.svg"
+            onTriggered: {
+                crosshairToggle() //trigger do sinal
+                _crosshairChecked: !_crosshairChecked
+            }
+
+            checked: _crosshairChecked
+        },
+
+        ToolStripAction {
+            text: qsTr("Cam")
+            iconSource: "/qmlimages/camera.svg"
+            onTriggered: {
+                camControlToggle() //trigger do sinal
+                _camControlChecked: !_camControlChecked
+            }
+
+            checked: _camControlChecked
         }
         //GuidedActionTakeoff { },
         //GuidedActionLand { },

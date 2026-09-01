@@ -116,6 +116,8 @@ const char* Vehicle::_flightTimeFactName =          "flightTime";
 const char* Vehicle::_gd60_Sensor1FactName =         "gd60_sensor1";
 const char* Vehicle::_gd60_Sensor2FactName =         "gd60_sensor2";
 const char* Vehicle::_gd60_Sensor3FactName =         "gd60_sensor3";
+const char* Vehicle::_GD_RC_SCOREFactName  =         "_GD_RC_SCORE";
+const char* Vehicle::_GD_NET_SCOREFactName =         "_GD_NET_SCORE";
 const char* Vehicle::_GD_RPM1FactName=               "_GD_RPM1";
 const char* Vehicle::_GD_RPM2FactName=               "_GD_RPM2";
 const char* Vehicle::_GD_RPM3FactName=               "_GD_RPM3";
@@ -123,6 +125,9 @@ const char* Vehicle::_GD_RPM4FactName=               "_GD_RPM4";
 const char* Vehicle::_GD_RPM5FactName=               "_GD_RPM5";
 const char* Vehicle::_GD_RPM6FactName=               "_GD_RPM6";
 const char* Vehicle::_GD_GeneratorRPMFactName=       "_GD_GeneratorRPM";
+const char* Vehicle::_GD_GimbalPitchFactName= "_GD_GimbalPitch";
+const char* Vehicle::_GD_GimbalYawFactName=   "_GD_GimbalYaw";
+const char* Vehicle::_GD_GimbalRollFactName=  "_GD_GimbalRoll";
 const char* Vehicle::_distanceToHomeFactName =      "distanceToHome";
 const char* Vehicle::_missionItemIndexFactName =    "missionItemIndex";
 const char* Vehicle::_headingToNextWPFactName =     "headingToNextWP";
@@ -347,6 +352,8 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _gd60_Sensor1Fact                      (0, _gd60_Sensor1FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor2Fact                      (0, _gd60_Sensor2FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor3Fact                      (0, _gd60_Sensor3FactName,      FactMetaData::valueTypeFloat)
+    , _GD_RC_SCOREFact                       (0, _GD_RC_SCOREFactName,       FactMetaData::valueTypeFloat)
+    , _GD_NET_SCOREFact                      (0, _GD_NET_SCOREFactName,      FactMetaData::valueTypeFloat)
     , _GD_RPM1Fact                           (0, _GD_RPM1FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM2Fact                           (0, _GD_RPM2FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM3Fact                           (0, _GD_RPM3FactName,           FactMetaData::valueTypeInt16)
@@ -354,6 +361,9 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _GD_RPM5Fact                           (0, _GD_RPM5FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM6Fact                           (0, _GD_RPM6FactName,           FactMetaData::valueTypeInt16)
     , _GD_GeneratorRPMFact                   (0, _GD_GeneratorRPMFactName,   FactMetaData::valueTypeInt16)
+    , _GD_GimbalPitchFact                    (0, _GD_GimbalPitchFactName,    FactMetaData::valueTypeDouble)
+    , _GD_GimbalYawFact                      (0, _GD_GimbalYawFactName,      FactMetaData::valueTypeDouble)
+    , _GD_GimbalRollFact                     (0, _GD_GimbalRollFactName,     FactMetaData::valueTypeDouble)
     , _distanceToHomeFact                    (0, _distanceToHomeFactName,    FactMetaData::valueTypeDouble)
     , _missionItemIndexFact                  (0, _missionItemIndexFactName,  FactMetaData::valueTypeUint16)
     , _headingToNextWPFact                   (0, _headingToNextWPFactName,   FactMetaData::valueTypeDouble)
@@ -389,24 +399,22 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
 
 }
 
-void Vehicle::stopRCOverride() {
-    if (!_overrideRunning) return;
+void Vehicle::stopRCOverride()
+{
+    if (!_overrideRunning) {
+        return;
+    }
 
     _overrideRunning = false;
+    if (_overrideFuture.isRunning()) {
+        _overrideFuture.waitForFinished();
+    }
 
-
+    _sendRCOverrideRelease();
 }
+
 #ifndef WIN32
 QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ //override.
-
-    // para testar no folder do ardupilot/Tools/autotest: python3 sim_vehicle.py -v copter --no-mavproxy -A "--serial0=udpclient:192.168.1.114:14550"
-    // 192.168.1.114:14550 <- IP e Porta que o controle ta escutando.
-    // OU
-    // python3 sim_vehicle.py -v copter --console --map -w
-    // e escreve no mavproxyterminal:  output add 192.168.1.114:14550
-    // =========================================================================
-    // MODIFICAÇÃO: INÍCIO DA THREAD DE LEITURA SERIAL E ENVIO MAVLINK
-    // =========================================================================
     if (_overrideRunning) {
         qWarning() << "Override já ativo";
         return "Override já ativo";
@@ -421,36 +429,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
     _overrideRunning = true;
 
     setJoystickEnabled(false);
-    _joystickManager->activeJoystick()->terminate();
-
-    // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
-    mavlink_rc_channels_override_t rc_reset;
-
-    // Define TODOS os 18 canais para 65535 (IGNORAR)
-    rc_reset.chan1_raw  = 65535; rc_reset.chan2_raw  = 65535;
-    rc_reset.chan3_raw  = 65535; rc_reset.chan4_raw  = 65535;
-    rc_reset.chan5_raw  = 65535; rc_reset.chan6_raw  = 65535;
-    rc_reset.chan7_raw  = 65535; rc_reset.chan8_raw  = 65535;
-    rc_reset.chan9_raw  = 65535; rc_reset.chan10_raw = 65535;
-    rc_reset.chan11_raw = 65535; rc_reset.chan12_raw = 65535;
-    rc_reset.chan13_raw = 65535; rc_reset.chan14_raw = 65535;
-    rc_reset.chan15_raw = 65535; rc_reset.chan16_raw = 65535;
-    rc_reset.chan17_raw = 65535; rc_reset.chan18_raw = 65535;
-
-    rc_reset.target_system      = id();
-    rc_reset.target_component = MAV_COMP_ID_AUTOPILOT1;
-
-    mavlink_message_t msg_out;
-    mavlink_msg_rc_channels_override_encode(
-        _mavlink->getSystemId(),
-        _mavlink->getComponentId(),
-        &msg_out,
-        &rc_reset
-        );
-
-
-    // Envia o comando de reset 3 vezes para garantir a entrega
-    sendMessageMultiple(msg_out);
 
     qWarning() << "RC Override MAVLink reset enviado (todos os canais setados para IGNORAR).";
 
@@ -459,10 +437,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         //if(retorno!="") return retorno;
     }
 
-
-
-
-    //_mavlink->_status.buffer_overrun
     _overrideFuture = QtConcurrent::run([=]() {
 
 
@@ -503,21 +477,6 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
 
         SiYiCrcApi crcAPI;
-        // ================= FECHA STREAM =================
-        /*QByteArray closeCmd = crcAPI.make_remote_channel_cmd(
-            0x01, // CLOSE
-            0x00  // freq = 0
-            );
-
-        for (int i = 0; i < 3; i++) {
-            send(sock, closeCmd.data(), closeCmd.size(), 0);
-            usleep(20000);
-        }
-
-        qWarning() << "[SIYI] RemoteChannelData CLOSED";
-
-        usleep(100000); // 100 ms de folga (importante)*/
-
         QByteArray openCmd = crcAPI.make_remote_channel_cmd(
             0x00, // OPEN
             0x05  // 4 Hz (use 0x05 pra 20Hz depois)
@@ -592,46 +551,78 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
         int  count_no_rcv=0;
         _overrideRunning = true;
         while (_overrideRunning) {
-            qDebug("[DEBUG LOOP DA THREAD]");
             // LER DADOS DA SERIAL
+            int n = recvfrom(sock, buf, sizeof(buf), 0, (sockaddr*)&from, &fromLen);
 
+            if (n < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    QThread::msleep(20);
+                    continue;
+                } else {
+                    QThread::msleep(20);
+                    continue;
+                }
+            }
 
+            count_no_rcv = 0;
 
-           int n = recvfrom(sock, buf, sizeof(buf), 0, (sockaddr*)&from, &fromLen);
-           if (n > 0) {
-               QString hex;
-               for (int i = 0; i < n; i++) {
-                   hex += QString("%1 ")
-                   .arg(buf[i], 2, 16, QLatin1Char('0'));
+           // tamanho mínimo para header + CRC
+               if (n < 10) {
+                   qWarning() << "[PACKET TOO SMALL]" << n;
+                   continue;
                }
-               qWarning() << "[UDP RX]" << hex;
-           }
-           else if (n == 0) {
-               qWarning() << "[UDP RX] datagrama vazio (0 bytes)";
-           }
-           else { // n < 0
-               if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                   // normal em socket não-bloqueante
-               } else {
-                   qWarning() << "[UDP RX ERROR]" << strerror(errno);
+
+               // valida header
+               if (buf[0] != 0x55 || buf[1] != 0x66) {
+                   qWarning() << "[HEADER ERROR]";
+                   continue;
                }
-           }
+
+               // CRC recebido e validação do pacote
+               bool valid_crc = false;
+
+                   if (n > 256) n = 256;
+
+                   if (n < 42)
+                       continue;
+
+                   const int packet_len = 42;
+
+                   int i = 0;
+
+                   while (i + packet_len <= n) {
+
+                       if (i + 1 >= n)
+                           break;
+
+                       if ((uint8_t)buf[i] == 0x55 && (uint8_t)buf[i+1] == 0x66) {
+
+                           uint16_t received_crc =
+                                   ((uint8_t)buf[i + packet_len - 1] << 8) |
+                                   (uint8_t)buf[i + packet_len - 2];
+
+                           uint16_t calculated_crc =
+                               crcAPI.calculate_crc16_pointer(buf + i, packet_len - 2);
+
+                           if (received_crc == calculated_crc) {
+                                valid_crc = true;
+                                break;
+
+                           }
 
 
 
+                           i += packet_len;
 
-            //if(n>0){
-            //QString hex;
-            //for (int i = 0; i < n; i++) {
-            //    hex += QString("%1 ").arg(buf[i], 2, 16, QLatin1Char('0'));
+                       } else {
+                           i++;
+                       }
+                   }
 
-            //}
-            //hex += QString(" | N = %1").arg(n);
-            //qDebug() << "[SERIAL HEX]" << hex;}
 
             // LÓGICA DE EXTRAÇÃO E ENVIO MAVLINK
             // Verifica se o pacote tem o tamanho mínimo e o magic byte correto (0x42)
-            if (n > 30 && buf[7] == 0x42) {
+            if (n > 30&& buf[0] == 0x55 && buf[1] == 0x66 && buf[7] == 0x42 && valid_crc) {
 
                 // --- 1. EXTRAIR VALORES BRUTOS ---
                 // Canal 1
@@ -740,11 +731,14 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                     values_changed = true;
                 }
 
+
+
                 current_time = QDateTime::currentMSecsSinceEpoch();
                 elapsed_time = current_time - last_sent_time;
-                // bool safety_interval_passed = (current_time - last_sent_time) >= SAFETY_SEND_INTERVAL_MS;
+                if (elapsed_time < MIN_LOOP_MS) {
+                    continue;
+                }
                 needs_send = values_changed || (elapsed_time >= MIN_LOOP_MS);
-                //if (values_changed || safety_interval_passed) { //Aqui é o IF original caso seja necessário um envio periódico mesmo que redundante
                 if (needs_send) { //esse aqui śo leva em conta o envio de mudanças, sem redundancias
 
                     // 3c. Codificar e Enviar a mensagem
@@ -755,41 +749,28 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
                         &channels_override // ENVIAR O ESTADO ATUAL!
                         );
 
-                    sendMessageOnLinkThreadSafe(vehicleLinkManager()->primaryLink().lock().get(),msg);
+                    auto link = vehicleLinkManager()->primaryLink().lock();
+                    if (!link) {
+                        QThread::msleep(20);
+                        continue;
+                    }
+
+                    sendMessageOnLinkThreadSafe(link.get(), msg);
 
                     // 3d. Atualizar o estado e o tempo SOMENTE se houver envio
                     previous_channels = channels_override; // O estado atual se torna o estado anterior
                     last_sent_time = current_time; // Atualiza o tempo do último envio
 
-                    // Log dos dados (opcional, mas útil para debug)
-                    qWarning() << "[MAVLink RC OUT] Ch1/Ch2/Ch3/Ch4:"
-                               << channels_override.chan1_raw << "/"
-                               << channels_override.chan2_raw << "/"
-                               << channels_override.chan3_raw << "/"
-                               << channels_override.chan4_raw << "/"
-                               << channels_override.chan5_raw << "/"
-                               << channels_override.chan6_raw << "/"
-                               << channels_override.chan7_raw << "/"
-                               << channels_override.chan8_raw << "/"
-                               << channels_override.chan9_raw << "/"
-                               << channels_override.chan10_raw << "/"
-                               << channels_override.chan11_raw << "/"
-                               << channels_override.chan12_raw << "/"
-                               << channels_override.chan13_raw << "/"
-                               << channels_override.chan14_raw << "/"
-                               << channels_override.chan15_raw << "/"
-                               << channels_override.chan16_raw
-                               << (values_changed ? " (MUDANÇA)" : " (KEEP-ALIVE)");
                 }
                 // --- FIM DA LÓGICA DE ENVIO OTIMIZADA ---
 
                 // O loop deve rodar em alta frequência para processar dados seriais rapidamente
                 // mas a pausa do envio é controlada pela lógica acima.
-                // QThread::msleep(MIN_LOOP_MS); // Removido daqui, pois a pausa já está no final do loop principal ou no 'n <= 0'.
             }
             else{
                 count_no_rcv++;
                 if(count_no_rcv>=4){ //200ms sem receber dados na porta serial -> reenviar start da porta
+                    count_no_rcv=0;
                     for (int i = 0; i < 3; i++) {
                         sendto(sock, openCmd.data(), openCmd.size(), 0, (sockaddr*)&unirc, sizeof(unirc));
                         usleep(20000);
@@ -798,13 +779,66 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
             }
 
             // Pausa de Loop (garante que o loop não sature a CPU se houver dados, mas sem envio) deletar para teste depois
-            QThread::msleep(1);
+            QThread::msleep(20);
         }
         close(sock);
 
     });
 
     return "";
+}
+
+void Vehicle::_sendRCOverrideRelease()
+{
+    if (!_mavlink) {
+        return;
+    }
+
+    mavlink_rc_channels_override_t release {};
+    release.target_system = id();
+    release.target_component = MAV_COMP_ID_AUTOPILOT1;
+
+    release.chan1_raw = 0;
+    release.chan2_raw = 0;
+    release.chan3_raw = 0;
+    release.chan4_raw = 0;
+    release.chan5_raw = 0;
+    release.chan6_raw = 0;
+    release.chan7_raw = 0;
+    release.chan8_raw = 0;
+
+    static constexpr uint16_t releaseExtendedChannel = UINT16_MAX - 1;
+    release.chan9_raw = releaseExtendedChannel;
+    release.chan10_raw = releaseExtendedChannel;
+    release.chan11_raw = releaseExtendedChannel;
+    release.chan12_raw = releaseExtendedChannel;
+    release.chan13_raw = releaseExtendedChannel;
+    release.chan14_raw = releaseExtendedChannel;
+    release.chan15_raw = releaseExtendedChannel;
+    release.chan16_raw = releaseExtendedChannel;
+    release.chan17_raw = releaseExtendedChannel;
+    release.chan18_raw = releaseExtendedChannel;
+
+    auto link = vehicleLinkManager()->primaryLink().lock();
+    if (!link) {
+        qWarning() << "RC Override release: sem primary link, não enviado.";
+        return;
+    }
+
+    // Envia direto no primary link (mesmo caminho comprovado do loop de override),
+    // repetido algumas vezes para garantir a entrega da liberação.
+    mavlink_message_t msg;
+    for (int i = 0; i < 5; ++i) {
+        mavlink_msg_rc_channels_override_encode(
+            _mavlink->getSystemId(),
+            _mavlink->getComponentId(),
+            &msg,
+            &release
+            );
+        sendMessageOnLinkThreadSafe(link.get(), msg);
+        QThread::msleep(20);
+    }
+    qWarning() << "RC Override release enviado.";
 }
 
 QString Vehicle::validateRCChannels(const QVariantList &arrayRC)
@@ -860,7 +894,7 @@ QString Vehicle::validateRCChannels(const QVariantList &arrayRC)
     // Cria a mensagem RC_CHANNELS_OVERRIDE para RESET
     mavlink_rc_channels_override_t rc_reset;
 
-    // Define TODOS os 18 canais para 65535 (IGNORAR)
+    // Define TODOS os 18 canais para 0 (IGNORAR)
     rc_reset.chan1_raw  = 65535; rc_reset.chan2_raw  = 65535;
     rc_reset.chan3_raw  = 65535; rc_reset.chan4_raw  = 65535;
     rc_reset.chan5_raw  = 65535; rc_reset.chan6_raw  = 65535;
@@ -1209,13 +1243,18 @@ void Vehicle::_commonInit()
     _addFact(&_gd60_Sensor1Fact,        _gd60_Sensor1FactName);
     _addFact(&_gd60_Sensor2Fact,        _gd60_Sensor2FactName);
     _addFact(&_gd60_Sensor3Fact,        _gd60_Sensor3FactName);
+    _addFact(&_GD_RC_SCOREFact,         _GD_RC_SCOREFactName);
+    _addFact(&_GD_NET_SCOREFact,         _GD_NET_SCOREFactName);
     _addFact(&_GD_RPM1Fact,             _GD_RPM1FactName);
     _addFact(&_GD_RPM2Fact,             _GD_RPM2FactName);
     _addFact(&_GD_RPM3Fact,             _GD_RPM3FactName);
     _addFact(&_GD_RPM4Fact,             _GD_RPM4FactName);
     _addFact(&_GD_RPM5Fact,             _GD_RPM5FactName);
     _addFact(&_GD_RPM6Fact,             _GD_RPM6FactName);
-    _addFact(&_GD_GeneratorRPMFact,         _GD_GeneratorRPMFactName);
+    _addFact(&_GD_GeneratorRPMFact,     _GD_GeneratorRPMFactName);
+    _addFact(&_GD_GimbalPitchFact ,     _GD_GimbalPitchFactName);
+    _addFact(&_GD_GimbalYawFact ,       _GD_GimbalYawFactName);
+    _addFact(&_GD_GimbalRollFact ,      _GD_GimbalRollFactName);
     _addFact(&_distanceToHomeFact,      _distanceToHomeFactName);
     _addFact(&_missionItemIndexFact,    _missionItemIndexFactName);
     _addFact(&_headingToNextWPFact,     _headingToNextWPFactName);
@@ -1257,6 +1296,8 @@ void Vehicle::_commonInit()
     _gd60_Sensor1Fact.setRawValue(0);
     _gd60_Sensor2Fact.setRawValue(0);
     _gd60_Sensor3Fact.setRawValue(0);
+    _GD_RC_SCOREFact.setRawValue(0);
+    _GD_NET_SCOREFact.setRawValue(0);
     _GD_RPM1Fact.setRawValue(0);
     _GD_RPM2Fact.setRawValue(0);
     _GD_RPM3Fact.setRawValue(0);
@@ -1287,7 +1328,7 @@ void Vehicle::_commonInit()
 Vehicle::~Vehicle()
 {
     qCDebug(VehicleLog) << "~Vehicle" << this;
-
+    stopRCOverride();
     delete _missionManager;
     _missionManager = nullptr;
 
@@ -1634,6 +1675,15 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         mavlink_rpm_t msg_rpm;
         mavlink_msg_rpm_decode(&message, &msg_rpm);
         _GD_GeneratorRPMFact.setRawValue(msg_rpm.rpm1);
+        if((msg_rpm.rpm1>0) && !generator_started){
+                _flightTimer.start();
+                _flightTimeUpdater.start();
+                generator_started=true;
+            }
+        if((msg_rpm.rpm1<=0) && generator_started){
+            _flightTimeUpdater.stop();
+            generator_started=false;
+        }
         break;
     }
 
@@ -1641,7 +1691,8 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     {
         mavlink_system_time_t msg_systime;
         mavlink_msg_system_time_decode(&message, &msg_systime);
-        _flightTimeFact.setRawValue(msg_systime.time_boot_ms/1000);//em segundos
+        //_flightTimeFact.setRawValue(msg_systime.time_boot_ms/1000);//em segundos
+        _updateFlightTime();
         break;
     }
     case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
@@ -1651,7 +1702,9 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             TEMP1,
             TEMP2,
             TEMP3,
-            TEMPGD25
+            TEMPGD25,
+            RC_SCORE,
+            NET_SCORE
         };
 
         mavlink_named_value_float_t msg_nvf;
@@ -1661,6 +1714,17 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         else if (strncmp(msg_nvf.name, "Temp2", 10) == 0) id = TEMP2;
         else if (strncmp(msg_nvf.name, "Temp3", 10) == 0) id = TEMP3;
         else if (strncmp(msg_nvf.name, "TempICE", 10) == 0) id = TEMPGD25;
+        else if (strncmp(msg_nvf.name, "RC_SCORE", 10) == 0) id = RC_SCORE;
+        else if (strncmp(msg_nvf.name, "NET_SCORE", 10) == 0) id = NET_SCORE;
+
+        /*char nameBuffer[11] = {};
+        memcpy(nameBuffer, msg_nvf.name, 10);
+
+        QFile file("named_value_float_log.txt");
+        if (file.open(QIODevice::Append | QIODevice::Text)) {
+            QTextStream out(&file);
+            out << nameBuffer << " : " << msg_nvf.value << "\n";
+        }*/
 
         switch(id) {
         case TEMP1:
@@ -1669,19 +1733,41 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
             break;
         case TEMP2:
             //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP2:" << msg_nvf.value;
-            _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
+
             break;
         case TEMP3:
             //qWarning() << "MEU SWITCH FUNCIONA PARA TEMP3:" << msg_nvf.value;
-            _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
+
             break;
         case TEMPGD25:
             _gd60_Sensor1Fact.setRawValue(msg_nvf.value);
+            break;
+        case RC_SCORE:
+            _GD_RC_SCOREFact.setRawValue(msg_nvf.value);
+            _gd60_Sensor2Fact.setRawValue(msg_nvf.value);
+            break;
+        case NET_SCORE:
+            _GD_NET_SCOREFact.setRawValue(msg_nvf.value);
+            _gd60_Sensor3Fact.setRawValue(msg_nvf.value);
             break;
         default:
             //qWarning() << "NAMED_VALUE_FLOAT RECEBIDO: "<<msg_nvf.value;
             break;
         }
+        break;
+    }
+    case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
+    {
+        mavlink_gimbal_device_attitude_status_t stat_gimbal;
+        mavlink_msg_gimbal_device_attitude_status_decode(&message, &stat_gimbal);
+        QQuaternion quaternion(stat_gimbal.q[0],stat_gimbal.q[1],stat_gimbal.q[2],stat_gimbal.q[3]);
+        QVector3D euler_angles = quaternion.toEulerAngles();
+        _GD_GimbalRollFact.setRawValue(euler_angles.x());
+        _GD_GimbalPitchFact.setRawValue(euler_angles.y());
+        _GD_GimbalYawFact.setRawValue(euler_angles.z());
+
+        //qDebug()<<"Quart "<<stat_gimbal.q[0]<<stat_gimbal.q[1]<<stat_gimbal.q[2]<<stat_gimbal.q[3];
+        //qDebug()<<"euler "<<euler_angles.x()<<euler_angles.y()<<euler_angles.z();
         break;
     }
 
@@ -1782,7 +1868,9 @@ void Vehicle::_handleCameraImageCaptured(const mavlink_message_t& message)
     qCDebug(VehicleLog) << "_handleCameraFeedback coord:index" << imageCoordinate << feedback.image_index << feedback.capture_result;
     if (feedback.capture_result == 1) {
         _cameraTriggerPoints.append(new QGCQGeoCoordinate(imageCoordinate, this));
+
     }
+    emit photoTaken();
 }
 
 void Vehicle::_chunkedStatusTextTimeout(void)
@@ -2712,6 +2800,7 @@ void Vehicle::_handleRadioStatus(mavlink_message_t& message)
 
     int rssi    = rstatus.rssi;
     int remrssi = rstatus.remrssi;
+    qDebug()<<"REMRSSI "<<remrssi;
     int lnoise = (int)(int8_t)rstatus.noise;
     int rnoise = (int)(int8_t)rstatus.remnoise;
     //-- 3DR Si1k radio needs rssi fields to be converted to dBm
@@ -2739,6 +2828,7 @@ void Vehicle::_handleRadioStatus(mavlink_message_t& message)
     }
     if(_telemetryRRSSI != remrssi) {
         _telemetryRRSSI = remrssi;
+
         emit telemetryRRSSIChanged(_telemetryRRSSI);
     }
     if(_telemetryRXErrors != rstatus.rxerrors) {
@@ -3252,7 +3342,6 @@ void Vehicle::_flightTimerStart()
     _flightTimer.start();
     _flightTimeUpdater.start();
     _flightDistanceFact.setRawValue(0);
-    _flightTimeFact.setRawValue(0);
 }
 
 void Vehicle::_flightTimerStop()
@@ -3262,7 +3351,14 @@ void Vehicle::_flightTimerStop()
 
 void Vehicle::_updateFlightTime()
 {
-    _flightTimeFact.setRawValue((double)_flightTimer.elapsed() / 1000.0);
+    static bool first_start = false;
+    if(generator_started){
+        if(!first_start) first_start = true;
+        _flightTimeFact.setRawValue((double)_flightTimer.elapsed() / 1000.0);
+    }
+    if(!first_start){
+        _flightTimeFact.setRawValue(0);
+    }
 }
 
 void Vehicle::_gotProgressUpdate(float progressValue)
@@ -5081,4 +5177,5 @@ void Vehicle::triggerSimpleCamera()
                    true,                        // show errors
                    0.0, 0.0, 0.0, 0.0,          // param 1-4 unused
                    1.0);                        // trigger camera
+    emit photoTaken();
 }

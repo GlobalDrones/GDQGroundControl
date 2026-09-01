@@ -50,6 +50,7 @@ public:
 
 signals:
     void    infoChanged     ();
+    void    photoCaptured   ();
 
 private:
     mavlink_video_stream_information_t _streamInfo;
@@ -331,6 +332,7 @@ signals:
     void    thermalModeChanged              ();
     void    thermalOpacityChanged           ();
     void    storageStatusChanged            ();
+    void    photoCaptured                   ();
 
 protected:
     virtual void    _setVideoStatus         (VideoStatus status);

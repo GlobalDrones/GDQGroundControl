@@ -42,6 +42,9 @@ Item {
         id:             noVideo
         anchors.fill:   parent
         color:          Qt.rgba(0,0,0,0.75)
+        // Drawn above the video item, which now stays rendered even before the
+        // first frame arrives - see the Loader below.
+        z:              1
         visible:        !(QGroundControl.videoManager.decoding)
         QGCLabel {
             text:               QGroundControl.settingsManager.videoSettings.streamEnabled.rawValue ? qsTr("WAITING FOR VIDEO") : qsTr("VIDEO DISABLED")
@@ -54,7 +57,7 @@ Item {
     Rectangle {
         anchors.fill:   parent
         color:          "black"
-        visible:        QGroundControl.videoManager.decoding
+        visible:        true
         function getWidth() {
             //-- Fit Width or Stretch
             if(_fitMode === 0 || _fitMode === 2) {
@@ -125,7 +128,13 @@ Item {
             height:             parent.getHeight()
             width:              parent.getWidth()
             anchors.centerIn:   parent
-            visible:            QGroundControl.videoManager.decoding
+            // GstGLVideoItem only picks up Qt's OpenGL context once the scene graph
+            // actually renders it, and an invisible item is never rendered. Gating this
+            // on 'decoding' deadlocks the Android hardware decoder: it needs that context
+            // when it is configured, which happens before any frame exists, so it fails,
+            // decodebin falls back to a software decoder and the item ends up painting
+            // unrelated GPU memory. Keep it rendered; noVideo covers it until then.
+            visible:            true
             sourceComponent:    videoBackgroundComponent
 
             property bool videoDisabled: QGroundControl.settingsManager.videoSettings.videoSource.rawValue === QGroundControl.settingsManager.videoSettings.disabledVideoSource

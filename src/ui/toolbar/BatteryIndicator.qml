@@ -108,9 +108,39 @@ Item {
                 anchors.bottom:     parent.bottom
                 width:              height
                 sourceSize.width:   width
-                source:             "/qmlimages/Battery.svg"
+                source: {
+                        switch (battery.id.rawValue) {
+                        case 2:
+                            return "/qmlimages/Battery.svg"
+                        case 1:
+                            return "/qmlimages/Battery.svg"
+                        default:
+                            return "/qmlimages/Battery.svg"
+                        }
+                    }
                 fillMode:           Image.PreserveAspectFit
-                color:              getBatteryColor()
+                color: (!activeVehicle
+                        || activeVehicle.batteries.count === 0
+                        || !activeVehicle.batteries.get(0)
+                        || isNaN(activeVehicle.batteries.get(0).voltage.rawValue))
+                       ? "white"
+                       : (battery.id.rawValue === 2 || battery.id.rawValue === 3)
+                         ? "white"
+                         : (activeVehicle.batteries.get(0).voltage.rawValue > 47)
+                           ? "white"
+                           : (activeVehicle.batteries.get(0).voltage.rawValue < 42)
+                             ? "red"
+                             : "yellow"
+                anchors.leftMargin: {
+                        switch (battery.id.rawValue) {
+                        case 2:
+                            return width*0.2
+                        case 1:
+                            return width*0.2
+                        default:
+                            return 0
+                        }
+                    }
             }
 
             QGCLabel {

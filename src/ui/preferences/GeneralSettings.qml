@@ -57,6 +57,10 @@ Rectangle {
     property bool   _isRTSP:                    _isGst && _videoSource === _videoSettings.rtspVideoSource
     property bool   _isTCP:                     _isGst && _videoSource === _videoSettings.tcpVideoSource
     property bool   _isMPEGTS:                  _isGst && _videoSource === _videoSettings.mpegtsVideoSource
+    property bool   _isSRT:                     _isGst && _videoSource === _videoSettings.srtVideoSource
+    property bool   _isStreamsList:             _isGst && _videoSource === _videoSettings.streamsListVideoSource
+    property var    _streamTypeModel:           [ _videoSettings.rtspVideoSource, _videoSettings.srtVideoSource, _videoSettings.tcpVideoSource, _videoSettings.mpegtsVideoSource, _videoSettings.udp264VideoSource, _videoSettings.udp265VideoSource ]
+    property var    _streamTypeShortLabels:     [ qsTr("RTSP"), qsTr("SRT"), qsTr("TCP"), qsTr("MPEG-TS"), qsTr("UDP h.264"), qsTr("UDP h.265") ]
     property bool   _videoAutoStreamConfig:     QGroundControl.videoManager.autoStreamConfigured
     property bool   _showSaveVideoSettings:     _isGst || _videoAutoStreamConfig
     property bool   _disableAllDataPersistence: QGroundControl.settingsManager.appSettings.disableAllPersistence.rawValue
@@ -274,16 +278,13 @@ Rectangle {
                                 fact:                   _videoSettings.rtspUrl
                                 visible:                rtspUrlLabel.visible
                                 //text: "rtsp://192.168.144.25:8554/main.264"
-                                onTextChanged: {
-                                    SiYi.camera.analyzeIp(text)
-                                }
                             }
 
                             QGCLabel {
-                                text:               qsTr("RTSP URLs List")
+                                text:               qsTr("Video Streams")
                                 Layout.columnSpan:  2
                                 Layout.alignment:   Qt.AlignHCenter
-                                visible:            _isRTSP && !_videoAutoStreamConfig
+                                visible:            _isStreamsList && !_videoAutoStreamConfig
                             }
 
                             Column {
@@ -291,7 +292,7 @@ Rectangle {
                                 Layout.fillWidth:  true
                                 Layout.alignment:  Qt.AlignHCenter
                                 spacing:           _margins
-                                visible:    !_videoAutoStreamConfig && _isRTSP && _videoSettings.rtspUrl.visible
+                                visible:    !_videoAutoStreamConfig && _isStreamsList
 
                                 ListView {
                                     id:     streamListView
@@ -305,52 +306,39 @@ Rectangle {
                                         spacing: _margins
                                         width:  parent.width
 
-                                        TextField {
-                                            style: TextFieldStyle {
-                                                background: Rectangle {
-                                                    implicitWidth:  ipField.implicitWidth
-                                                    implicitHeight: ipField.implicitHeight
-                                                    color:          "white"       // fundo branco
-                                                    radius:         4             // cantos arredondados (opcional)
-                                                    border.color:   "#888"        // borda cinza (opcional)
-                                                    border.width:   1
-                                                }
-                                            }
-                                            text:             modelData.ip
-                                            height:           FactTextField.height
-                                            Layout.preferredWidth: parent.width * 0.4
-                                            placeholderText:  qsTr("rtsp://<IP>:<porta>/…")
-                                            Layout.fillWidth: true
-                                            Layout.bottomMargin: 5
+                                        QGCTextField {
+                                            text:                   modelData.alias
+                                            Layout.preferredWidth:  parent.width * 0.3
+                                            placeholderText:        qsTr("Alias")
+                                            Layout.fillWidth:       true
+                                            Layout.bottomMargin:    5
                                             onEditingFinished:
-                                                QGroundControl.videoManager.updateStream(index, text, modelData.alias)
+                                                QGroundControl.videoManager.updateStream(index, modelData.ip, text, modelData.type)
                                         }
-                                        TextField {
-                                            style: TextFieldStyle {
-                                                background: Rectangle {
-                                                    implicitWidth:  ipField.implicitWidth
-                                                    implicitHeight: ipField.implicitHeight
-                                                    color:          "white"       // fundo branco
-                                                    radius:         4             // cantos arredondados (opcional)
-                                                    border.color:   "#888"        // borda cinza (opcional)
-                                                    border.width:   1
-                                                }
+                                        QGCComboBox {
+                                            model:                  _root._streamTypeShortLabels
+                                            currentIndex:           Math.max(0, _root._streamTypeModel.indexOf(modelData.type))
+                                            Layout.preferredWidth:  ScreenTools.defaultFontPixelWidth * 11
+                                            Layout.bottomMargin:    5
+                                            onActivated: function (typeIndex) {
+                                                QGroundControl.videoManager.updateStream(index, modelData.ip, modelData.alias, _root._streamTypeModel[typeIndex])
                                             }
-                                            text:             modelData.alias
-                                            height:           FactTextField.height
-                                            Layout.preferredWidth: parent.width * 0.4
-                                            placeholderText:  qsTr("Alias")
-                                            Layout.fillWidth: true
-                                            Layout.bottomMargin: 5
+                                        }
+                                        QGCTextField {
+                                            text:                   modelData.ip
+                                            Layout.preferredWidth:  parent.width * 0.35
+                                            placeholderText:        qsTr("IP / URL")
+                                            Layout.fillWidth:       true
+                                            Layout.bottomMargin:    5
                                             onEditingFinished:
-                                                QGroundControl.videoManager.updateStream(index, modelData.ip, text)
+                                                QGroundControl.videoManager.updateStream(index, text, modelData.alias, modelData.type)
                                         }
                                         QGCColoredImage {
                                             source:         "/qmlimages/trash.svg"
                                             width:          ScreenTools.defaultFontPixelHeight
                                             height:         width
                                             fillMode:       Image.PreserveAspectFit
-                                            color:          "white"
+                                            color:          qgcPal.text
                                             Layout.bottomMargin: 5
                                             MouseArea {
                                                 anchors.fill: parent
@@ -362,12 +350,12 @@ Rectangle {
                             }
 
                             QGCButton {
-                                text:             qsTr("+ Adicionar IP")
+                                text:             qsTr("+ Add Camera")
                                 Layout.columnSpan:  2
                                 Layout.alignment: Qt.AlignHCenter
-                                onClicked:        QGroundControl.videoManager.addStream("", "")
+                                onClicked:        QGroundControl.videoManager.addStream("", "", _videoSettings.rtspVideoSource)
                                 Layout.preferredWidth: _comboFieldWidth
-                                visible:    !_videoAutoStreamConfig && _isRTSP && _videoSettings.rtspUrl.visible
+                                visible:    !_videoAutoStreamConfig && _isStreamsList
                             }
 
                             QGCLabel {
@@ -379,6 +367,51 @@ Rectangle {
                                 Layout.preferredWidth:  _comboFieldWidth
                                 fact:                   _videoSettings.tcpUrl
                                 visible:                tcpUrlLabel.visible
+                            }
+
+                            QGCLabel {
+                                id:         srtUrlLabel
+                                text:       qsTr("SRT URL")
+                                visible:    !_videoAutoStreamConfig && _isSRT && _videoSettings.srtUrl.visible
+                            }
+                            FactTextField {
+                                Layout.preferredWidth:  _comboFieldWidth
+                                fact:                   _videoSettings.srtUrl
+                                visible:                srtUrlLabel.visible
+                            }
+
+                            RowLayout {
+                                Layout.columnSpan: 2
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.preferredWidth: _comboFieldWidth
+                                spacing: _margins
+
+                                property string transmitterIp: ""
+
+                                QGCLabel {
+                                    text: qsTr("SiYi TX IP")
+                                }
+
+                                QGCTextField {
+                                    id: transmitterIpField
+                                    Layout.fillWidth: true
+                                    placeholderText: qsTr("192.168.144.12")
+
+                                    onTextChanged: {
+                                        transmitterIp = text
+                                    }
+                                }
+
+                                QGCButton {
+                                    id: setButton
+                                    text: qsTr("Set")
+                                    checkable: false
+
+                                    onClicked: {
+                                        SiYi.transmitter.setIp(transmitterIpField.text)
+                                        setButton.checked = false
+                                    }
+                                }
                             }
 
                             QGCLabel {

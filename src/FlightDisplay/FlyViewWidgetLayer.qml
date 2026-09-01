@@ -57,6 +57,7 @@ Item {
     property SiYiCamera camera: siyi.camera
     property int iconLeftMargin: toolStrip.width + toolStrip.anchors.leftMargin
     property bool visible_custom_telemetry: false
+    property bool crosshair_visible: false
 
     QGCToolInsets {
         id: _totalToolInsets
@@ -141,7 +142,7 @@ Item {
         anchors.right: parent.right
         width: _rightPanelWidth
         state: _verticalCenter ? "verticalCenter" : "topAnchor"
-        visible: false//!SiYi.hideWidgets
+        visible: !SiYi.hideWidgets
         states: [
             State {
                 name: "verticalCenter"
@@ -172,7 +173,7 @@ Item {
         height: telemetryPanel.height
         color:  qgcPal.toolbarBackground
         anchors.rightMargin: 10
-        visible: true
+        visible: false
         radius: 5
 
         QGCLabel {
@@ -201,7 +202,7 @@ Item {
 
     Rectangle {
         id: resultRectangle
-        anchors.bottom: telemetryPanel.top
+        anchors.bottom: parent.bottom
         width: resultLabel.width + resultLabel.width * 0.4
         height: resultLabel.height + resultLabel.height * 0.4
         anchors.bottomMargin: 10
@@ -362,7 +363,12 @@ Item {
 
         onModoEngenheiroToggle:{
             visible_custom_telemetry = !visible_custom_telemetry
-            //console.log("[a] visible_custom_telemetry ativado pelo engenheiroToggle: ", visible_custom_telemetry)
+        }
+        onCrosshairToggle:{
+            crosshair_visible = !crosshair_visible
+        }
+        onCamControlToggle: {
+            SiYi.hideWidgets = !SiYi.hideWidgets
         }
 
         property real leftInset: x + width

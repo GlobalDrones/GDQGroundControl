@@ -175,7 +175,7 @@ SetupPage {
                                 onActivated: {
                                     if(_collisionPrevention) {
                                         _collisionPrevention.value = index > 0 ? 5 : -1
-                                        console.log('Collision prevention enabled: ' + _collisionPrevention.value)
+                                        //console.log('Collision prevention enabled: ' + _collisionPrevention.value)
                                         showObstacleDistanceOverlayCheckBox.checked = _collisionPrevention.value > 0
                                     }
                                 }

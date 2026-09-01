@@ -20,6 +20,7 @@
 #include <QUrl>
 #include <QDateTime>
 #include <QSysInfo>
+#include <QThread>
 
 QGC_LOGGING_CATEGORY(VideoReceiverLog, "VideoReceiverLog")
 
@@ -304,7 +305,12 @@ GstVideoReceiver::stop(void)
 
                 GstMessage* msg;
 
-                if((msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, (GstMessageType)(GST_MESSAGE_EOS|GST_MESSAGE_ERROR))) != nullptr) {
+                // Bounded wait: a hung/unresponsive source (e.g. a frozen RTSP/SRT camera) may
+                // never post EOS. This call runs on the receiver's single worker thread, so an
+                // unbounded wait here would stall every other queued start/stop/watchdog
+                // operation until the source unblocks on its own. Fall through to the
+                // unconditional GST_STATE_NULL below either way.
+                if((msg = gst_bus_timed_pop_filtered(bus, 2 * GST_SECOND, (GstMessageType)(GST_MESSAGE_EOS|GST_MESSAGE_ERROR))) != nullptr) {
                     if(GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
                         qCCritical(VideoReceiverLog) << "Error stopping pipeline!";
                     } else if(GST_MESSAGE_TYPE(msg) == GST_MESSAGE_EOS) {
@@ -314,7 +320,7 @@ GstVideoReceiver::stop(void)
                     gst_message_unref(msg);
                     msg = nullptr;
                 } else {
-                    qCCritical(VideoReceiverLog) << "gst_bus_timed_pop_filtered() failed";
+                    qCWarning(VideoReceiverLog) << "Timed out waiting for EOS while stopping, forcing pipeline to NULL" << _uri;
                 }
             }
 
@@ -423,6 +429,11 @@ GstVideoReceiver::startDecoding(void* sink)
     gst_object_ref(_videoSink);
 
     _removingDecoder = false;
+
+    // Do this before the early return below. With srt:// the handshake takes seconds,
+    // so _streaming is still false here and the decoder actually gets built later from
+    // _onNewSourcePad() - by which time the GL context has had all that time to appear.
+    _prepareVideoSinkForDecoder();
 
     if (!_streaming) {
         _dispatchSignal([this](){
@@ -697,6 +708,7 @@ GstVideoReceiver::_makeSource(const QString& uri)
     bool isUdp265   = uri.contains("udp265://", Qt::CaseInsensitive);
     bool isTcpMPEGTS= uri.contains("tcp://",    Qt::CaseInsensitive);
     bool isUdpMPEGTS= uri.contains("mpegts://", Qt::CaseInsensitive);
+    bool isSrtMPEGTS= uri.contains("srt://",    Qt::CaseInsensitive);
 
     GstElement* source  = nullptr;
     GstElement* buffer  = nullptr;
@@ -711,6 +723,10 @@ GstVideoReceiver::_makeSource(const QString& uri)
         if(isTcpMPEGTS) {
             if ((source = gst_element_factory_make("tcpclientsrc", "source")) != nullptr) {
                 g_object_set(static_cast<gpointer>(source), "host", qPrintable(url.host()), "port", url.port(), nullptr);
+            }
+        } else if (isSrtMPEGTS) {
+            if ((source = gst_element_factory_make("srtsrc", "source")) != nullptr) {
+                g_object_set(static_cast<gpointer>(source), "uri", qPrintable(uri), nullptr);
             }
         } else if (isRtsp) {
             if ((source = gst_element_factory_make("rtspsrc", "source")) != nullptr) {
@@ -764,7 +780,7 @@ GstVideoReceiver::_makeSource(const QString& uri)
 
         // FIXME: AV: Android does not determine MPEG2-TS via parsebin - have to explicitly state which demux to use
         // FIXME: AV: tsdemux handling is a bit ugly - let's try to find elegant solution for that later
-        if (isTcpMPEGTS || isUdpMPEGTS) {
+        if (isTcpMPEGTS || isUdpMPEGTS || isSrtMPEGTS) {
             if ((tsdemux = gst_element_factory_make("tsdemux", nullptr)) == nullptr) {
                 qCCritical(VideoReceiverLog) << "gst_element_factory_make('tsdemux') failed";
                 break;
@@ -851,12 +867,37 @@ GstVideoReceiver::_makeDecoder(GstCaps* caps, GstElement* videoSink)
     Q_UNUSED(videoSink)
     GstElement* decoder = nullptr;
 
+    // decodebin3 never exposes a src pad when a tsdemux sits upstream - tcp:// and
+    // srt:// hang on "WAITING FOR VIDEO" forever. Upstream hit the same wall, see
+    // qgroundcontrol#9830, and the answer there was the classic decodebin. Applying
+    // that everywhere breaks rendering on this hardware (udp:// then paints garbage
+    // instead of the frames), so the swap is limited to the sources that need it.
+    const bool isMPEGTS = _uri.contains(QStringLiteral("tcp://"), Qt::CaseInsensitive)
+                       || _uri.contains(QStringLiteral("srt://"), Qt::CaseInsensitive)
+                       || _uri.contains(QStringLiteral("mpegts://"), Qt::CaseInsensitive);
+
+    const char* factory = isMPEGTS ? "decodebin" : "decodebin3";
+
     do {
-        if ((decoder = gst_element_factory_make("decodebin3", nullptr)) == nullptr) {
-            qCCritical(VideoReceiverLog) << "gst_element_factory_make('decodebin3') failed";
+        if ((decoder = gst_element_factory_make(factory, nullptr)) == nullptr) {
+            qCCritical(VideoReceiverLog) << "gst_element_factory_make() failed for" << factory;
             break;
         }
+
+        // The Android hardware decoder can only output GLMemory. While decodebin is
+        // autoplugging, the video sink is not linked yet, so nothing answers its caps
+        // query and it gives up with "Codec only supports GL output but downstream
+        // does not" - decodebin then falls back to avdec_*, the frames come out in
+        // system memory, glupload spins up a second (unshared) EGL context and the
+        // item paints unrelated GPU memory. autoplug-query lets the sink answer for
+        // itself; autoplug-select just reports what was considered.
+        if (isMPEGTS) {
+            g_signal_connect(decoder, "autoplug-query", G_CALLBACK(_autoplugQuery), this);
+            g_signal_connect(decoder, "autoplug-select", G_CALLBACK(_autoplugSelect), nullptr);
+        }
     } while(0);
+
+    qCDebug(VideoReceiverLog) << "Decoder bin:" << factory << _uri;
 
     return decoder;
 }
@@ -973,6 +1014,10 @@ GstVideoReceiver::_onNewSourcePad(GstPad* pad)
 
     GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipeline), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline-with-new-source-pad");
 
+    // This - not startDecoding() - is where the decoder gets built for srt:// and
+    // tcp://, because the source only produces a pad once the connection is up.
+    _prepareVideoSinkForDecoder();
+
     if (!_addDecoder(_decoderValve)) {
         qCCritical(VideoReceiverLog) << "_addDecoder() failed";
         return;
@@ -990,8 +1035,132 @@ GstVideoReceiver::_onNewDecoderPad(GstPad* pad)
 
     qCDebug(VideoReceiverLog) << "_onNewDecoderPad" << _uri;
 
+    // Report what decodebin actually plugged and what it hands out. A hardware
+    // decoder (amcviddec-*) producing memory:GLMemory/texture-target=external-oes
+    // renders differently than a software one (avdec_*) producing plain system
+    // memory, and there is no other way to tell them apart from the outside.
+    if (_decoder != nullptr) {
+        GstIterator* it;
+
+        if ((it = gst_bin_iterate_recurse(GST_BIN(_decoder))) != nullptr) {
+            GValue item = G_VALUE_INIT;
+
+            while (gst_iterator_next(it, &item) == GST_ITERATOR_OK) {
+                GstElement* child = GST_ELEMENT(g_value_get_object(&item));
+                qCDebug(VideoReceiverLog) << "Decoder chain element:" << GST_ELEMENT_NAME(child);
+                g_value_reset(&item);
+            }
+
+            g_value_unset(&item);
+            gst_iterator_free(it);
+        }
+    }
+
+    GstCaps* padCaps;
+
+    if ((padCaps = gst_pad_get_current_caps(pad)) != nullptr) {
+        gchar* capsStr = gst_caps_to_string(padCaps);
+        qCDebug(VideoReceiverLog) << "Decoder output caps:" << capsStr;
+        g_free(capsStr);
+        gst_caps_unref(padCaps);
+    } else {
+        qCDebug(VideoReceiverLog) << "Decoder output caps: not negotiated yet";
+    }
+
     if (!_addVideoSink(pad)) {
         qCCritical(VideoReceiverLog) << "_addVideoSink() failed";
+    }
+}
+
+void
+GstVideoReceiver::_prepareVideoSinkForDecoder(void)
+{
+    if (_pipeline == nullptr || _videoSink == nullptr) {
+        return;
+    }
+
+    // The Android hardware decoder can only output GLMemory, and it asks downstream
+    // for a GL context while decodebin is still autoplugging it. qmlglsink can only
+    // answer that once its start() has run, which happens on the way to PAUSED - so
+    // the sink has to be in the pipeline and started before the decoder is built.
+    // Leave it here and the context query fails, the decoder refuses the caps, and
+    // decodebin falls back to a software one whose system-memory output then forces
+    // glupload to spin up a second EGL context that Qt does not share.
+    // Limited to the MPEG-TS sources: udp:// and rtsp:// go through decodebin3, which
+    // negotiates this correctly on its own, and that path is known to work here.
+    const bool isMPEGTS = _uri.contains(QStringLiteral("tcp://"), Qt::CaseInsensitive)
+                       || _uri.contains(QStringLiteral("srt://"), Qt::CaseInsensitive)
+                       || _uri.contains(QStringLiteral("mpegts://"), Qt::CaseInsensitive);
+
+    if (isMPEGTS) {
+        GstObject* sinkParent;
+
+        if ((sinkParent = gst_element_get_parent(_videoSink)) == nullptr) {
+            gst_object_ref(_videoSink); // gst_bin_add() will steal one reference
+            gst_bin_add(GST_BIN(_pipeline), _videoSink);
+            gst_element_set_state(_videoSink, GST_STATE_PAUSED);
+            qCDebug(VideoReceiverLog) << "Video sink pre-rolled to PAUSED before autoplug" << _uri;
+        } else {
+            gst_object_unref(sinkParent);
+            sinkParent = nullptr;
+        }
+
+        // qmlglsink only builds its GstGLContext after Qt's render thread has had a
+        // chance to run, which is several milliseconds after the state change above.
+        // The hardware decoder is configured before that and loses the race on a cold
+        // start: its context query is answered "no", it refuses the caps, and decodebin
+        // falls back to a software decoder whose system-memory output makes glupload
+        // create a second EGL context that Qt does not share - which is what paints
+        // unrelated GPU memory on screen. This runs on the receiver's own worker
+        // thread, never on Qt's, so waiting here is safe.
+        static const char* const kGlContextTypes[] = { "gst.gl.GLDisplay", "gst.gl.app_context" };
+
+        const int kGlContextWaitMs = 3000;
+        const int kGlContextPollMs = 25;
+
+        bool haveGlContext = false;
+
+        for (int waited = 0; waited <= kGlContextWaitMs; waited += kGlContextPollMs) {
+            for (const char* ctxType : kGlContextTypes) {
+                GstQuery* query = gst_query_new_context(ctxType);
+                GstPad* sinkpad = gst_element_get_static_pad(_videoSink, "sink");
+                gboolean answered = FALSE;
+
+                if (sinkpad != nullptr) {
+                    answered = gst_pad_query(sinkpad, query);
+                    gst_object_unref(sinkpad);
+                    sinkpad = nullptr;
+                }
+
+                GstContext* ctx = nullptr;
+
+                if (answered) {
+                    gst_query_parse_context(query, &ctx);
+                }
+
+                if (ctx != nullptr) {
+                    // Publish it so the decoder finds it through the normal mechanism
+                    // instead of depending on a query reaching the sink in time.
+                    gst_element_set_context(_pipeline, ctx);
+                    haveGlContext = true;
+                }
+
+                gst_query_unref(query);
+                query = nullptr;
+            }
+
+            if (haveGlContext) {
+                qCDebug(VideoReceiverLog) << "GL context ready after" << waited << "ms, published to pipeline" << _uri;
+                break;
+            }
+
+            QThread::msleep(kGlContextPollMs);
+        }
+
+        if (!haveGlContext) {
+            qCWarning(VideoReceiverLog) << "No GL context after" << kGlContextWaitMs
+                                        << "ms - the hardware decoder will be refused and video will render incorrectly" << _uri;
+        }
     }
 }
 
@@ -1073,12 +1242,24 @@ GstVideoReceiver::_addVideoSink(GstPad* pad)
 {
     GstCaps* caps = gst_pad_query_caps(pad, nullptr);
 
-    gst_object_ref(_videoSink); // gst_bin_add() will steal one reference
+    // startDecoding() may already have put the sink in the pipeline so that it could
+    // answer the decoder's GL context query during autoplug.
+    GstObject* sinkParent;
+    bool addedHere = false;
 
-    gst_bin_add(GST_BIN(_pipeline), _videoSink);
+    if ((sinkParent = gst_element_get_parent(_videoSink)) == nullptr) {
+        gst_object_ref(_videoSink); // gst_bin_add() will steal one reference
+        gst_bin_add(GST_BIN(_pipeline), _videoSink);
+        addedHere = true;
+    } else {
+        gst_object_unref(sinkParent);
+        sinkParent = nullptr;
+    }
 
     if(!gst_element_link(_decoder, _videoSink)) {
-        gst_bin_remove(GST_BIN(_pipeline), _videoSink);
+        if (addedHere) {
+            gst_bin_remove(GST_BIN(_pipeline), _videoSink);
+        }
         qCCritical(VideoReceiverLog) << "Unable to link video sink";
         if (caps != nullptr) {
             gst_caps_unref(caps);
@@ -1089,7 +1270,8 @@ GstVideoReceiver::_addVideoSink(GstPad* pad)
 
     gst_element_sync_state_with_parent(_videoSink);
 
-    g_object_set(_videoSink, "sync", _buffer >= 0, NULL);
+    g_object_set(_videoSink, "sync", FALSE, "max-lateness", G_GINT64_CONSTANT(-1), nullptr);
+
 
     GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipeline), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline-with-videosink");
 
@@ -1303,7 +1485,7 @@ GstVideoReceiver::_onBusMessage(GstBus* bus, GstMessage* msg, gpointer data)
             }
 
             if (error != nullptr) {
-                qCCritical(VideoReceiverLog) << "GStreamer error:" << error->message;
+                //qCCritical(VideoReceiverLog) << "GStreamer error:" << error->message;
                 g_error_free(error);
                 error = nullptr;
             }
@@ -1366,6 +1548,69 @@ GstVideoReceiver::_onNewPad(GstElement* element, GstPad* pad, gpointer data)
     } else {
         qCDebug(VideoReceiverLog) << "Unexpected call!";
     }
+}
+
+gboolean
+GstVideoReceiver::_autoplugQuery(GstElement* bin, GstPad* pad, GstElement* child, GstQuery* query, gpointer data)
+{
+    Q_UNUSED(bin)
+    Q_UNUSED(pad)
+    Q_UNUSED(child)
+
+    GstVideoReceiver* pThis = static_cast<GstVideoReceiver*>(data);
+
+    if (pThis == nullptr || pThis->_videoSink == nullptr) {
+        return FALSE;
+    }
+
+    switch (GST_QUERY_TYPE(query)) {
+    case GST_QUERY_CAPS:
+    case GST_QUERY_CONTEXT:
+    case GST_QUERY_ALLOCATION:
+        break;
+    default:
+        return FALSE;
+    }
+
+    // The video sink is only linked once the decoder exposes its pad, so while
+    // decodebin is autoplugging there is nobody downstream to answer. The Android
+    // hardware decoder asks whether GLMemory is accepted, gets no for an answer and
+    // bails out with "Codec only supports GL output but downstream does not" - which
+    // is how decodebin ends up on avdec_* and the frames arrive in system memory.
+    // Answer on the sink's behalf: it is already built at this point, just not in
+    // the pipeline yet.
+    GstPad* sinkpad;
+
+    if ((sinkpad = gst_element_get_static_pad(pThis->_videoSink, "sink")) == nullptr) {
+        return FALSE;
+    }
+
+    const gboolean ret = gst_pad_query(sinkpad, query);
+
+    gst_object_unref(sinkpad);
+    sinkpad = nullptr;
+
+    qCDebug(VideoReceiverLog) << "autoplug-query" << GST_QUERY_TYPE_NAME(query) << "answered by sink:" << (ret ? "yes" : "no");
+
+    return ret;
+}
+
+gint
+GstVideoReceiver::_autoplugSelect(GstElement* bin, GstPad* pad, GstCaps* caps, GstElementFactory* factory, gpointer data)
+{
+    Q_UNUSED(bin)
+    Q_UNUSED(pad)
+    Q_UNUSED(data)
+
+    gchar* capsStr = gst_caps_to_string(caps);
+
+    qCDebug(VideoReceiverLog) << "autoplug-select candidate:" << GST_OBJECT_NAME(factory)
+                              << "rank" << gst_plugin_feature_get_rank(GST_PLUGIN_FEATURE(factory))
+                              << "for" << capsStr;
+
+    g_free(capsStr);
+
+    return 0; // GST_AUTOPLUG_SELECT_TRY - report only, do not change the outcome
 }
 
 void
@@ -1463,7 +1708,6 @@ GstVideoReceiver::_teeProbe(GstPad* pad, GstPadProbeInfo* info, gpointer user_da
 GstPadProbeReturn
 GstVideoReceiver::_videoSinkProbe(GstPad* pad, GstPadProbeInfo* info, gpointer user_data)
 {
-    Q_UNUSED(pad)
     Q_UNUSED(info)
 
     if(user_data != nullptr) {
@@ -1471,6 +1715,19 @@ GstVideoReceiver::_videoSinkProbe(GstPad* pad, GstPadProbeInfo* info, gpointer u
 
         if (pThis->_resetVideoSink) {
             pThis->_resetVideoSink = false;
+
+            // What the sink bin is actually being fed. The memory feature and
+            // texture-target here decide whether qmlglsink can render it at all.
+            GstCaps* sinkCaps;
+
+            if ((sinkCaps = gst_pad_get_current_caps(pad)) != nullptr) {
+                gchar* capsStr = gst_caps_to_string(sinkCaps);
+                qCDebug(VideoReceiverLog) << "Video sink input caps:" << capsStr;
+                g_free(capsStr);
+                gst_caps_unref(sinkCaps);
+            } else {
+                qCDebug(VideoReceiverLog) << "Video sink input caps: unavailable";
+            }
 
 // FIXME: AV: this makes MPEG2-TS playing smooth but breaks RTSP
 //            gst_pad_send_event(pad, gst_event_new_flush_start());
