@@ -21,6 +21,7 @@ import QGroundControl.FlightDisplay 1.0
 import QGroundControl.FlightMap     1.0
 
 import SiYi.Object 1.0
+import PreFlightChecklist.Object 1.0
 
 /// @brief Native QML top level window
 /// All properties defined here are visible to all QML pages.
@@ -411,6 +412,22 @@ ApplicationWindow {
                             if (!mainWindow.preventViewSwitch()) {
                                 toolSelectDialog.hideDialog()
                                 mainWindow.showSettingsTool()
+                            }
+                        }
+                    }
+
+                    SubMenuButton {
+                        id:                 checklistButton
+                        height:             _toolButtonHeight
+                        Layout.fillWidth:   true
+                        text:               qsTr("Pre-Flight Checklist")
+                        imageResource:      "/qmlimages/Armed.svg"
+                        imageColor:         qgcPal.text
+
+                        onClicked: {
+                            if (!mainWindow.preventViewSwitch()) {
+                                toolSelectDialog.hideDialog()
+                                PreFlightChecklist.requestChecklist()
                             }
                         }
                     }

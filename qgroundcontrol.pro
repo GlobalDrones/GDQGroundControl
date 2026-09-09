@@ -441,6 +441,7 @@ contains (DEFINES, QGC_ENABLE_PAIRING) {
 #
 
 HEADERS += \
+    src/PreFlightChecklist/PreFlightChecklistBridge.h \
     src/QmlControls/QmlUnitsConversion.h \
     src/SiYi/SiYi.h \
     src/SiYi/SiYiCamera.h \
@@ -460,6 +461,7 @@ contains (DEFINES, QGC_ENABLE_PAIRING) {
 }
 
 SOURCES += \
+    src/PreFlightChecklist/PreFlightChecklistBridge.cc \
     src/SiYi/SiYi.cc \
     src/SiYi/SiYiCamera.cc \
     src/SiYi/SiYiCrcApi.cc \
@@ -778,8 +780,9 @@ contains (DEFINES, QGC_ENABLE_PAIRING) {
 }
 
 AndroidBuild {
-HEADERS += \
-    src/Joystick/JoystickAndroid.h \
+    QT += androidextras
+    HEADERS += \
+        src/Joystick/JoystickAndroid.h \
 }
 
 DebugBuild {
@@ -1517,6 +1520,7 @@ AndroidBuild {
         include(android.pri)
     }
 }
+
 
 #-------------------------------------------------------------------------------------
 #

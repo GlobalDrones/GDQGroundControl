@@ -66,6 +66,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include "PreFlightChecklist/PreFlightChecklistBridge.h"
 #endif
 
 #include <sys/socket.h>
@@ -3170,6 +3171,14 @@ QGeoCoordinate Vehicle::homePosition()
 
 void Vehicle::setArmed(bool armed, bool showError)
 {
+    if (armed && !PreFlightChecklistBridge::instance()->checklistComplete()) {
+        if (showError) {
+            qgcApp()->showAppMessage(tr("Checklist pré-operacional não foi liberado. "
+                                        "Complete o checklist antes de armar."));
+        }
+        return;
+    }
+
     // We specifically use COMMAND_LONG:MAV_CMD_COMPONENT_ARM_DISARM since it is supported by more flight stacks.
     sendMavCommand(_defaultComponentId,
                    MAV_CMD_COMPONENT_ARM_DISARM,
