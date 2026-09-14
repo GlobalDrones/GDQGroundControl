@@ -310,6 +310,7 @@ public:
     Q_PROPERTY(Fact* gd60_Sensor1       READ gd60_Sensor1       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor2       READ gd60_Sensor2       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor3       READ gd60_Sensor3       CONSTANT)
+    Q_PROPERTY(Fact* gd30_remainsecs    READ gd30_remainsecs       CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM1           READ _GD_RPM1           CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM2           READ _GD_RPM2           CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM3           READ _GD_RPM3           CONSTANT)
@@ -679,6 +680,7 @@ public:
     Fact* gd60_Sensor1                      () { return &_gd60_Sensor1Fact;}
     Fact* gd60_Sensor2                      () { return &_gd60_Sensor2Fact;}
     Fact* gd60_Sensor3                      () { return &_gd60_Sensor3Fact;}
+    Fact* gd30_remainsecs                   () {return &_gd30_remainsecsFact;}
     Fact* _GD_RPM1                          () { return &_GD_RPM1Fact;}
     Fact* _GD_RPM2                          () { return &_GD_RPM2Fact;}
     Fact* _GD_RPM3                          () { return &_GD_RPM3Fact;}
@@ -1356,6 +1358,7 @@ private:
     Fact _gd60_Sensor1Fact;
     Fact _gd60_Sensor2Fact;
     Fact _gd60_Sensor3Fact;
+    Fact _gd30_remainsecsFact;
     Fact _GD_RPM1Fact;
     Fact _GD_RPM2Fact;
     Fact _GD_RPM3Fact;
@@ -1423,6 +1426,7 @@ private:
     static const char* _gd60_Sensor1FactName;
     static const char* _gd60_Sensor2FactName;
     static const char* _gd60_Sensor3FactName;
+    static const char* _gd30_remainsecsFactName;
     static const char* _GD_RPM1FactName;
     static const char* _GD_RPM2FactName;
     static const char* _GD_RPM3FactName;

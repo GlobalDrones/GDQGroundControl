@@ -56,27 +56,24 @@ Item {
             return NaN
         return fact.value
     }
-    Timer{
+    Timer {
         id: gasolineValuesUpdater
         interval: 100
         running: true
         repeat: true
 
-        onTriggered:{
-            _gasolina = _activeVehicle.batteries.get(_gasolineIndex).percentRemaining.value
-            horas_restantes = Math.floor((7200*(_gasolina/100))/3600)
-            minutos_restantes = Math.floor(((7200*(_gasolina/100))%3600)/60)
-            segundos_restantes = (7200 * (_gasolina/100))%60
+        onTriggered: {
+            // Supondo que você agora receba os segundos diretamente (ex: _segundosTotais)
+            // Se segundos_totais vier em ponto flutuante, use Math.floor() para evitar decimais nos segundos
+            var segundosTotais = Math.floor(_activeVehicle.gd30_remainsecs.value)
 
+            horas_restantes = Math.floor(segundosTotais / 3600)
+            minutos_restantes = Math.floor((segundosTotais % 3600) / 60)
+            segundos_restantes = segundosTotais % 60
 
-
-            if(horas_restantes<10) {horas_restantes_string = "0"+horas_restantes.toString()}
-            else {horas_restantes_string = horas_restantes.toString()}
-            if(minutos_restantes < 10){ minutos_restantes_string = "0" +minutos_restantes.toString()}
-            else {minutos_restantes_string = minutos_restantes.toString()}
-            if(segundos_restantes <10) {segundos_restantes_string = "0" + segundos_restantes.toString()}
-            else {segundos_restantes_string = segundos_restantes.toString()}
-
+            horas_restantes_string = (horas_restantes < 10 ? "0" : "") + horas_restantes.toString()
+            minutos_restantes_string = (minutos_restantes < 10 ? "0" : "") + minutos_restantes.toString()
+            segundos_restantes_string = (segundos_restantes < 10 ? "0" : "") + segundos_restantes.toString()
         }
     }
 

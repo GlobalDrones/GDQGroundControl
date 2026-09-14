@@ -103,18 +103,57 @@ Item {
                 return ""
             }
 
+            function getBatteryCurrentText() {
+                if (isNaN(battery.current.rawValue)) {
+                    return qsTr("NaN")
+                } else if (!isNaN(battery.current.rawValue)) {
+                    return battery.current.valueString + battery.current.units
+                } else if (battery.chargeState.rawValue !== MAVLink.MAV_BATTERY_CHARGE_STATE_UNDEFINED) {
+                    return battery.chargeState.enumStringValue
+                }
+                return ""
+            }
+
             QGCColoredImage {
                 anchors.top:        parent.top
                 anchors.bottom:     parent.bottom
                 width:              height
                 sourceSize.width:   width
-                source:             "/qmlimages/Battery.svg"
+                source: {
+                        switch (battery.id.rawValue) {
+                        case 1:
+                            return "/qmlimages/Generator.svg"
+                        case 2:
+                            return "/qmlimages/GasCan.svg"
+                        default:
+                            return "/qmlimages/Battery.svg"
+                        }
+                    }
                 fillMode:           Image.PreserveAspectFit
                 color:              getBatteryColor()
+                anchors.leftMargin: {
+                        switch (battery.id.rawValue) {
+                        case 2:
+                            return width*0.2
+                        case 3:
+                            return width*0.2
+                        default:
+                            return 0
+                        }
+                    }
             }
 
             QGCLabel {
-                text:                   getBatteryTensionText()
+                text:{
+                        switch (battery.id.rawValue) {
+                        case 0:
+                            return getBatteryCurrentText()
+                        case 2:
+                            return getBatteryPercentageText()
+                        default:
+                            return getBatteryTensionText()
+                        }
+                    }
                 font.pointSize:         ScreenTools.mediumFontPointSize
                 color:                  getBatteryColor()
                 anchors.verticalCenter: parent.verticalCenter

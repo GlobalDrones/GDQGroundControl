@@ -18,7 +18,7 @@ Item {
     property real toolsMargin
     property bool _androidBuild
     property var  _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
-
+    property var activeVehicle:QGroundControl.multiVehicleManager.activeVehicle
     property real battery1Pct: 0
     property real battery1Voltage: 0
     property real battery1Current: 0
@@ -41,7 +41,15 @@ Item {
     property bool _selected_rotor_4
     property bool _selected_rotor_5
     property bool _selected_rotor_6
-
+    Binding{
+        target: bottomDataArea
+        property: "_gasolina"
+        value: {
+            if (!activeVehicle) return 0
+            if (activeVehicle.batteries.count <= 0) return 0
+            return activeVehicle.batteries.get(2).voltage.value
+        }
+    }
     Rectangle {
         id: gradientBar
         anchors.fill: parent
@@ -188,7 +196,7 @@ Item {
                 anchors.margins: 0
                 source: "/qmlimages/GasCan.svg"
                 fillMode: Image.PreserveAspectFit
-                color:  _gasolina > 50 ? "green" : (_gasolina > 20 ? "orange" : "red")
+                color:  "white" //13 > 50 ? "green" : (13 > 20 ? "orange" : "red")
                 visible: true
             }
         }
@@ -221,7 +229,7 @@ Item {
         anchors.fill: textBoxGasolinePercentage
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        text: _gasolina + "%"
+        text: _gasolina.toString() + "L"
         font.bold: true
         color: "white"
         visible: textBoxGasolinePercentage.visible
@@ -305,7 +313,7 @@ Item {
     QGCColoredImage {
         id: satteliteInformationIcon
         anchors.top:        parent.top
-        anchors.left:       _GD60? generatorFunctionalityIcon.right :generatorFunctionalityIcon.right
+        anchors.left:       generatorFunctionalityIcon.right
         anchors.leftMargin: _toolsMargin
         anchors.topMargin:  _toolsMargin*2
         width:              height
@@ -483,7 +491,7 @@ Item {
                 Text {
                     color: "white"
                     font.bold: true
-                    font.pixelSize: 15
+                    font.pixelSize: 22
                     text:  "T1: " + _activeVehicle.gd60_Sensor2.rawValue.toString() + "°C"
 
                 }
@@ -491,15 +499,15 @@ Item {
                 Text {
                     color: "white"
                     font.bold: true
-                    font.pixelSize: 15
+                    font.pixelSize: 22
                     text: "T2: " + _activeVehicle.gd60_Sensor3.rawValue.toString() + "°C"
                 }
 
                 Text {
                     color: "white"
                     font.bold: true
-                    font.pixelSize: 15
-                    text: "RPM: " + _activeVehicle.gd60_Sensor1.rawValue.toString()
+                    font.pixelSize: 22
+                    text: "RPM: " + Math.max(0, _activeVehicle.gd60_Sensor1.rawValue).toString()
                 }
             }
     }

@@ -83,10 +83,10 @@ Item {
     property var _current_generator: 0
     property real _gasolina: 50//_activeVehicle.batteries.get(1).voltage (P/ GD25)
 
-    property int _battery1Index: _GD60? 0:0
+    property int _battery1Index: _GD60? 0:2
     property int _battery2Index: _GD60? 1:0
     property int _gasolineIndex: _GD60? 0:1
-    property int _generatorIndex: _GD60? 0:2
+    property int _generatorIndex: _GD60? 0:0
 
 
     property int _satCount: 0

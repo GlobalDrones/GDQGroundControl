@@ -116,6 +116,7 @@ const char* Vehicle::_flightTimeFactName =          "flightTime";
 const char* Vehicle::_gd60_Sensor1FactName =         "gd60_sensor1";
 const char* Vehicle::_gd60_Sensor2FactName =         "gd60_sensor2";
 const char* Vehicle::_gd60_Sensor3FactName =         "gd60_sensor3";
+const char* Vehicle::_gd30_remainsecsFactName =      "gd30_remainsecs";
 const char* Vehicle::_GD_RPM1FactName=               "_GD_RPM1";
 const char* Vehicle::_GD_RPM2FactName=               "_GD_RPM2";
 const char* Vehicle::_GD_RPM3FactName=               "_GD_RPM3";
@@ -350,6 +351,7 @@ Vehicle::Vehicle(MAV_AUTOPILOT               firmwareType,
     , _gd60_Sensor1Fact                      (0, _gd60_Sensor1FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor2Fact                      (0, _gd60_Sensor2FactName,      FactMetaData::valueTypeFloat)
     , _gd60_Sensor3Fact                      (0, _gd60_Sensor3FactName,      FactMetaData::valueTypeFloat)
+    , _gd30_remainsecsFact                       (0, _gd30_remainsecsFactName,    FactMetaData::valueTypeFloat)
     , _GD_RPM1Fact                           (0, _GD_RPM1FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM2Fact                           (0, _GD_RPM2FactName,           FactMetaData::valueTypeInt16)
     , _GD_RPM3Fact                           (0, _GD_RPM3FactName,           FactMetaData::valueTypeInt16)
@@ -1272,6 +1274,7 @@ void Vehicle::_commonInit()
     _addFact(&_gd60_Sensor1Fact,        _gd60_Sensor1FactName);
     _addFact(&_gd60_Sensor2Fact,        _gd60_Sensor2FactName);
     _addFact(&_gd60_Sensor3Fact,        _gd60_Sensor3FactName);
+    _addFact(&_gd30_remainsecsFact,     _gd30_remainsecsFactName);
     _addFact(&_GD_RPM1Fact,             _GD_RPM1FactName);
     _addFact(&_GD_RPM2Fact,             _GD_RPM2FactName);
     _addFact(&_GD_RPM3Fact,             _GD_RPM3FactName);
@@ -1323,6 +1326,7 @@ void Vehicle::_commonInit()
     _gd60_Sensor1Fact.setRawValue(0);
     _gd60_Sensor2Fact.setRawValue(0);
     _gd60_Sensor3Fact.setRawValue(0);
+    _gd30_remainsecsFact.setRawValue(0);
     _GD_RPM1Fact.setRawValue(0);
     _GD_RPM2Fact.setRawValue(0);
     _GD_RPM3Fact.setRawValue(0);
