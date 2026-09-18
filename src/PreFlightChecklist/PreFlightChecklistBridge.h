@@ -41,6 +41,8 @@ class PreFlightChecklistBridge : public QObject
                    READ releasedAt
                        NOTIFY checklistResultChanged)
 
+    Q_PROPERTY(bool hasReportResult READ hasReportResult NOTIFY reportResultChanged)
+
 public:
     static PreFlightChecklistBridge *instance();
 
@@ -76,16 +78,40 @@ public:
         return _releasedAt;
     }
 
+    bool reportGenerated() const
+    {
+        return _reportGenerated;
+    }
+
+    QString reportPath() const
+    {
+        return _reportPath;
+    }
+
+    bool hasReportResult() const
+    {
+        return _hasReportResult;
+    }
+
+    static constexpr int kFinalizeRequestCode = 77777 /* algum valor != kRequestCode */;
+
+    Q_INVOKABLE void finalizeOperation(const QString &checklistFile);
+    Q_PROPERTY(bool reportGenerated READ reportGenerated NOTIFY reportResultChanged)
+    Q_PROPERTY(QString reportPath READ reportPath NOTIFY reportResultChanged)
+
+
 #if defined(Q_OS_ANDROID)
     void handleActivityResult(
         int receiverRequestCode,
         int resultCode,
         const QAndroidJniObject &data
         ) override;
+
 #endif
 
 signals:
     void checklistResultChanged();
+    void reportResultChanged();
 
 private:
     explicit PreFlightChecklistBridge(QObject *parent = nullptr);
@@ -102,6 +128,10 @@ private:
     QString _checklistFile;
 
     qint64 _releasedAt = 0;
+
+    bool _reportGenerated = false;
+    QString _reportPath;
+    bool _hasReportResult = false;
 };
 
 #endif // PREFLIGHTCHECKLISTBRIDGE_H

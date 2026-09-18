@@ -685,7 +685,7 @@ QString Vehicle::overwriteRC(const QVariantList &arrayRC, bool force_override){ 
 
 
                 // --- 3. LÓGICA DE ENVIO OTIMIZADA (DIRTY FLAG) ---
-
+                qWarning()<<channels_override.chan1_raw;
                 // 3a. Verificar a conexão MAVLink
                 if (!_mavlink) {
                     qWarning() << "Aguardando objeto MAVLink/UAS. Pulando envio.";

@@ -32,7 +32,10 @@ ApplicationWindow {
     visible:        true
 
     property SiYiCamera siYiCamera: SiYi.camera
-    property var versao_software: "Versão 2.3.3"
+    property var versao_software: "Versão 0.1"
+
+    property bool checklistVerified: false
+    property bool reportGenerated: false
 
     Component.onCompleted: {
         //-- Full screen on mobile or tiny screens
@@ -46,6 +49,21 @@ ApplicationWindow {
         // Start the sequence of first run prompt(s)
         firstRunPromptManager.nextPrompt()
     }
+
+    Connections {
+            target: PreFlightChecklist
+
+            function onChecklistResultChanged() {
+                        checklistVerified = true
+
+                }
+
+            function onReportResultChanged() {
+                console.log("Relatório atualizado!")
+                reportGenerated = true
+                console.log("Caminho:", PreFlightChecklist.reportPath)
+            }
+        }
 
     QtObject {
         id: firstRunPromptManager
@@ -420,14 +438,23 @@ ApplicationWindow {
                         id:                 checklistButton
                         height:             _toolButtonHeight
                         Layout.fillWidth:   true
-                        text:               qsTr("Pre-Flight Checklist")
+                        text:               checklistVerified? qsTr("Finalizer Operação") : qsTr("Pre-Flight Checklist")
                         imageResource:      "/qmlimages/Armed.svg"
                         imageColor:         qgcPal.text
 
                         onClicked: {
-                            if (!mainWindow.preventViewSwitch()) {
-                                toolSelectDialog.hideDialog()
-                                PreFlightChecklist.requestChecklist()
+                            if (!checklistVerified){
+                                if (!mainWindow.preventViewSwitch()) {
+                                    toolSelectDialog.hideDialog()
+                                    PreFlightChecklist.requestChecklist()
+                                    checklistVerified = true
+                                }
+                            }
+                            else{
+                                PreFlightChecklist.finalizeOperation(PreFlightChecklist.reportPath)
+                                checklistVerified = false
+
+
                             }
                         }
                     }

@@ -84,37 +84,46 @@ void PreFlightChecklistBridge::requestChecklist()
 // ============================================================================
 
 #if defined(Q_OS_ANDROID)
-
 void PreFlightChecklistBridge::handleActivityResult(
     int receiverRequestCode,
     int resultCode,
     const QAndroidJniObject& data)
 {
-    // ------------------------------------------------------------------------
-    // Ignora resultados de outras requisições
-    // ------------------------------------------------------------------------
+    if (resultCode != -1) {
+        return;
+    }
+
+    if (!data.isValid()) {
+        return;
+    }
+
+    if (receiverRequestCode == kFinalizeRequestCode) {
+        _reportGenerated =
+            data.callMethod<jboolean>(
+                "getBooleanExtra",
+                "(Ljava/lang/String;Z)Z",
+                QAndroidJniObject::fromString("report_generated").object<jstring>(),
+                jboolean(false)
+                );
+
+        const QAndroidJniObject reportPath =
+            data.callObjectMethod(
+                "getStringExtra",
+                "(Ljava/lang/String;)Ljava/lang/String;",
+                QAndroidJniObject::fromString("report_path").object<jstring>()
+                );
+
+        _reportPath = reportPath.isValid() ? reportPath.toString() : QString();
+
+        _hasReportResult = true;
+        emit reportResultChanged();
+        return;
+    }
 
     if (receiverRequestCode != kRequestCode) {
         return;
     }
 
-
-    // ------------------------------------------------------------------------
-    // Android Activity.RESULT_OK == -1
-    // ------------------------------------------------------------------------
-
-    if (resultCode != -1) {
-        return;
-    }
-
-
-    // ------------------------------------------------------------------------
-    // Verifica se recebemos um Intent válido
-    // ------------------------------------------------------------------------
-
-    if (!data.isValid()) {
-        return;
-    }
 
 
     // ------------------------------------------------------------------------
@@ -211,6 +220,61 @@ void PreFlightChecklistBridge::handleActivityResult(
     _hasResult = true;
 
     emit checklistResultChanged();
+}
+
+void PreFlightChecklistBridge::finalizeOperation(const QString &checklistFile)
+{
+#if defined(Q_OS_ANDROID)
+
+    QAndroidJniObject activity = QtAndroid::androidActivity();
+
+    if (!activity.isValid()) {
+        qWarning() << "PreFlightChecklist: Android activity is invalid";
+        return;
+    }
+
+    QAndroidJniObject packageName =
+        QAndroidJniObject::fromString("org.globaldrones.GDPreFlightChecklist");
+
+    QAndroidJniObject packageManager =
+        activity.callObjectMethod("getPackageManager", "()Landroid/content/pm/PackageManager;");
+
+    if (!packageManager.isValid()) {
+        qWarning() << "PreFlightChecklist: failed to get PackageManager";
+        return;
+    }
+
+    QAndroidJniObject launchIntent =
+        packageManager.callObjectMethod(
+            "getLaunchIntentForPackage",
+            "(Ljava/lang/String;)Landroid/content/Intent;",
+            packageName.object<jstring>()
+            );
+
+    if (!launchIntent.isValid()) {
+        qWarning() << "PreFlightChecklist: app not installed or has no launcher activity";
+        return;
+    }
+
+    launchIntent.callObjectMethod(
+        "putExtra",
+        "(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;",
+        QAndroidJniObject::fromString("action").object<jstring>(),
+        QAndroidJniObject::fromString("finalizar_operacao").object<jstring>()
+        );
+
+    launchIntent.callObjectMethod(
+        "putExtra",
+        "(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;",
+        QAndroidJniObject::fromString("checklist_file").object<jstring>(),
+        QAndroidJniObject::fromString(checklistFile).object<jstring>()
+        );
+
+    qDebug() << "PreFlightChecklist: requesting operation finalize for" << checklistFile;
+
+    QtAndroid::startActivity(launchIntent, kFinalizeRequestCode, this);
+
+#endif
 }
 
 #endif
