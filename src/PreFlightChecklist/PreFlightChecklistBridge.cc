@@ -33,45 +33,156 @@ void PreFlightChecklistBridge::requestChecklist()
         return;
     }
 
-    QAndroidJniObject packageName =
+    // Cria um Intent novo, em vez de usar o Intent do launcher.
+    QAndroidJniObject intent(
+        "android/content/Intent",
+        "(Ljava/lang/String;)V",
+        QAndroidJniObject::fromString(
+            "android.intent.action.MAIN"
+            ).object<jstring>()
+        );
+
+    if (!intent.isValid()) {
+        qWarning() << "PreFlightChecklist: failed to create Intent";
+        return;
+    }
+
+    // Aponta diretamente para a Activity do aplicativo de checklist.
+    QAndroidJniObject componentName(
+        "android/content/ComponentName",
+        "(Ljava/lang/String;Ljava/lang/String;)V",
         QAndroidJniObject::fromString(
             "org.globaldrones.GDPreFlightChecklist"
-            );
+            ).object<jstring>(),
+        QAndroidJniObject::fromString(
+            "org.qtproject.qt5.android.bindings.QtActivity"
+            ).object<jstring>()
+        );
 
-    // Em vez de adivinhar o nome da Activity de entrada do app do checklist
-    // (setClassName com Context+2 Strings nem existe no Android, e assumir
-    // "QtActivity" genérica quebra se o app customizar a Activity, como o
-    // próprio QGC faz com QGCActivity), pedimos pro PackageManager o launch
-    // intent real do pacote — funciona independente de como a Activity foi
-    // nomeada.
-    QAndroidJniObject packageManager =
-        activity.callObjectMethod(
-            "getPackageManager",
-            "()Landroid/content/pm/PackageManager;"
-            );
-
-    if (!packageManager.isValid()) {
-        qWarning() << "PreFlightChecklist: failed to get PackageManager";
+    if (!componentName.isValid()) {
+        qWarning() << "PreFlightChecklist: failed to create ComponentName";
         return;
     }
 
-    QAndroidJniObject launchIntent =
-        packageManager.callObjectMethod(
-            "getLaunchIntentForPackage",
-            "(Ljava/lang/String;)Landroid/content/Intent;",
-            packageName.object<jstring>()
+    intent.callObjectMethod(
+        "setComponent",
+        "(Landroid/content/ComponentName;)Landroid/content/Intent;",
+        componentName.object<jobject>()
+        );
+
+    const jint flags =
+        intent.callMethod<jint>(
+            "getFlags",
+            "()I"
             );
 
-    if (!launchIntent.isValid()) {
-        qWarning() << "PreFlightChecklist: app not installed or has no launcher activity";
-        return;
-    }
+    qDebug() << "PreFlightChecklist: flags do Intent novo ="
+             << Qt::hex
+             << flags;
 
     qDebug() << "PreFlightChecklist: launching external app";
 
     QtAndroid::startActivity(
-        launchIntent,
+        intent,
         kRequestCode,
+        this
+        );
+
+#endif
+}
+
+
+void PreFlightChecklistBridge::finalizeOperation(
+    const QString &checklistFile)
+{
+#if defined(Q_OS_ANDROID)
+
+    QAndroidJniObject activity = QtAndroid::androidActivity();
+
+    if (!activity.isValid()) {
+        qWarning() << "PreFlightChecklist: Android activity is invalid";
+        return;
+    }
+
+    // Cria um Intent novo, em vez de usar o Intent do launcher.
+    QAndroidJniObject intent(
+        "android/content/Intent",
+        "(Ljava/lang/String;)V",
+        QAndroidJniObject::fromString(
+            "android.intent.action.MAIN"
+            ).object<jstring>()
+        );
+
+    if (!intent.isValid()) {
+        qWarning() << "PreFlightChecklist: failed to create Intent";
+        return;
+    }
+
+    // Aponta diretamente para a Activity do aplicativo de checklist.
+    QAndroidJniObject componentName(
+        "android/content/ComponentName",
+        "(Ljava/lang/String;Ljava/lang/String;)V",
+        QAndroidJniObject::fromString(
+            "org.globaldrones.GDPreFlightChecklist"
+            ).object<jstring>(),
+        QAndroidJniObject::fromString(
+            "org.qtproject.qt5.android.bindings.QtActivity"
+            ).object<jstring>()
+        );
+
+    if (!componentName.isValid()) {
+        qWarning() << "PreFlightChecklist: failed to create ComponentName";
+        return;
+    }
+
+    intent.callObjectMethod(
+        "setComponent",
+        "(Landroid/content/ComponentName;)Landroid/content/Intent;",
+        componentName.object<jobject>()
+        );
+
+    // Indica ao aplicativo do checklist que esta abertura
+    // corresponde à finalização da operação.
+    intent.callObjectMethod(
+        "putExtra",
+        "(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;",
+        QAndroidJniObject::fromString(
+            "action"
+            ).object<jstring>(),
+        QAndroidJniObject::fromString(
+            "finalizar_operacao"
+            ).object<jstring>()
+        );
+
+    // Passa o arquivo da checklist que deve ser utilizado
+    // para gerar o relatório da operação.
+    intent.callObjectMethod(
+        "putExtra",
+        "(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;",
+        QAndroidJniObject::fromString(
+            "checklist_file"
+            ).object<jstring>(),
+        QAndroidJniObject::fromString(
+            checklistFile
+            ).object<jstring>()
+        );
+
+    const jint flags =
+        intent.callMethod<jint>(
+            "getFlags",
+            "()I"
+            );
+
+    qDebug() << "PreFlightChecklist: flags do Intent novo ="
+             << Qt::hex
+             << flags;
+
+    qDebug() << "PreFlightChecklist: requesting operation finalize for"
+             << checklistFile;
+
+    QtAndroid::startActivity(
+        intent,
+        kFinalizeRequestCode,
         this
         );
 
@@ -84,38 +195,68 @@ void PreFlightChecklistBridge::requestChecklist()
 // ============================================================================
 
 #if defined(Q_OS_ANDROID)
-
 void PreFlightChecklistBridge::handleActivityResult(
     int receiverRequestCode,
     int resultCode,
     const QAndroidJniObject& data)
 {
-    // ------------------------------------------------------------------------
-    // Ignora resultados de outras requisições
-    // ------------------------------------------------------------------------
+    qDebug() << "PreFlightChecklistBridge::handleActivityResult chamado —"
+             << "requestCode:" << receiverRequestCode
+             << "resultCode:" << resultCode
+             << "data válida:" << data.isValid();
 
-    if (receiverRequestCode != kRequestCode) {
-        return;
+    if (receiverRequestCode != kRequestCode && receiverRequestCode != kFinalizeRequestCode) {
+        return; // não é nenhum dos dois Intents que a gente dispara
     }
-
-
-    // ------------------------------------------------------------------------
-    // Android Activity.RESULT_OK == -1
-    // ------------------------------------------------------------------------
 
     if (resultCode != -1) {
         return;
     }
 
-
-    // ------------------------------------------------------------------------
-    // Verifica se recebemos um Intent válido
-    // ------------------------------------------------------------------------
-
     if (!data.isValid()) {
         return;
     }
 
+    if (receiverRequestCode == kFinalizeRequestCode) {
+
+        _reportGenerated =
+            data.callMethod<jboolean>(
+                "getBooleanExtra",
+                "(Ljava/lang/String;Z)Z",
+                QAndroidJniObject::fromString(
+                    "report_generated"
+                    ).object<jstring>(),
+                jboolean(false)
+                );
+
+        const QAndroidJniObject reportPath =
+            data.callObjectMethod(
+                "getStringExtra",
+                "(Ljava/lang/String;)Ljava/lang/String;",
+                QAndroidJniObject::fromString(
+                    "report_path"
+                    ).object<jstring>()
+                );
+
+        _reportPath =
+            reportPath.isValid()
+                ? reportPath.toString()
+                : QString();
+
+        qDebug() << "PreFlightChecklist: ===== RESULTADO FINALIZACAO =====";
+        qDebug() << "PreFlightChecklist: report_generated ="
+                 << _reportGenerated;
+        qDebug() << "PreFlightChecklist: report_path ="
+                 << _reportPath;
+        qDebug() << "PreFlightChecklist: report_path valido ="
+                 << reportPath.isValid();
+        qDebug() << "PreFlightChecklist: =================================";
+
+        _hasReportResult = true;
+        emit reportResultChanged();
+
+        return;
+    }
 
     // ------------------------------------------------------------------------
     // checklist_complete (boolean — chave e tipo têm que bater com o que
@@ -190,6 +331,8 @@ void PreFlightChecklistBridge::handleActivityResult(
         _checklistFile.clear();
     }
 
+    qDebug() << "PreFlightChecklistBridge: checklistFile recebido =" << _checklistFile;
+
 
     // ------------------------------------------------------------------------
     // released_at (long — chave e tipo têm que bater com o envio)
@@ -212,5 +355,6 @@ void PreFlightChecklistBridge::handleActivityResult(
 
     emit checklistResultChanged();
 }
+
 
 #endif
