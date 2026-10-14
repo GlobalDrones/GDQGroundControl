@@ -417,7 +417,11 @@ Item {
 
         onTriggered:{
             gcsID = QGroundControl.mavlinkSystemID.valueOf(); //tem que ficar atualizando. tem jeito melhor pra fazer mas isso é pequisa futura e o desempenho ta satisfatório pra agora
-            if(!_activeVehicle){return}
+
+            if (!_activeVehicle) {
+                return
+            }
+
             if(_activeVehicle.firmwareMajorVersion.toString() == "255"){ // Caso esteja rodando nosso Ardupilot custom (Major Version 255)
                 let allMessages = _activeVehicle.formattedMessages;
                     let lines = allMessages.split("<br/>").filter(line => line.trim() !== "");
@@ -695,7 +699,11 @@ Item {
         Item {
             id: cameraControlOverlay
             z: QGroundControl.zOrderTopMost
-            visible: QGroundControl.videoManager.hasVideo
+            // Only shown (and only ever touches the video source) while "Streams List" is the
+            // selected Source in Settings - otherwise it must not interfere with whatever single
+            // source (RTSP/UDP/etc) is manually configured there.
+            visible: QGroundControl.videoManager.hasVideo &&
+                     QGroundControl.settingsManager.videoSettings.videoSource.rawValue === QGroundControl.settingsManager.videoSettings.streamsListVideoSource
 
             // Lista com pares: texto + URL correspondente
             /*property var cameraList: [
@@ -703,7 +711,6 @@ Item {
                 { name: "Video 2", url: "rtsp://192.168.144.25:8554/video2" },
                 { name: "FPV",     url: "rtsp://192.168.144.26:554/main.264" }
             ]*/
-            property int cameraIndex: 0
 
             states: [
                 State {
@@ -748,11 +755,13 @@ Item {
                         id: cameraText
                         anchors.centerIn: parent
                         text: {
-                            if (QGroundControl.videoManager.streams.length > 0 && cameraControlOverlay.cameraIndex < QGroundControl.videoManager.streams.length) {
-                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
-                                return element.alias ? element.alias : element.url
+                            var streams = QGroundControl.videoManager.streams
+                            var idx = QGroundControl.videoManager.currentStreamIndex
+                            if (streams.length > 0 && idx >= 0 && idx < streams.length) {
+                                var element = streams[idx]
+                                return element.alias ? element.alias : element.ip
                             } else {
-                                return "Sem câmeras"
+                                return qsTr("Sem câmeras")
                             }
                         }
                         color: "white"
@@ -770,13 +779,10 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            if (QGroundControl.videoManager.streams.length > 0) {
-                                cameraControlOverlay.cameraIndex = (cameraControlOverlay.cameraIndex + 1) % QGroundControl.videoManager.streams.length
-
-                                var element = QGroundControl.videoManager.streams[cameraControlOverlay.cameraIndex]
-                                if (element.ip) {
-                                    QGroundControl.settingsManager.videoSettings.rtspUrl.rawValue = element.ip
-                                }
+                            var streams = QGroundControl.videoManager.streams
+                            if (streams.length > 0) {
+                                var nextIndex = (QGroundControl.videoManager.currentStreamIndex + 1) % streams.length
+                                QGroundControl.videoManager.selectStream(nextIndex)
                             }
                         }
                     }

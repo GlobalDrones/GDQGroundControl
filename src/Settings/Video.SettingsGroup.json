@@ -33,6 +33,13 @@
     "default":     ""
 },
 {
+    "name":             "srtUrl",
+    "shortDesc": "Video SRT Url",
+    "longDesc":  "SRT url address and port to connect to (caller mode) for video stream. Example: 192.168.143.200:8890",
+    "type":             "string",
+    "default":     ""
+},
+{
     "name":             "videoSavePath",
     "shortDesc": "Video save directory",
     "longDesc":  "Directory to save videos to.",
@@ -102,11 +109,11 @@
 {
     "name":             "rtspTimeout",
     "shortDesc": "RTSP Video Timeout",
-    "longDesc":  "How long to wait before assuming RTSP link is gone.",
+    "longDesc":  "How long to wait before assuming the video link is gone. Applies to every GStreamer source, not just RTSP.",
     "type":             "uint32",
     "min":              1,
     "units":            "s",
-    "default":     2
+    "default":     5
 },
 {
     "name":             "streamEnabled",
