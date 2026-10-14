@@ -32,7 +32,7 @@ ApplicationWindow {
     visible:        true
 
     property SiYiCamera siYiCamera: SiYi.camera
-    property var versao_software: "Versão 2.3.3_SRT"
+    property var versao_software: "Versão 2.3.4"
 
     property bool checklistVerified: false
     property bool reportGenerated: false
