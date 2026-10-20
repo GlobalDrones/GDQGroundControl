@@ -441,7 +441,6 @@ contains (DEFINES, QGC_ENABLE_PAIRING) {
 #
 
 HEADERS += \
-    src/PreFlightChecklist/PreFlightChecklistBridge.h \
     src/QmlControls/QmlUnitsConversion.h \
     src/SiYi/SiYi.h \
     src/SiYi/SiYiCamera.h \
@@ -461,7 +460,6 @@ contains (DEFINES, QGC_ENABLE_PAIRING) {
 }
 
 SOURCES += \
-    src/PreFlightChecklist/PreFlightChecklistBridge.cc \
     src/SiYi/SiYi.cc \
     src/SiYi/SiYiCamera.cc \
     src/SiYi/SiYiCrcApi.cc \

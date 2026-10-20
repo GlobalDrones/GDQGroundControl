@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/json">
+        <file alias="GD.SettingsGroup.json">../res/json/GD.SettingsGroup.json</file>
+    </qresource>
+</RCC>

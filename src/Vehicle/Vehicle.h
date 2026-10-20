@@ -107,9 +107,8 @@ public:
             JoystickManager*        joystickManager);
 
     // Pass these into the offline constructor to create an offline vehicle which tracks the offline vehicle settings
-    static constexpr MAV_AUTOPILOT MAV_AUTOPILOT_TRACK = MAV_AUTOPILOT_INVALID;
-    static constexpr MAV_TYPE      MAV_TYPE_TRACK      = MAV_TYPE_GCS;
-
+    static const MAV_AUTOPILOT    MAV_AUTOPILOT_TRACK = static_cast<MAV_AUTOPILOT>(-1);
+    static const MAV_TYPE         MAV_TYPE_TRACK = static_cast<MAV_TYPE>(-1);
 
     // The following is used to create a disconnected Vehicle for use while offline editing.
     Vehicle(MAV_AUTOPILOT           firmwareType,
@@ -257,7 +256,6 @@ public:
     Q_PROPERTY(bool                 requiresGpsFix              READ requiresGpsFix                                                 NOTIFY requiresGpsFixChanged)
     Q_PROPERTY(double               loadProgress                READ loadProgress                                                   NOTIFY loadProgressChanged)
     Q_PROPERTY(bool                 initialConnectComplete      READ isInitialConnectComplete                                       NOTIFY initialConnectComplete)
-    Q_PROPERTY(QVariantList         gd_rcchannels               READ gd_rcchannels                                                  NOTIFY gd_rcchannelsChanged)
 
     // The following properties relate to Orbit status
     Q_PROPERTY(bool             orbitActive     READ orbitActive        NOTIFY orbitActiveChanged)
@@ -300,16 +298,26 @@ public:
     Q_PROPERTY(Fact* distanceToHome     READ distanceToHome     CONSTANT)
     Q_PROPERTY(Fact* missionItemIndex   READ missionItemIndex   CONSTANT)
     Q_PROPERTY(Fact* headingToNextWP    READ headingToNextWP    CONSTANT)
-    Q_PROPERTY(Fact* distanceToNextWP   READ distanceToNextWP   CONSTANT)
     Q_PROPERTY(Fact* headingToHome      READ headingToHome      CONSTANT)
     Q_PROPERTY(Fact* distanceToGCS      READ distanceToGCS      CONSTANT)
     Q_PROPERTY(Fact* hobbs              READ hobbs              CONSTANT)
     Q_PROPERTY(Fact* throttlePct        READ throttlePct        CONSTANT)
+
+    // Global Drones: fatos lidos pelo QML dos produtos, preenchidos por custom/src/telemetry.
+    // Os nomes são os dos apps anteriores, para o QML de cada produto continuar valendo.
+    Q_PROPERTY(Fact* distanceToNextWP   READ distanceToNextWP   CONSTANT)
     Q_PROPERTY(Fact* rangeFinderDist    READ rangeFinderDist    CONSTANT)
-    Q_PROPERTY(Fact* flightTimeCustom   READ flightTimeCustom          CONSTANT)
+    Q_PROPERTY(Fact* flightTimeCustom   READ flightTimeCustom   CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor1       READ gd60_Sensor1       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor2       READ gd60_Sensor2       CONSTANT)
     Q_PROPERTY(Fact* gd60_Sensor3       READ gd60_Sensor3       CONSTANT)
+    Q_PROPERTY(Fact* gd30_remainsecs    READ gd30_remainsecs    CONSTANT)
+    Q_PROPERTY(Fact* gd60_ECU1_CTP1     READ gd60_ECU1_CTP1     CONSTANT)
+    Q_PROPERTY(Fact* gd60_ECU1_CTP2     READ gd60_ECU1_CTP2     CONSTANT)
+    Q_PROPERTY(Fact* gd60_ECU2_CTP1     READ gd60_ECU2_CTP1     CONSTANT)
+    Q_PROPERTY(Fact* gd60_ECU2_CTP2     READ gd60_ECU2_CTP2     CONSTANT)
+    Q_PROPERTY(Fact* gd60_RPM_M1        READ gd60_RPM_M1        CONSTANT)
+    Q_PROPERTY(Fact* gd60_RPM_M2        READ gd60_RPM_M2        CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM1           READ _GD_RPM1           CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM2           READ _GD_RPM2           CONSTANT)
     Q_PROPERTY(Fact* _GD_RPM3           READ _GD_RPM3           CONSTANT)
@@ -320,8 +328,6 @@ public:
     Q_PROPERTY(Fact* _GD_GimbalPitch    READ _GD_GimbalPitch    CONSTANT)
     Q_PROPERTY(Fact* _GD_GimbalYaw      READ _GD_GimbalYaw      CONSTANT)
     Q_PROPERTY(Fact* _GD_GimbalRoll     READ _GD_GimbalRoll     CONSTANT)
-
-
 
     Q_PROPERTY(FactGroup*           gps             READ gpsFactGroup               CONSTANT)
     Q_PROPERTY(FactGroup*           gps2            READ gps2FactGroup              CONSTANT)
@@ -465,7 +471,6 @@ public:
     bool    takeoffVehicleSupported () const;
     QString gotoFlightMode          () const;
 
-
     // Property accessors
 
     QGeoCoordinate coordinate() { return _coordinate; }
@@ -547,13 +552,6 @@ public:
     ///     @param sendMultiple Send multiple time to guarantee Vehicle reception
     void requestDataStream(MAV_DATA_STREAM stream, uint16_t rate, bool sendMultiple = true);
 
-    /// Start the Overwritting thread for RC channels with controller serial input
-    Q_INVOKABLE QString overwriteRC(const QVariantList &arrayRC, bool force_override);
-    Q_INVOKABLE void stopRCOverride(void);
-    Q_INVOKABLE QString validateRCChannels(const QVariantList &arrayRC);
-    Q_INVOKABLE void _sendRCOverrideRelease();
-
-
     // The follow method are used to turn on/off the tracking of settings updates for firmware/vehicle type on offline vehicles.
     void trackFirmwareVehicleTypeChanges(void);
     void stopTrackingFirmwareVehicleTypeChanges(void);
@@ -626,8 +624,6 @@ public:
     bool            hilMode                     () const { return _base_mode & MAV_MODE_FLAG_HIL_ENABLED; }
     Actuators*      actuators                   () const { return _actuators; }
 
-    bool            generator_started = false;
-
     /// Get the maximum MAVLink protocol version supported
     /// @return the maximum version
     unsigned        maxProtoVersion         () const { return _maxProtoVersion; }
@@ -673,28 +669,35 @@ public:
     Fact* distanceToHome                    () { return &_distanceToHomeFact; }
     Fact* missionItemIndex                  () { return &_missionItemIndexFact; }
     Fact* headingToNextWP                   () { return &_headingToNextWPFact; }
-    Fact* distanceToNextWP                  () { return &_distanceToNextWPFact; }
     Fact* headingToHome                     () { return &_headingToHomeFact; }
     Fact* distanceToGCS                     () { return &_distanceToGCSFact; }
     Fact* hobbs                             () { return &_hobbsFact; }
     Fact* throttlePct                       () { return &_throttlePctFact; }
+
+    // Global Drones
+    Fact* distanceToNextWP                  () { return &_distanceToNextWPFact; }
     Fact* rangeFinderDist                   () { return &_rangeFinderDistFact; }
-    Fact* flightTimeCustom                  () { return &_flightTimeFact;}
-    Fact* gd60_Sensor1                      () { return &_gd60_Sensor1Fact;}
-    Fact* gd60_Sensor2                      () { return &_gd60_Sensor2Fact;}
-    Fact* gd60_Sensor3                      () { return &_gd60_Sensor3Fact;}
-    Fact* _GD_RPM1                          () { return &_GD_RPM1Fact;}
-    Fact* _GD_RPM2                          () { return &_GD_RPM2Fact;}
-    Fact* _GD_RPM3                          () { return &_GD_RPM3Fact;}
-    Fact* _GD_RPM4                          () { return &_GD_RPM4Fact;}
-    Fact* _GD_RPM5                          () { return &_GD_RPM5Fact;}
-    Fact* _GD_RPM6                          () { return &_GD_RPM6Fact;}
-    Fact* _GD_GeneratorRPM                  () {return &_GD_GeneratorRPMFact;}
-    Fact* _GD_GimbalPitch                   () {return &_GD_GimbalPitchFact;}
-    Fact* _GD_GimbalYaw                     () {return &_GD_GimbalYawFact;}
-    Fact* _GD_GimbalRoll                    () {return &_GD_GimbalRollFact;}
-    Fact* _GD_RC_SCORE                      () {return &_GD_RC_SCOREFact ;}
-    Fact* _GD_NET_SCORE                     () {return &_GD_NET_SCOREFact;}
+    Fact* flightTimeCustom                  () { return &_flightTimeFact; }    ///< mesmo fato de flightTime
+    Fact* gd60_Sensor1                      () { return &_gd60_Sensor1Fact; }
+    Fact* gd60_Sensor2                      () { return &_gd60_Sensor2Fact; }
+    Fact* gd60_Sensor3                      () { return &_gd60_Sensor3Fact; }
+    Fact* gd30_remainsecs                   () { return &_gd30_remainsecsFact; }
+    Fact* gd60_ECU1_CTP1                    () { return &_gd60_ECU1_CTP1Fact; }
+    Fact* gd60_ECU1_CTP2                    () { return &_gd60_ECU1_CTP2Fact; }
+    Fact* gd60_ECU2_CTP1                    () { return &_gd60_ECU2_CTP1Fact; }
+    Fact* gd60_ECU2_CTP2                    () { return &_gd60_ECU2_CTP2Fact; }
+    Fact* gd60_RPM_M1                       () { return &_gd60_RPM_M1Fact; }
+    Fact* gd60_RPM_M2                       () { return &_gd60_RPM_M2Fact; }
+    Fact* _GD_RPM1                          () { return &_GD_RPM1Fact; }
+    Fact* _GD_RPM2                          () { return &_GD_RPM2Fact; }
+    Fact* _GD_RPM3                          () { return &_GD_RPM3Fact; }
+    Fact* _GD_RPM4                          () { return &_GD_RPM4Fact; }
+    Fact* _GD_RPM5                          () { return &_GD_RPM5Fact; }
+    Fact* _GD_RPM6                          () { return &_GD_RPM6Fact; }
+    Fact* _GD_GeneratorRPM                  () { return &_GD_GeneratorRPMFact; }
+    Fact* _GD_GimbalPitch                   () { return &_GD_GimbalPitchFact; }
+    Fact* _GD_GimbalYaw                     () { return &_GD_GimbalYawFact; }
+    Fact* _GD_GimbalRoll                    () { return &_GD_GimbalRollFact; }
 
     FactGroup* gpsFactGroup                 () { return &_gpsFactGroup; }
     FactGroup* gps2FactGroup                () { return &_gps2FactGroup; }
@@ -808,9 +811,6 @@ public:
     quint64 vehicleUID() const { return _uid; }
     QString vehicleUIDStr();
 
-
-    QVariantList gd_rcchannels() const { return _gd_rcchannels; }
-
     bool soloFirmware() const { return _soloFirmware; }
     void setSoloFirmware(bool soloFirmware);
 
@@ -842,7 +842,6 @@ public:
     const QVariantList&         toolIndicators      ();
     const QVariantList&         modeIndicators      ();
     const QVariantList&         staticCameraList    () const;
-
 
     bool capabilitiesKnown      () const { return _capabilityBitsKnown; }
     uint64_t capabilityBits     () const { return _capabilityBits; }    // Change signalled by capabilityBitsChanged
@@ -948,8 +947,6 @@ signals:
     void readyToFlyChanged              (bool readyToFy);
     void allSensorsHealthyChanged       (bool allSensorsHealthy);
     void requiresGpsFixChanged          ();
-    void gd_rcchannelsChanged();
-    void photoTaken();
 
     void firmwareVersionChanged         ();
     void firmwareCustomVersionChanged   ();
@@ -1060,7 +1057,6 @@ private:
     // ArduPilot dialect messages
 #if !defined(NO_ARDUPILOT_DIALECT)
     void _handleCameraFeedback          (const mavlink_message_t& message);
-    void _handleRangefinder             (mavlink_message_t& message);
 #endif
     void _handleCameraImageCaptured     (const mavlink_message_t& message);
     void _handleADSBVehicle             (const mavlink_message_t& message);
@@ -1092,11 +1088,6 @@ private:
     int     _defaultComponentId;
     bool    _offlineEditingVehicle = false; ///< true: This Vehicle is a "disconnected" vehicle for ui use while offline editing
 
-
-
-    QVariantList _gd_rcchannels;
-
-
     MAV_AUTOPILOT       _firmwareType;
     MAV_TYPE            _vehicleType;
     FirmwarePlugin*     _firmwarePlugin = nullptr;
@@ -1111,8 +1102,6 @@ private:
     QFile               _csvLogFile;
 
     bool            _joystickEnabled = false;
-    std::atomic<bool> _overrideRunning{false};
-    QFuture<void> _overrideFuture;
 
     UAS* _uas = nullptr;
 
@@ -1359,11 +1348,27 @@ private:
     Fact _xTrackErrorFact;
     Fact _flightDistanceFact;
     Fact _flightTimeFact;
+    Fact _distanceToHomeFact;
+    Fact _missionItemIndexFact;
+    Fact _headingToNextWPFact;
+    Fact _headingToHomeFact;
+    Fact _distanceToGCSFact;
+    Fact _hobbsFact;
+    Fact _throttlePctFact;
+
+    // Global Drones
+    Fact _distanceToNextWPFact;
+    Fact _rangeFinderDistFact;
     Fact _gd60_Sensor1Fact;
     Fact _gd60_Sensor2Fact;
     Fact _gd60_Sensor3Fact;
-    Fact _GD_RC_SCOREFact;
-    Fact _GD_NET_SCOREFact;
+    Fact _gd30_remainsecsFact;
+    Fact _gd60_ECU1_CTP1Fact;
+    Fact _gd60_ECU1_CTP2Fact;
+    Fact _gd60_ECU2_CTP1Fact;
+    Fact _gd60_ECU2_CTP2Fact;
+    Fact _gd60_RPM_M1Fact;
+    Fact _gd60_RPM_M2Fact;
     Fact _GD_RPM1Fact;
     Fact _GD_RPM2Fact;
     Fact _GD_RPM3Fact;
@@ -1374,15 +1379,6 @@ private:
     Fact _GD_GimbalPitchFact;
     Fact _GD_GimbalYawFact;
     Fact _GD_GimbalRollFact;
-    Fact _distanceToHomeFact;
-    Fact _missionItemIndexFact;
-    Fact _headingToNextWPFact;
-    Fact _distanceToNextWPFact;
-    Fact _headingToHomeFact;
-    Fact _distanceToGCSFact;
-    Fact _hobbsFact;
-    Fact _throttlePctFact;
-    Fact _rangeFinderDistFact;
 
     VehicleGPSFactGroup             _gpsFactGroup;
     VehicleGPS2FactGroup            _gps2FactGroup;
@@ -1428,11 +1424,27 @@ private:
     static const char* _xTrackErrorFactName;
     static const char* _flightDistanceFactName;
     static const char* _flightTimeFactName;
+    static const char* _distanceToHomeFactName;
+    static const char* _missionItemIndexFactName;
+    static const char* _headingToNextWPFactName;
+    static const char* _headingToHomeFactName;
+    static const char* _distanceToGCSFactName;
+    static const char* _hobbsFactName;
+    static const char* _throttlePctFactName;
+
+    // Global Drones
+    static const char* _distanceToNextWPFactName;
+    static const char* _rangeFinderDistFactName;
     static const char* _gd60_Sensor1FactName;
     static const char* _gd60_Sensor2FactName;
     static const char* _gd60_Sensor3FactName;
-    static const char* _GD_RC_SCOREFactName;
-    static const char* _GD_NET_SCOREFactName;
+    static const char* _gd30_remainsecsFactName;
+    static const char* _gd60_ECU1_CTP1FactName;
+    static const char* _gd60_ECU1_CTP2FactName;
+    static const char* _gd60_ECU2_CTP1FactName;
+    static const char* _gd60_ECU2_CTP2FactName;
+    static const char* _gd60_RPM_M1FactName;
+    static const char* _gd60_RPM_M2FactName;
     static const char* _GD_RPM1FactName;
     static const char* _GD_RPM2FactName;
     static const char* _GD_RPM3FactName;
@@ -1443,15 +1455,6 @@ private:
     static const char* _GD_GimbalPitchFactName;
     static const char* _GD_GimbalYawFactName;
     static const char* _GD_GimbalRollFactName;
-    static const char* _distanceToHomeFactName;
-    static const char* _missionItemIndexFactName;
-    static const char* _headingToNextWPFactName;
-    static const char* _distanceToNextWPFactName;
-    static const char* _headingToHomeFactName;
-    static const char* _distanceToGCSFactName;
-    static const char* _hobbsFactName;
-    static const char* _throttlePctFactName;
-    static const char* _rangeFinderDistFactName;
 
     static const char* _gpsFactGroupName;
     static const char* _gps2FactGroupName;

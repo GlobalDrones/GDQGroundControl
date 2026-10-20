@@ -450,7 +450,7 @@ FlightMap {
             return _mapCircle.radius.rawValue
         }
 
-        // Component.onCompleted: globals.guidedControllerFlyView.orbitMapCircle = orbitMapCircle
+        Component.onCompleted: globals.guidedControllerFlyView.orbitMapCircle = orbitMapCircle
 
         QGCMapCircle {
             id:                 _mapCircle

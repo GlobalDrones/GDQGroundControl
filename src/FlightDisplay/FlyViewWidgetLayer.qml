@@ -56,8 +56,6 @@ Item {
     property var siyi: SiYi
     property SiYiCamera camera: siyi.camera
     property int iconLeftMargin: toolStrip.width + toolStrip.anchors.leftMargin
-    property bool visible_custom_telemetry: false
-    property bool crosshair_visible: false
 
     QGCToolInsets {
         id: _totalToolInsets
@@ -124,8 +122,7 @@ Item {
         id: instrumentPanel
         anchors.margins: _toolsMargin
         //anchors.topMargin: anchors.margins + SiYi.iconsHeight
-        //anchors.top: multiVehiclePanelSelector.visible ? multiVehiclePanelSelector.bottom : parent.top
-        anchors.bottom: parent.bottom
+        anchors.top: multiVehiclePanelSelector.visible ? multiVehiclePanelSelector.bottom : parent.top
         anchors.right: parent.right
         width: _rightPanelWidth
         spacing: _toolsMargin
@@ -167,21 +164,20 @@ Item {
 
     Rectangle {
         id: zoomMultipleRectangle
-        anchors.right: telemetryPanel.left
-        anchors.bottom: telemetryPanel.bottom
+        anchors.bottom: telemetryPanel.top
         width: zoomMultipleLabel.width + zoomMultipleLabel.width * 0.4
-        height: telemetryPanel.height
-        color:  qgcPal.toolbarBackground
-        anchors.rightMargin: 10
+        height: zoomMultipleLabel.height + zoomMultipleLabel.height * 0.4
+        color: "white"
+        anchors.bottomMargin: 10
         visible: false
+        anchors.horizontalCenter: telemetryPanel.horizontalCenter
         radius: 5
-
         QGCLabel {
             id: zoomMultipleLabel
             text: (zoomMultipleLabel.zoomMultiple / 10).toFixed(1)
             anchors.centerIn: parent
-            color: "white"
-            font.pixelSize: 36
+            color: "black"
+            font.pixelSize: 48
 
             Timer {
                 id: visibleTimer
@@ -202,7 +198,7 @@ Item {
 
     Rectangle {
         id: resultRectangle
-        anchors.bottom: parent.bottom
+        anchors.bottom: telemetryPanel.top
         width: resultLabel.width + resultLabel.width * 0.4
         height: resultLabel.height + resultLabel.height * 0.4
         anchors.bottomMargin: 10
@@ -259,12 +255,9 @@ Item {
         id: telemetryPanel
         x: recalcXPosition()
         anchors.margins: _toolsMargin
-        anchors.bottom:parent.bottom
-        anchors.right:instrumentPanel.right
-        visible: visible_custom_telemetry //!SiYi.hideWidgets
+        visible: !SiYi.hideWidgets
 
-
-        /*// States for custom layout support
+        // States for custom layout support
         states: [
             State {
                 name: "bottom"
@@ -309,7 +302,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
-        ]*/
+        ]
 
         function recalcXPosition() {
             // First try centered
@@ -360,16 +353,6 @@ Item {
 
         onDisplayPreFlightChecklist: mainWindow.showPopupDialogFromComponent(
                                          preFlightChecklistPopup)
-
-        onModoEngenheiroToggle:{
-            visible_custom_telemetry = !visible_custom_telemetry
-        }
-        onCrosshairToggle:{
-            crosshair_visible = !crosshair_visible
-        }
-        onCamControlToggle: {
-            SiYi.hideWidgets = !SiYi.hideWidgets
-        }
 
         property real leftInset: x + width
     }

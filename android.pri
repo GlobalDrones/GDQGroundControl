@@ -12,10 +12,30 @@ exists($$PWD/custom/android) {
     PRE_TARGETDEPS += $$android_source_dir_target.target
     QMAKE_EXTRA_TARGETS += android_source_dir_target
 
-    android_source_dir_target.commands = $$QMAKE_MKDIR $$ANDROID_PACKAGE_SOURCE_DIR && \
-            $$QMAKE_COPY_DIR $$PWD/android/* $$OUT_PWD/ANDROID_PACKAGE_SOURCE_DIR && \
-            $$QMAKE_COPY_DIR $$PWD/custom/android/* $$OUT_PWD/ANDROID_PACKAGE_SOURCE_DIR && \
-            $$QMAKE_STREAM_EDITOR -i \"s/package=\\\"org.mavlink.qgroundcontrol\\\"/package=\\\"$$QGC_ANDROID_PACKAGE\\\"/\" $$ANDROID_PACKAGE_SOURCE_DIR/AndroidManifest.xml
+    # The manifest is generated at qmake time with the package and label filled in:
+    # the build-time "qmake -install sed -i" did not work on Windows hosts (no -i),
+    # and cmd.exe rejects forward slashes in mkdir/xcopy (hence shell_path).
+    CUSTOM_MANIFEST = $$cat($$PWD/custom/android/AndroidManifest.xml, blob)
+    CUSTOM_MANIFEST = $$replace(CUSTOM_MANIFEST, "package=\"org.mavlink.qgroundcontrol\"", "package=\"$$QGC_ANDROID_PACKAGE\"")
+    !isEmpty(CUSTOM_ANDROID_LABEL) {
+        CUSTOM_MANIFEST = $$replace(CUSTOM_MANIFEST, CUSTOM_ANDROID_LABEL, $$CUSTOM_ANDROID_LABEL)
+    }
+    CUSTOM_MANIFEST_FILE = $$OUT_PWD/AndroidManifest.generated.xml
+    write_file($$CUSTOM_MANIFEST_FILE, CUSTOM_MANIFEST)
+
+    ANDROID_SOURCE_DIR_SHELL = $$shell_path($$ANDROID_PACKAGE_SOURCE_DIR)
+    android_source_dir_target.commands = ( $$sprintf($$QMAKE_MKDIR_CMD, $$ANDROID_SOURCE_DIR_SHELL) ) && \
+            $$QMAKE_COPY_DIR $$shell_path($$PWD/android/*) $$ANDROID_SOURCE_DIR_SHELL && \
+            $$QMAKE_COPY_DIR $$shell_path($$PWD/custom/android/*) $$ANDROID_SOURCE_DIR_SHELL
+    # Custom builds with product variants: overlay the variant directory
+    !isEmpty(CUSTOM_ANDROID_VARIANT_DIR):exists($$CUSTOM_ANDROID_VARIANT_DIR) {
+        android_source_dir_target.commands += && $$QMAKE_COPY_DIR $$shell_path($$CUSTOM_ANDROID_VARIANT_DIR/*) $$ANDROID_SOURCE_DIR_SHELL
+    }
+    android_source_dir_target.commands += && $$QMAKE_COPY $$shell_path($$CUSTOM_MANIFEST_FILE) $$shell_path($$ANDROID_PACKAGE_SOURCE_DIR/AndroidManifest.xml)
+    # Extra gradle.properties entries (e.g. org.gradle.java.home); androiddeployqt keeps them
+    !isEmpty(CUSTOM_GRADLE_PROPERTIES) {
+        android_source_dir_target.commands += && $$QMAKE_COPY $$shell_path($$CUSTOM_GRADLE_PROPERTIES) $$shell_path($$ANDROID_PACKAGE_SOURCE_DIR/gradle.properties)
+    }
     android_source_dir_target.depends = FORCE
 }
 

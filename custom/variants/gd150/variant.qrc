@@ -1,0 +1,22 @@
+<RCC>
+    <!-- Substituições de arquivos da base só do GD150: mesmo alias da base com
+         o prefixo /gdv (ver GDUrlInterceptor). -->
+    <qresource prefix="/gdv">
+        <file alias="qml/QGroundControl/FlightDisplay/FlightDisplayViewWidgets.qml">qml/FlightDisplay/FlightDisplayViewWidgets.qml</file>
+        <file alias="qml/QGroundControl/Controls/MainToolBar.qml">qml/toolbar/MainToolBar.qml</file>
+        <file alias="toolbar/BatteryIndicator.qml">qml/toolbar/BatteryIndicator.qml</file>
+        <file alias="toolbar/LinkIndicator.qml">qml/toolbar/LinkIndicator.qml</file>
+        <file alias="toolbar/RCRSSIIndicator.qml">qml/toolbar/RCRSSIIndicator.qml</file>
+    </qresource>
+    <!-- Painéis do Fly View comum (import GD.Variant 1.0) -->
+    <qresource prefix="/qml">
+        <file alias="GD/Variant/qmldir">qml/GD/Variant/qmldir</file>
+        <file alias="GD/Variant/FlyViewBottomViewArea.qml">qml/GD/Variant/FlyViewBottomViewArea.qml</file>
+        <file alias="GD/Variant/FlyViewLateralViewArea.qml">qml/GD/Variant/FlyViewLateralViewArea.qml</file>
+    </qresource>
+    <!-- Ícones do painel inferior (nomes novos, fora da base) -->
+    <qresource prefix="/qmlimages">
+        <file alias="pressure_gauge.svg">res/pressure_gauge.svg</file>
+        <file alias="power_consumo.svg">res/power_consumo.svg</file>
+    </qresource>
+</RCC>

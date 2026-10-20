@@ -33,12 +33,15 @@ public slots:
 signals:
     void pointAdded     (QGeoCoordinate coordinate);
     void updateLastPoint(QGeoCoordinate coordinate);
+    void pointRemoved   (QGeoCoordinate coordinate);    ///< Global Drones: ponto mais antigo saiu da trilha
     void pointsCleared  (void);
 
 private slots:
     void _vehicleCoordinateChanged(QGeoCoordinate coordinate);
 
 private:
+    void _trimTrail(void);
+
     Vehicle*        _vehicle;
     QVariantList    _points;
     QGeoCoordinate  _lastPoint;
@@ -46,4 +49,8 @@ private:
 
     static constexpr double _distanceTolerance = 2.0;
     static constexpr double _azimuthTolerance = 1.5;
+
+    // Global Drones: a trilha no mapa guarda só os pontos mais recentes, senão
+    // cresce durante o voo inteiro e polui a tela do piloto (e59a89e, GD60)
+    static constexpr int _maxTrailPoints = 500;
 };

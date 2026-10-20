@@ -1,0 +1,14 @@
+<RCC>
+    <!-- Substituições comuns de QMLs da base: mesmo alias do qgroundcontrol.qrc,
+         com o prefixo /gdc (ver GDUrlInterceptor). -->
+    <qresource prefix="/gdc/qml">
+        <file alias="QGroundControl/FlightDisplay/GuidedActionConfirm.qml">../qml/FlightDisplay/GuidedActionConfirm.qml</file>
+        <file alias="VirtualJoystick.qml">../qml/FlightDisplay/VirtualJoystick.qml</file>
+        <file alias="QGroundControl/ScreenTools/ScreenTools.qml">../qml/QmlControls/ScreenTools.qml</file>
+        <file alias="QGCInstrumentWidget.qml">../qml/FlightMap/Widgets/QGCInstrumentWidget.qml</file>
+        <file alias="QGroundControl/Controls/GeoFenceMapVisuals.qml">../qml/PlanView/GeoFenceMapVisuals.qml</file>
+        <file alias="QGroundControl/Controls/QGCMapPolygonVisuals.qml">../qml/MissionManager/QGCMapPolygonVisuals.qml</file>
+        <!-- Barra superior: status sem o botão Arm/Disarm/Force Arm (arma-se pelo rádio) -->
+        <file alias="QGroundControl/Controls/MainStatusIndicator.qml">../qml/toolbar/MainStatusIndicator.qml</file>
+    </qresource>
+</RCC>

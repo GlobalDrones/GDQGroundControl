@@ -38,10 +38,11 @@ public:
     Q_PROPERTY(Fact* voltageThird       READ voltageThird       CONSTANT)
     Q_PROPERTY(Fact* voltageFourth      READ voltageFourth      CONSTANT)
 
+    // Global Drones: temperatura dos ESCs, vinda de ESC_TELEMETRY_1_TO_4 (ArduPilot)
     Q_PROPERTY(Fact* temperatureFirst   READ temperatureFirst   CONSTANT)
-    Q_PROPERTY(Fact* temperatureSecond  READ temperatureSecond   CONSTANT)
+    Q_PROPERTY(Fact* temperatureSecond  READ temperatureSecond  CONSTANT)
     Q_PROPERTY(Fact* temperatureThird   READ temperatureThird   CONSTANT)
-    Q_PROPERTY(Fact* temperatureFourth  READ temperatureFourth   CONSTANT)
+    Q_PROPERTY(Fact* temperatureFourth  READ temperatureFourth  CONSTANT)
 
     Fact* index                         () { return &_indexFact; }
 
@@ -60,12 +61,10 @@ public:
     Fact* voltageThird                  () { return &_voltageThirdFact; }
     Fact* voltageFourth                 () { return &_voltageFourthFact; }
 
-    Fact* temperatureFirst                      () { return &_temperatureFirstFact; }
-    Fact* temperatureSecond                     () { return &_temperatureSecondFact; }
-    Fact* temperatureThird                      () { return &_temperatureThirdFact; }
-    Fact* temperatureFourth                     () { return &_temperatureFourthFact; }
-
-
+    Fact* temperatureFirst              () { return &_temperatureFirstFact; }
+    Fact* temperatureSecond             () { return &_temperatureSecondFact; }
+    Fact* temperatureThird              () { return &_temperatureThirdFact; }
+    Fact* temperatureFourth             () { return &_temperatureFourthFact; }
 
     // Overrides from FactGroup
     void handleMessage(Vehicle* vehicle, mavlink_message_t& message) override;

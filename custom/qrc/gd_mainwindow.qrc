@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/gdc">
+        <file alias="qml/MainRootWindow.qml">../qml/MainRootWindow.qml</file>
+    </qresource>
+</RCC>

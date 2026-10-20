@@ -1,0 +1,9 @@
+<RCC>
+    <!-- Substituições comuns de vídeo e configurações (ver GDUrlInterceptor).
+         GDStreamSelector e GDGimbalPitchIndicator ficam em gd_controls.qrc,
+         com o resto do módulo GD.Controls. -->
+    <qresource prefix="/gdc">
+        <file alias="qml/GeneralSettings.qml">../qml/preferences/GeneralSettings.qml</file>
+        <file alias="qml/QGroundControl/FlightDisplay/FlightDisplayViewVideo.qml">../qml/FlightDisplay/FlightDisplayViewVideo.qml</file>
+    </qresource>
+</RCC>

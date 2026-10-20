@@ -1,0 +1,3 @@
+module GD.Variant
+FlyViewBottomDataArea   1.0 FlyViewBottomDataArea.qml
+FlyViewLateralDataArea  1.0 FlyViewLateralDataArea.qml

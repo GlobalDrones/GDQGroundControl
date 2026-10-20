@@ -1,0 +1,16 @@
+<RCC>
+    <!-- Substituições de arquivos da base só do GD30 (ver GDUrlInterceptor):
+         mesmo alias do qrc da base, com o prefixo /gdv. -->
+    <qresource prefix="/gdv">
+        <file alias="qml/QGroundControl/FlightDisplay/FlyView.qml">qml/FlightDisplay/FlyView.qml</file>
+        <file alias="qml/QGroundControl/FlightDisplay/FlightDisplayViewWidgets.qml">qml/FlightDisplay/FlightDisplayViewWidgets.qml</file>
+        <file alias="toolbar/BatteryIndicator.qml">qml/toolbar/BatteryIndicator.qml</file>
+        <file alias="toolbar/RCRSSIIndicator.qml">qml/toolbar/RCRSSIIndicator.qml</file>
+    </qresource>
+    <!-- Tipos QML só do GD30 (import GD.Variant 1.0) -->
+    <qresource prefix="/qml">
+        <file alias="GD/Variant/qmldir">qml/GD/Variant/qmldir</file>
+        <file alias="GD/Variant/FlyViewBottomDataArea.qml">qml/GD/Variant/FlyViewBottomDataArea.qml</file>
+        <file alias="GD/Variant/FlyViewLateralDataArea.qml">qml/GD/Variant/FlyViewLateralDataArea.qml</file>
+    </qresource>
+</RCC>

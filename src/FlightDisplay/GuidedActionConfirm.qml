@@ -38,7 +38,7 @@ Rectangle {
     property real _margins:         ScreenTools.defaultFontPixelWidth / 2
     property bool _emergencyAction: action === guidedController.actionEmergencyStop
 
-    // Component.onCompleted: guidedController.confirmDialog = this
+    Component.onCompleted: guidedController.confirmDialog = this
 
     onHideTriggerChanged: {
         if (hideTrigger) {

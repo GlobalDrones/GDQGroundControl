@@ -46,6 +46,7 @@ QGCPopupDialog {
         onTriggered: {
             // FIXME: What was the visible check in here for
             if (!_checklistComplete) {
+                console.log("open", _root.width, _root.height)
                 _root.open()
             } else {
                 _root.close()

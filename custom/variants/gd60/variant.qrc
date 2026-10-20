@@ -1,0 +1,28 @@
+<RCC>
+    <!-- Substituições de arquivos da base só do GD60 (ver GDUrlInterceptor):
+         mesmo alias do qrc da base, com o prefixo /gdv. -->
+    <qresource prefix="/gdv">
+        <file alias="qml/QGroundControl/FlightDisplay/FlyView.qml">qml/FlightDisplay/FlyView.qml</file>
+        <file alias="qml/QGroundControl/FlightDisplay/VehicleWarnings.qml">qml/FlightDisplay/VehicleWarnings.qml</file>
+        <file alias="toolbar/BatteryIndicator.qml">qml/toolbar/BatteryIndicator.qml</file>
+        <file alias="toolbar/LinkIndicator.qml">qml/toolbar/LinkIndicator.qml</file>
+        <file alias="toolbar/RCRSSIIndicator.qml">qml/toolbar/RCRSSIIndicator.qml</file>
+        <!-- Marca ArduPilot escondida na barra superior (a5c0484): imagem
+             transparente de 1x64 px, que deixa o logo com largura ~0 como no
+             app anterior -->
+        <file alias="qmlimages/APM/BrandImage">res/brand_hidden.png</file>
+        <file alias="qmlimages/APM/BrandImageSub">res/brand_hidden.png</file>
+    </qresource>
+    <!-- Tipos só do GD60 (import GD.Variant 1.0) -->
+    <qresource prefix="/qml">
+        <file alias="GD/Variant/qmldir">qml/GD/Variant/qmldir</file>
+        <file alias="GD/Variant/FlyViewLateralViewArea.qml">qml/GD/Variant/FlyViewLateralViewArea.qml</file>
+        <file alias="GD/Variant/PilotHud.qml">qml/GD/Variant/PilotHud.qml</file>
+        <file alias="GD/Variant/RpmDial.qml">qml/GD/Variant/RpmDial.qml</file>
+    </qresource>
+    <!-- Imagens só do GD60 (HUD e painel lateral) -->
+    <qresource prefix="/qmlimages">
+        <file alias="GD60_lowres.png">res/gd60_whiteIcon.png</file>
+        <file alias="rollPointer.svg">res/rollPointer.svg</file>
+    </qresource>
+</RCC>

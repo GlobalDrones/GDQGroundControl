@@ -1,0 +1,23 @@
+<RCC>
+    <!-- Substituições comuns do Fly View (ver GDUrlInterceptor). GDCrosshair
+         fica em gd_controls.qrc, com o resto do módulo GD.Controls. -->
+    <qresource prefix="/gdc">
+        <file alias="qml/QGroundControl/FlightDisplay/FlyView.qml">../qml/FlightDisplay/FlyView.qml</file>
+        <file alias="qml/QGroundControl/FlightDisplay/FlyViewWidgetLayer.qml">../qml/FlightDisplay/FlyViewWidgetLayer.qml</file>
+        <file alias="qml/QGroundControl/FlightDisplay/FlyViewToolStrip.qml">../qml/FlightDisplay/FlyViewToolStrip.qml</file>
+        <file alias="qml/QGroundControl/FlightDisplay/FlyViewToolStripActionList.qml">../qml/FlightDisplay/FlyViewToolStripActionList.qml</file>
+        <file alias="qml/QGroundControl/FlightDisplay/FlyViewMap.qml">../qml/FlightDisplay/FlyViewMap.qml</file>
+        <file alias="qml/QGroundControl/FlightDisplay/FlightDisplayViewWidgets.qml">../qml/FlightDisplay/FlightDisplayViewWidgets.qml</file>
+        <!-- Barra de telemetria ("+Info") sem os ícones de modo inferior/lateral -->
+        <file alias="qml/QGroundControl/FlightDisplay/TelemetryValuesBar.qml">../qml/FlightDisplay/TelemetryValuesBar.qml</file>
+    </qresource>
+    <!-- Ações guiadas escondidas de vez em todos os produtos: controlador sem
+         ações guiadas, painel multiveículo sem Pause/Start Mission e toque em
+         waypoint sem "Set Waypoint". O menu de clique do mapa saiu do
+         FlyViewMap acima. -->
+    <qresource prefix="/gdc">
+        <file alias="qml/QGroundControl/FlightDisplay/GuidedActionsController.qml">../qml/FlightDisplay/GuidedActionsController.qml</file>
+        <file alias="qml/QGroundControl/FlightDisplay/MultiVehicleList.qml">../qml/FlightDisplay/MultiVehicleList.qml</file>
+        <file alias="qml/QGroundControl/FlightMap/PlanMapItems.qml">../qml/FlightMap/MapItems/PlanMapItems.qml</file>
+    </qresource>
+</RCC>

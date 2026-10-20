@@ -1,0 +1,14 @@
+{
+    "version":      1,
+    "fileType":  "FactMetaData",
+    "QGC.MetaData.Facts":
+[
+{
+    "name":             "externalChecklistEnabled",
+    "shortDesc":        "Exigir o checklist pré-voo externo",
+    "longDesc":         "Mostra o botão do app de checklist pré-voo e só permite armar depois que o checklist for concluído. Disponível apenas no Android.",
+    "type":             "bool",
+    "default":          false
+}
+]
+}

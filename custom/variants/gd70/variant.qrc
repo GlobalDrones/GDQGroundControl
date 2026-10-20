@@ -1,0 +1,15 @@
+<RCC>
+    <!-- GD.Variant do GD70: painéis inferior e lateral do FlyView comum -->
+    <qresource prefix="/qml">
+        <file alias="GD/Variant/qmldir">qml/GD/Variant/qmldir</file>
+        <file alias="GD/Variant/FlyViewBottomViewArea.qml">qml/GD/Variant/FlyViewBottomViewArea.qml</file>
+        <file alias="GD/Variant/FlyViewLateralViewArea.qml">qml/GD/Variant/FlyViewLateralViewArea.qml</file>
+    </qresource>
+    <!-- Substituições de arquivos da base só no GD70 (barra superior) -->
+    <qresource prefix="/gdv">
+        <file alias="toolbar/BatteryIndicator.qml">qml/toolbar/BatteryIndicator.qml</file>
+        <file alias="toolbar/RCRSSIIndicator.qml">qml/toolbar/RCRSSIIndicator.qml</file>
+        <file alias="toolbar/LinkIndicator.qml">qml/toolbar/LinkIndicator.qml</file>
+        <file alias="qml/QGroundControl/Controls/MainToolBar.qml">qml/toolbar/MainToolBar.qml</file>
+    </qresource>
+</RCC>

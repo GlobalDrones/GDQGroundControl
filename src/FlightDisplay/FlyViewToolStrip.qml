@@ -18,20 +18,12 @@ ToolStrip {
     title:  qsTr("Fly")
 
     signal displayPreFlightChecklist
-    signal modoEngenheiroToggle
-    signal crosshairToggle
-    signal camControlToggle
+
     FlyViewToolStripActionList {
         id: flyViewToolStripActionList
 
         onDisplayPreFlightChecklist: _root.displayPreFlightChecklist()
-        onModoEngenheiroToggle: _root.modoEngenheiroToggle()
-        onCrosshairToggle: _root.crosshairToggle()
-        onCamControlToggle: _root.camControlToggle()
     }
-
-
-
 
     model: flyViewToolStripActionList.model
 }

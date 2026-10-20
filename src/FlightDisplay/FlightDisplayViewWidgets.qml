@@ -23,10 +23,9 @@ import QGroundControl.Vehicle       1.0
 import QGroundControl.FlightMap     1.0
 
 Loader {
-    property bool _gd60: false
     width:  parent.width
-    source: ""//!_gd60 ? (QGroundControl.settingsManager.flyViewSettings.alternateInstrumentPanel.rawValue ?
-            //    "qrc:/qml/QGCInstrumentWidgetAlternate.qml" : "qrc:/qml/QGCInstrumentWidget.qml") : ""
+    source: QGroundControl.settingsManager.flyViewSettings.alternateInstrumentPanel.rawValue ?
+                "qrc:/qml/QGCInstrumentWidgetAlternate.qml" : "qrc:/qml/QGCInstrumentWidget.qml"
 
     property var missionController
 }

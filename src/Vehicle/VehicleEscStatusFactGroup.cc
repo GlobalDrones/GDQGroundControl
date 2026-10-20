@@ -73,38 +73,39 @@ VehicleEscStatusFactGroup::VehicleEscStatusFactGroup(QObject* parent)
     _addFact(&_voltageThirdFact,                _voltageThirdFactName);
     _addFact(&_voltageFourthFact,               _voltageFourthFactName);
 
-    _addFact(&_temperatureFirstFact,                    _temperatureFirstFactName);
-    _addFact(&_temperatureSecondFact,                   _temperatureSecondFactName);
-    _addFact(&_temperatureThirdFact,                    _temperatureThirdFactName);
-    _addFact(&_temperatureFourthFact,                   _temperatureFourthFactName);
-
+    _addFact(&_temperatureFirstFact,            _temperatureFirstFactName);
+    _addFact(&_temperatureSecondFact,           _temperatureSecondFactName);
+    _addFact(&_temperatureThirdFact,            _temperatureThirdFactName);
+    _addFact(&_temperatureFourthFact,           _temperatureFourthFactName);
 }
 
 void VehicleEscStatusFactGroup::handleMessage(Vehicle* /* vehicle */, mavlink_message_t& message)
 {
-    if (message.msgid != MAVLINK_MSG_ID_ESC_STATUS && message.msgid != MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4) {
+#if !defined(NO_ARDUPILOT_DIALECT)
+    // Global Drones: o ArduPilot não envia ESC_STATUS; RPM e temperatura dos
+    // ESCs chegam por ESC_TELEMETRY_1_TO_4.
+    if (message.msgid == MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4) {
+        mavlink_esc_telemetry_1_to_4_t escTelemetry;
+        mavlink_msg_esc_telemetry_1_to_4_decode(&message, &escTelemetry);
 
+        rpmFirst()->setRawValue                 (escTelemetry.rpm[0]);
+        rpmSecond()->setRawValue                (escTelemetry.rpm[1]);
+        rpmThird()->setRawValue                 (escTelemetry.rpm[2]);
+        rpmFourth()->setRawValue                (escTelemetry.rpm[3]);
+
+        temperatureFirst()->setRawValue         (escTelemetry.temperature[0]);
+        temperatureSecond()->setRawValue        (escTelemetry.temperature[1]);
+        temperatureThird()->setRawValue         (escTelemetry.temperature[2]);
+        temperatureFourth()->setRawValue        (escTelemetry.temperature[3]);
         return;
+    }
+#endif
 
+    if (message.msgid != MAVLINK_MSG_ID_ESC_STATUS) {
+        return;
     }
 
-    if (message.msgid == MAVLINK_MSG_ID_ESC_TELEMETRY_1_TO_4){
-        mavlink_esc_telemetry_1_to_4_t msg_et14;
-        mavlink_msg_esc_telemetry_1_to_4_decode(&message, &msg_et14);
-        //qWarning()<<"TESTE MSG_ID_ESC_TELEMETRY "<< msg_et14.rpm[0] << msg_et14.rpm[1] << msg_et14.rpm[2] << msg_et14.rpm[3];
-        rpmFirst()->setRawValue                     (msg_et14.rpm[0]);
-        rpmSecond()->setRawValue                    (msg_et14.rpm[1]);
-        rpmThird()->setRawValue                    (msg_et14.rpm[2]);
-        rpmFourth()->setRawValue                    (msg_et14.rpm[3]);
-
-        temperatureFirst()->setRawValue             (msg_et14.temperature[0]);
-        temperatureSecond()->setRawValue            (msg_et14.temperature[1]);
-        temperatureThird()->setRawValue             (msg_et14.temperature[2]);
-        temperatureFourth()->setRawValue            (msg_et14.temperature[3]);
-
-    }
-    //ESC_STATUS não existe como mensagem atualmente
-    /*mavlink_esc_status_t content;
+    mavlink_esc_status_t content;
     mavlink_msg_esc_status_decode(&message, &content);
 
     index()->setRawValue                        (content.index);
@@ -122,7 +123,5 @@ void VehicleEscStatusFactGroup::handleMessage(Vehicle* /* vehicle */, mavlink_me
     voltageFirst()->setRawValue                 (content.voltage[0]);
     voltageSecond()->setRawValue                (content.voltage[1]);
     voltageThird()->setRawValue                 (content.voltage[2]);
-    voltageFourth()->setRawValue                (content.voltage[3]);*/
-
-
+    voltageFourth()->setRawValue                (content.voltage[3]);
 }

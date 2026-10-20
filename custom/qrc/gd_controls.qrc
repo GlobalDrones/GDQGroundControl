@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/qml">
+        <file alias="GD/Controls/qmldir">../qml/GD/Controls/qmldir</file>
+        <file alias="GD/Controls/GDStreamSelector.qml">../qml/GD/Controls/GDStreamSelector.qml</file>
+        <file alias="GD/Controls/GDGimbalPitchIndicator.qml">../qml/GD/Controls/GDGimbalPitchIndicator.qml</file>
+        <file alias="GD/Controls/GDCrosshair.qml">../qml/GD/Controls/GDCrosshair.qml</file>
+        <file alias="GD/Controls/GDRcOverrideControl.qml">../qml/GD/Controls/GDRcOverrideControl.qml</file>
+        <file alias="GD/Controls/GDBreachAlert.qml">../qml/GD/Controls/GDBreachAlert.qml</file>
+    </qresource>
+</RCC>

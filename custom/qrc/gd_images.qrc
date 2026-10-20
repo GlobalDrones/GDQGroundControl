@@ -1,0 +1,21 @@
+<RCC>
+    <!-- Imagens GD usadas pelo QML de mais de um produto. Os nomes não existem
+         na base, então entram direto no prefixo que o QML já usa. -->
+    <qresource prefix="/qmlimages">
+        <file alias="GasCan.svg">../res/images/gas-can.svg</file>
+        <file alias="Generator.svg">../res/images/generator.svg</file>
+        <file alias="MotorTemp.svg">../res/images/motorTemp.svg</file>
+        <file alias="MotorTermometer.png">../res/images/motorTermometerMask.png</file>
+        <file alias="rotorsAccell.png">../res/images/rotorsAccel.png</file>
+        <file alias="trash.svg">../res/images/trash.svg</file>
+    </qresource>
+    <!-- Ícone extra na lista de ícones dos valores de telemetria (FactValueGrid
+         lista o diretório :/InstrumentValueIcons/ inteiro). -->
+    <qresource prefix="/InstrumentValueIcons">
+        <file alias="drone.svg">../res/images/drone.svg</file>
+    </qresource>
+    <!-- Logo GD no lugar do logo QGC (substitui /res/QGCLogoFull da base) -->
+    <qresource prefix="/gdc/res">
+        <file alias="QGCLogoFull">../res/images/QGCLogoFull.svg</file>
+    </qresource>
+</RCC>

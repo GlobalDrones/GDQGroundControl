@@ -1,0 +1,4 @@
+module GD.Variant
+FlyViewLateralViewArea  1.0 FlyViewLateralViewArea.qml
+PilotHud                1.0 PilotHud.qml
+internal RpmDial RpmDial.qml

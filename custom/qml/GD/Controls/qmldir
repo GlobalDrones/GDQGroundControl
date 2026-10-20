@@ -1,0 +1,6 @@
+module GD.Controls
+GDStreamSelector        1.0 GDStreamSelector.qml
+GDGimbalPitchIndicator  1.0 GDGimbalPitchIndicator.qml
+GDCrosshair             1.0 GDCrosshair.qml
+GDRcOverrideControl     1.0 GDRcOverrideControl.qml
+GDBreachAlert           1.0 GDBreachAlert.qml
