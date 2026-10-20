@@ -40,6 +40,10 @@ void SiYiTcpClient::analyzeIp(QString videoUrl)
 {
     qWarning() << videoUrl;
     videoUrl = videoUrl.remove(QString("rtsp://"));
+    // SRT urls have no path segment (e.g. srt://192.168.144.26:8890), so the
+    // ip:port split below already extracts the ip correctly once the scheme
+    // prefix is stripped.
+    videoUrl = videoUrl.remove(QString("srt://"));
     QStringList strList = videoUrl.split('/');
     if (!strList.isEmpty()) {
         // rtsp://192/168.144.25:8554/video1
