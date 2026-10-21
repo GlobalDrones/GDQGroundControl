@@ -119,3 +119,9 @@ You need two packages:
 - [gstreamer-1.0-msvc-x86_64-1.18.1.msi](https://gstreamer.freedesktop.org/data/pkg/windows/1.18.1/msvc/gstreamer-1.0-msvc-x86_64-1.18.1.msi)
 
 Make sure you select "Complete" installation instead of "Typical" installation during the install process. The installer places them under c:\gstreamer, which is where the QGC build system will look for it.
+
+Global Drones: se o GStreamer estiver em outra pasta (os instaladores novos usam `C:\Program Files\gstreamer`), informe a pasta `msvc_x86_64` na variável `GST_ROOT`, na linha de comando do qmake ou no ambiente:
+
+```
+qmake qgroundcontrol.pro GD_VARIANT=gd60 "GST_ROOT=C:/Program Files/gstreamer/1.0/msvc_x86_64"
+```

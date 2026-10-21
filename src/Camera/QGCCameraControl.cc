@@ -386,7 +386,6 @@ QGCCameraControl::takePhoto()
             _setPhotoStatus(PHOTO_CAPTURE_IN_PROGRESS);
             _captureInfoRetries = 0;
             //-- Capture local image as well
-            emit photoCaptured();
             if(qgcApp()->toolbox()->videoManager()) {
                 qgcApp()->toolbox()->videoManager()->grabImage();
             }
@@ -1692,17 +1691,28 @@ QGCCameraControl::currentStreamInstance()
 QGCVideoStreamInfo*
 QGCCameraControl::thermalStreamInstance()
 {
+    //-- For now, it will return the first thermal listed (if any)
     for(int i = 0; i < _streams.count(); i++) {
-        auto pStream = qobject_cast<QGCVideoStreamInfo*>(_streams[i]);
-        if(pStream && pStream->isThermal()) {
+        if(_streams[i]) {
+            QGCVideoStreamInfo* pStream = qobject_cast<QGCVideoStreamInfo*>(_streams[i]);
+            if(pStream) {
+                if(pStream->isThermal()) {
+                    return pStream;
+                }
+            }
+        }
+    }
+#ifdef GD_FEATURE_SECOND_STREAM_THERMAL
+    // GD (57ca673): sem stream marcado como térmico, o 2º stream anunciado é
+    // tratado como térmico. Não quando o 2º já é o principal: abriria um 2º
+    // receiver na mesma URL.
+    if(_streams.count() > 1) {
+        QGCVideoStreamInfo* pStream = qobject_cast<QGCVideoStreamInfo*>(_streams[1]);
+        if(pStream && pStream != currentStreamInstance()) {
             return pStream;
         }
     }
-
-    if (_streams.count() > 1) {
-        return qobject_cast<QGCVideoStreamInfo*>(_streams[1]);
-    }
-
+#endif
     return nullptr;
 }
 

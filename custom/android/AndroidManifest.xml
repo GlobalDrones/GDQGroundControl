@@ -10,7 +10,7 @@
 
     <supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="CUSTOM_ANDROID_LABEL" android:extractNativeLibs="true" android:icon="@drawable/icon">
-        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:name="org.mavlink.qgroundcontrol.QGCActivity" android:exported="true" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="sensor" android:launchMode="singleTask" android:keepScreenOn="true">
+        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:name="org.mavlink.qgroundcontrol.QGCActivity" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="sensor" android:launchMode="singleTask" android:keepScreenOn="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -80,7 +80,7 @@
         <!-- For adding service(s) please check: https://wiki.qt.io/AndroidServices -->
     </application>
 
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="31"/>
+    <uses-sdk android:targetSdkVersion="24"/>
 
     <!-- Needed to keep working while 'asleep' -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -103,11 +103,4 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <!-- Alvo 31+: logs, missões e parâmetros continuam em /storage/emulated/0/<app>;
-         o piloto libera "Acesso a todos os arquivos" na primeira abertura (GDAndroidStorage) -->
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
-    <!-- Android 12+: permissões novas do Bluetooth (só usadas com link Bluetooth) -->
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation"/>
 </manifest>

@@ -91,12 +91,13 @@ Item {
                 return battery.voltage.valueString + battery.voltage.units
             }
 
-            // Litros restantes = (capacidade - consumido) / 1000
+            // Litros restantes = (capacidade - consumido) / 1000, pela média
+            // móvel das últimas 20 leituras válidas (leituras 255 ignoradas)
             function getBatteryFuelLeftInLiters() {
-                if (isNaN(battery.mahConsumed.rawValue)) {
+                if (isNaN(battery.mahConsumedAvg.rawValue)) {
                     return qsTr("NaN")
                 }
-                return ((max_consumed - battery.mahConsumed.rawValue) / 1000).toFixed(2) + "L"
+                return ((max_consumed - battery.mahConsumedAvg.rawValue) / 1000).toFixed(2) + "L"
             }
 
             QGCColoredImage {

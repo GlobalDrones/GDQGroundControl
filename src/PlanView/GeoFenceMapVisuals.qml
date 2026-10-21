@@ -35,7 +35,7 @@ Item {
     property var    _polygons:                  myGeoFenceController.polygons
     property var    _circles:                   myGeoFenceController.circles
     property color  _borderColor:               "orange"
-    property int    _borderWidthInclusion:      4
+    property int    _borderWidthInclusion:      2
     property int    _borderWidthExclusion:      0
     property color  _interiorColorExclusion:    "orange"
     property color  _interiorColorInclusion:    "transparent"
@@ -101,14 +101,7 @@ Item {
             mapControl:         map
             mapPolygon:         object
             borderWidth:        object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
-            borderColor:       {
-                            switch (index) {
-                                case 0: return "chartreuse";    // First polygon
-                                case 1: return "gold";  // Second polygon
-                                case 2: return "red";   // Third polygon
-                                default: return _borderColor; // Default color
-                            }
-                        }
+            borderColor:        _borderColor
             interiorColor:      object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
             interiorOpacity:    object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
             interactive:        _root.interactive && mapPolygon && mapPolygon.interactive

@@ -508,8 +508,6 @@ QGCCacheWorker::_createTileSet(QGCMapTask *mtask)
             task->tileSet()->setId(setID);
             //-- Prepare Download List
             quint64 tileCount = 0;
-            Q_UNUSED(tileCount);
-
             _db->transaction();
             for(int z = task->tileSet()->minZoom(); z <= task->tileSet()->maxZoom(); z++) {
                 QGCTileSet set = QGCMapEngine::getTileCount(z,

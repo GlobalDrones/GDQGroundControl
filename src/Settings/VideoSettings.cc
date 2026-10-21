@@ -26,8 +26,8 @@ const char* VideoSettings::videoSourceUDPH264           = QT_TRANSLATE_NOOP("Vid
 const char* VideoSettings::videoSourceUDPH265           = QT_TRANSLATE_NOOP("VideoSettings", "UDP h.265 Video Stream");
 const char* VideoSettings::videoSourceTCP               = QT_TRANSLATE_NOOP("VideoSettings", "TCP-MPEG2 Video Stream");
 const char* VideoSettings::videoSourceMPEGTS            = QT_TRANSLATE_NOOP("VideoSettings", "MPEG-TS (h.264) Video Stream");
-const char* VideoSettings::videoSourceSRT                = QT_TRANSLATE_NOOP("VideoSettings", "SRT Video Stream");
-const char* VideoSettings::videoSourceStreamsList        = QT_TRANSLATE_NOOP("VideoSettings", "Streams List");
+const char* VideoSettings::videoSourceSRT               = QT_TRANSLATE_NOOP("VideoSettings", "SRT Video Stream");
+const char* VideoSettings::videoSourceStreamsList       = QT_TRANSLATE_NOOP("VideoSettings", "Streams List");
 const char* VideoSettings::videoSource3DRSolo           = QT_TRANSLATE_NOOP("VideoSettings", "3DR Solo (requires restart)");
 const char* VideoSettings::videoSourceParrotDiscovery   = QT_TRANSLATE_NOOP("VideoSettings", "Parrot Discovery");
 const char* VideoSettings::videoSourceYuneecMantisG     = QT_TRANSLATE_NOOP("VideoSettings", "Yuneec Mantis G");
@@ -222,7 +222,7 @@ bool VideoSettings::streamConfigured(void)
         qCDebug(VideoManagerLog) << "Testing configuration for TCP Stream:" << tcpUrl()->rawValue().toString();
         return !tcpUrl()->rawValue().toString().isEmpty();
     }
-    //-- If SRT, check for URL
+    //-- SRT: precisa da URL
     if(vSource == videoSourceSRT) {
         qCDebug(VideoManagerLog) << "Testing configuration for SRT Stream:" << srtUrl()->rawValue().toString();
         return !srtUrl()->rawValue().toString().isEmpty();
@@ -232,7 +232,7 @@ bool VideoSettings::streamConfigured(void)
         qCDebug(VideoManagerLog) << "Testing configuration for MPEG-TS Stream:" << udpPort()->rawValue().toInt();
         return udpPort()->rawValue().toInt() != 0;
     }
-    //-- If Streams List, check that an entry is actually selected
+    //-- Streams List: precisa de uma entrada selecionada
     if(vSource == videoSourceStreamsList) {
         const int currentStreamIndex = qgcApp()->toolbox()->videoManager()->currentStreamIndex();
         qCDebug(VideoManagerLog) << "Testing configuration for Streams List:" << currentStreamIndex;

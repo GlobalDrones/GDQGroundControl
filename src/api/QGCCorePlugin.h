@@ -126,6 +126,9 @@ public:
     /// @return true: Allow vehicle to continue processing, false: Vehicle should not process message
     virtual bool mavlinkMessage(Vehicle* vehicle, LinkInterface* link, mavlink_message_t message);
 
+    /// Allows the plugin to block arming (setArmed and forceArm). Return false and fill reason to block.
+    virtual bool armingAllowed(Vehicle* /*vehicle*/, QString& /*reason*/) { return true; }
+
     /// Allows custom builds to add custom items to the FlightMap. Objects put into QmlObjectListModel should derive from QmlComponentInfo and set the url property.
     virtual QmlObjectListModel* customMapItems();
 

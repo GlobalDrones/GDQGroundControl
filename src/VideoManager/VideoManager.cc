@@ -15,14 +15,6 @@
 #include <QDir>
 #include <QQuickWindow>
 
-// #include <QDebug>
-// #include <QDir>
-// #include <QFile>
-// #include <QJsonArray>
-// #include <QJsonDocument>
-// #include <QJsonObject>
-// #include <QStandardPaths>
-
 #ifndef QGC_DISABLE_UVC
 #include <QCameraInfo>
 #endif
@@ -36,7 +28,7 @@
 #include "Settings/SettingsManager.h"
 #include "Vehicle.h"
 #include "QGCCameraManager.h"
-#include "SiYi.h"
+#include "SiYi/SiYi.h"
 
 #if defined(QGC_GST_STREAMING)
 #include "GStreamer.h"
@@ -102,11 +94,9 @@ VideoManager::setToolbox(QGCToolbox *toolbox)
    qmlRegisterUncreatableType<VideoManager> ("QGroundControl.VideoManager", 1, 0, "VideoManager", "Reference only");
    qmlRegisterUncreatableType<VideoReceiver>("QGroundControl",              1, 0, "VideoReceiver","Reference only");
 
-   // Carrega de QSettings para _streams (antes de qualquer uso em QML)
-   loadStreams();
-
    // TODO: Those connections should be Per Video, not per VideoManager.
    _videoSettings = toolbox->settingsManager()->videoSettings();
+   _loadStreams();
    QString videoSource = _videoSettings->videoSource()->rawValue().toString();
    connect(_videoSettings->videoSource(),   &Fact::rawValueChanged, this, &VideoManager::_videoSourceChanged);
    connect(_videoSettings->udpPort(),       &Fact::rawValueChanged, this, &VideoManager::_udpPortChanged);
@@ -121,8 +111,8 @@ VideoManager::setToolbox(QGCToolbox *toolbox)
 #if defined(QGC_GST_STREAMING)
     GStreamer::blacklist(static_cast<VideoSettings::VideoDecoderOptions>(_videoSettings->forceVideoDecoder()->rawValue().toInt()));
 #ifndef QGC_DISABLE_UVC
-    // If we are using a UVC camera setup the device name
-    _updateUVC();
+   // If we are using a UVC camera setup the device name
+   _updateUVC();
 #endif
 
     emit isGStreamerChanged();
@@ -322,8 +312,8 @@ VideoManager::startRecording(const QString& videoFile)
     }
 
     _videoFile = savePath + "/"
-                 + (videoFile.isEmpty() ? QDateTime::currentDateTime().toString("yyyy-MM-dd_hh.mm.ss") : videoFile)
-                 + ".";
+            + (videoFile.isEmpty() ? QDateTime::currentDateTime().toString("yyyy-MM-dd_hh.mm.ss") : videoFile)
+            + ".";
     QString videoFile2 = _videoFile + "2." + ext;
     _videoFile += ext;
 
@@ -457,11 +447,10 @@ bool
 VideoManager::autoStreamConfigured()
 {
 #if defined(QGC_GST_STREAMING)
-    if (_videoSettings &&
-        _videoSettings->videoSource()->rawValue().toString() == VideoSettings::videoSourceSRT) {
+    // SRT é sempre configurado à mão: a câmera anunciada por MAVLink não o substitui
+    if (_videoSettings && _videoSettings->videoSource()->rawValue().toString() == VideoSettings::videoSourceSRT) {
         return false;
     }
-
     if(_activeVehicle && _activeVehicle->cameraManager()) {
         QGCVideoStreamInfo* pInfo = _activeVehicle->cameraManager()->currentStreamInstance();
         if(pInfo) {
@@ -516,143 +505,6 @@ VideoManager::_rtspUrlChanged()
 }
 
 //-----------------------------------------------------------------------------
-QVariantList VideoManager::streamsVar() const
-{
-    QVariantList list;
-    for (const auto &si : _streams) {
-        QVariantMap m;
-        m["ip"]    = si.ip;
-        m["alias"] = si.alias;
-        m["type"]  = si.type;
-        list.append(m);
-    }
-    return list;
-}
-
-void VideoManager::addStream(const QString& ip, const QString& alias, const QString& type)
-{
-    _streams.append({ip, alias, type});
-    saveStreams();
-    emit streamsChanged();
-}
-
-void VideoManager::addStream(int index, const QString& ip, const QString& alias, const QString& type)
-{
-    if (index < 0 || index > _streams.size()) {
-        addStream(ip, alias, type);
-    } else {
-        _streams.insert(index, {ip, alias, type});
-        saveStreams();
-        emit streamsChanged();
-    }
-}
-
-void VideoManager::updateStream(int index, const QString& ip, const QString& alias, const QString& type)
-{
-    if (index < 0 || index >= _streams.size()) return;
-    _streams[index] = {ip, alias, type};
-    saveStreams();
-    emit streamsChanged();
-    // Only actually restart playback if the edited entry is both the selected one and the
-    // "Streams List" source is the active video source - otherwise the list must not interfere
-    // with whatever single source (RTSP/UDP/etc) is currently configured.
-    if (index == _currentStreamIndex && _videoSettings &&
-            _videoSettings->videoSource()->rawValue().toString() == VideoSettings::videoSourceStreamsList) {
-        _restartVideo(0);
-    }
-}
-
-void VideoManager::removeStream(int index)
-{
-    if (index < 0 || index >= _streams.size()) return;
-    _streams.removeAt(index);
-    if (_currentStreamIndex == index) {
-        _currentStreamIndex = -1;
-    } else if (_currentStreamIndex > index) {
-        _currentStreamIndex--;
-    }
-    saveStreams();
-    emit streamsChanged();
-    emit currentStreamIndexChanged();
-}
-
-void VideoManager::selectStream(int index)
-{
-    if (index < 0 || index >= _streams.size()) return;
-
-    _currentStreamIndex = index;
-
-    QSettings s;
-    s.beginGroup("VideoManager");
-    s.setValue("currentStreamIndex", _currentStreamIndex);
-    s.endGroup();
-
-    emit currentStreamIndexChanged();
-
-    // Only actually switch what's playing while "Streams List" is the active video source -
-    // picking an entry here must not interfere with any other manually configured source.
-    if (_videoSettings && _videoSettings->videoSource()->rawValue().toString() == VideoSettings::videoSourceStreamsList) {
-        _restartVideo(0);
-    }
-}
-
-QString VideoManager::_uriForStreamEntry(const StreamInfo& stream) const
-{
-    if (stream.type == VideoSettings::videoSourceSRT) {
-        return QStringLiteral("srt://%1").arg(stream.ip);
-    } else if (stream.type == VideoSettings::videoSourceTCP) {
-        return QStringLiteral("tcp://%1").arg(stream.ip);
-    } else if (stream.type == VideoSettings::videoSourceUDPH264) {
-        return QStringLiteral("udp://0.0.0.0:%1").arg(stream.ip);
-    } else if (stream.type == VideoSettings::videoSourceUDPH265) {
-        return QStringLiteral("udp265://0.0.0.0:%1").arg(stream.ip);
-    } else if (stream.type == VideoSettings::videoSourceMPEGTS) {
-        return QStringLiteral("mpegts://0.0.0.0:%1").arg(stream.ip);
-    }
-    // Default / legacy entries (saved before the type column existed) are RTSP - the ip field
-    // already holds the full rtsp:// URL, used verbatim (same as the single RTSP URL field).
-    return stream.ip;
-}
-
-void VideoManager::loadStreams()
-{
-    QSettings s;
-    s.beginGroup("VideoManager");
-    int size = s.beginReadArray("streams");
-    _streams.clear();
-    for (int i = 0; i < size; ++i) {
-        s.setArrayIndex(i);
-        StreamInfo si;
-        si.ip    = s.value("ip"   ).toString();
-        si.alias = s.value("alias").toString();
-        si.type  = s.value("type" , VideoSettings::videoSourceRTSP).toString();
-        _streams.append(si);
-    }
-    s.endArray();
-
-    const int savedIndex = s.value("currentStreamIndex", -1).toInt();
-    _currentStreamIndex = (savedIndex >= 0 && savedIndex < _streams.size()) ? savedIndex : -1;
-
-    s.endGroup();
-}
-
-void VideoManager::saveStreams()
-{
-    QSettings s;
-    s.beginGroup("VideoManager");
-    s.beginWriteArray("streams");
-    for (int i = 0; i < _streams.size(); ++i) {
-        s.setArrayIndex(i);
-        s.setValue("ip"   , _streams[i].ip);
-        s.setValue("alias", _streams[i].alias);
-        s.setValue("type" , _streams[i].type);
-    }
-    s.endArray();
-    s.endGroup();
-    s.sync();
-}
-
-//-----------------------------------------------------------------------------
 void
 VideoManager::_tcpUrlChanged()
 {
@@ -664,6 +516,183 @@ void
 VideoManager::_srtUrlChanged()
 {
     _restartVideo(0);
+}
+
+//-----------------------------------------------------------------------------
+// GD: lista de streams. Fica no QSettings do usuário (grupo VideoManager) com o
+// índice do stream selecionado. Ela só mexe no vídeo com a fonte "Streams List"
+// ativa; com outra fonte, editar ou escolher entradas não interfere no vídeo.
+
+static QString withScheme(const QString& address, const QString& scheme)
+{
+    // O campo aceita o endereço puro ou a URL completa
+    return address.contains(QStringLiteral("://")) ? address : QStringLiteral("%1://%2").arg(scheme, address);
+}
+
+QVariantList
+VideoManager::streamsVar() const
+{
+    QVariantList list;
+    for (const StreamInfo& stream : _streams) {
+        QVariantMap map;
+        map[QStringLiteral("ip")]    = stream.ip;
+        map[QStringLiteral("alias")] = stream.alias;
+        map[QStringLiteral("type")]  = stream.type;
+        list.append(map);
+    }
+    return list;
+}
+
+void
+VideoManager::addStream(const QString& ip, const QString& alias, const QString& type)
+{
+    _streams.append({ip, alias, type});
+    _saveStreams();
+    emit streamsChanged();
+}
+
+void
+VideoManager::updateStream(int index, const QString& ip, const QString& alias, const QString& type)
+{
+    if (index < 0 || index >= _streams.size()) {
+        return;
+    }
+    _streams[index] = {ip, alias, type};
+    _saveStreams();
+    emit streamsChanged();
+    if (index == _currentStreamIndex && _streamsListActive()) {
+        _restartVideo(0);
+    }
+}
+
+void
+VideoManager::removeStream(int index)
+{
+    if (index < 0 || index >= _streams.size()) {
+        return;
+    }
+    _streams.removeAt(index);
+    const bool removedCurrent = index == _currentStreamIndex;
+    if (removedCurrent) {
+        _currentStreamIndex = -1;
+    } else if (index < _currentStreamIndex) {
+        _currentStreamIndex--;
+    }
+    _saveStreams();
+    emit streamsChanged();
+    emit currentStreamIndexChanged();
+    // Sem o stream selecionado o vídeo para, em vez de seguir na URL apagada
+    if (removedCurrent && _streamsListActive()) {
+        _restartVideo(0);
+    }
+}
+
+void
+VideoManager::selectStream(int index)
+{
+    if (index < 0 || index >= _streams.size()) {
+        return;
+    }
+    _currentStreamIndex = index;
+    _saveStreams();
+    emit currentStreamIndexChanged();
+    if (_streamsListActive()) {
+        _restartVideo(0);
+    }
+}
+
+bool
+VideoManager::_streamsListActive() const
+{
+    return _videoSettings && _videoSettings->videoSource()->rawValue().toString() == VideoSettings::videoSourceStreamsList;
+}
+
+QString
+VideoManager::_uriForStreamEntry(const StreamInfo& stream) const
+{
+    // Entrada recém-criada ("+ Add Camera") ainda sem endereço: sem vídeo, em vez
+    // de abrir o receiver em "rtsp://" ou "udp://0.0.0.0:"
+    if (stream.ip.trimmed().isEmpty()) {
+        return QString();
+    }
+    if (stream.type == VideoSettings::videoSourceSRT) {
+        return withScheme(stream.ip, QStringLiteral("srt"));
+    } else if (stream.type == VideoSettings::videoSourceTCP) {
+        return withScheme(stream.ip, QStringLiteral("tcp"));
+    } else if (stream.type == VideoSettings::videoSourceUDPH264) {
+        return QStringLiteral("udp://0.0.0.0:%1").arg(stream.ip);
+    } else if (stream.type == VideoSettings::videoSourceUDPH265) {
+        return QStringLiteral("udp265://0.0.0.0:%1").arg(stream.ip);
+    } else if (stream.type == VideoSettings::videoSourceMPEGTS) {
+        return QStringLiteral("mpegts://0.0.0.0:%1").arg(stream.ip);
+    }
+    // RTSP, inclusive as entradas antigas: o campo guarda a URL rtsp:// completa
+    return withScheme(stream.ip, QStringLiteral("rtsp"));
+}
+
+void
+VideoManager::_loadStreams()
+{
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("VideoManager"));
+    const int count = settings.beginReadArray(QStringLiteral("streams"));
+    bool legacyList = false;
+    _streams.clear();
+    for (int i = 0; i < count; i++) {
+        settings.setArrayIndex(i);
+        StreamInfo stream;
+        stream.ip    = settings.value(QStringLiteral("ip")).toString();
+        stream.alias = settings.value(QStringLiteral("alias")).toString();
+        if (settings.contains(QStringLiteral("type"))) {
+            stream.type = settings.value(QStringLiteral("type")).toString();
+        } else {
+            // Lista antiga (GD25 sem SRT, GD30, GD70, GD150): só havia RTSP
+            stream.type = VideoSettings::videoSourceRTSP;
+            legacyList = true;
+        }
+        _streams.append(stream);
+    }
+    settings.endArray();
+    const int savedIndex = settings.value(QStringLiteral("currentStreamIndex"), -1).toInt();
+    settings.endGroup();
+
+    _currentStreamIndex = (savedIndex >= 0 && savedIndex < _streams.size()) ? savedIndex : -1;
+
+    if (legacyList) {
+        // Na lista antiga a fonte era "RTSP Video Stream" e o seletor do FlyView
+        // gravava a câmera escolhida em rtspUrl. Passa para "Streams List" com a
+        // mesma câmera selecionada, senão o seletor some. Roda uma vez só: depois
+        // de salva, toda entrada tem tipo.
+        if (_videoSettings->videoSource()->rawValue().toString() == VideoSettings::videoSourceRTSP) {
+            const QString rtspUrl = _videoSettings->rtspUrl()->rawValue().toString();
+            for (int i = 0; i < _streams.size(); i++) {
+                if (_streams[i].ip == rtspUrl) {
+                    _currentStreamIndex = i;
+                    _videoSettings->videoSource()->setRawValue(VideoSettings::videoSourceStreamsList);
+                    break;
+                }
+            }
+        }
+        _saveStreams();
+    }
+}
+
+void
+VideoManager::_saveStreams()
+{
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("VideoManager"));
+    settings.remove(QStringLiteral("streams"));
+    settings.beginWriteArray(QStringLiteral("streams"), _streams.size());
+    for (int i = 0; i < _streams.size(); i++) {
+        settings.setArrayIndex(i);
+        settings.setValue(QStringLiteral("ip"),    _streams[i].ip);
+        settings.setValue(QStringLiteral("alias"), _streams[i].alias);
+        settings.setValue(QStringLiteral("type"),  _streams[i].type);
+    }
+    settings.endArray();
+    settings.setValue(QStringLiteral("currentStreamIndex"), _currentStreamIndex);
+    settings.endGroup();
 }
 
 //-----------------------------------------------------------------------------
@@ -691,16 +720,16 @@ VideoManager::isGStreamer()
 #if defined(QGC_GST_STREAMING)
     QString videoSource = _videoSettings->videoSource()->rawValue().toString();
     return videoSource == VideoSettings::videoSourceUDPH264 ||
-           videoSource == VideoSettings::videoSourceUDPH265 ||
-           videoSource == VideoSettings::videoSourceRTSP ||
-           videoSource == VideoSettings::videoSourceTCP ||
-           videoSource == VideoSettings::videoSourceMPEGTS ||
-           videoSource == VideoSettings::videoSourceSRT ||
-           videoSource == VideoSettings::videoSourceStreamsList ||
-           videoSource == VideoSettings::videoSource3DRSolo ||
-           videoSource == VideoSettings::videoSourceParrotDiscovery ||
-           videoSource == VideoSettings::videoSourceYuneecMantisG ||
-           autoStreamConfigured();
+            videoSource == VideoSettings::videoSourceUDPH265 ||
+            videoSource == VideoSettings::videoSourceRTSP ||
+            videoSource == VideoSettings::videoSourceTCP ||
+            videoSource == VideoSettings::videoSourceMPEGTS ||
+            videoSource == VideoSettings::videoSourceSRT ||
+            videoSource == VideoSettings::videoSourceStreamsList ||
+            videoSource == VideoSettings::videoSource3DRSolo ||
+            videoSource == VideoSettings::videoSourceParrotDiscovery ||
+            videoSource == VideoSettings::videoSourceYuneecMantisG ||
+            autoStreamConfigured();
 #else
     return false;
 #endif
@@ -787,42 +816,44 @@ VideoManager::_updateSettings(unsigned id)
     _lowLatencyStreaming[id] = lowLatencyStreaming;
 
     const QString source = _videoSettings->videoSource()->rawValue().toString();
+    // SRT é sempre configurado à mão: a câmera anunciada por MAVLink não o substitui
     const bool manualSrtSource = id == 0 && source == VideoSettings::videoSourceSRT;
 
     //-- Auto discovery
+
     if(!manualSrtSource && _activeVehicle && _activeVehicle->cameraManager()) {
         QGCVideoStreamInfo* pInfo = _activeVehicle->cameraManager()->currentStreamInstance();
         if(pInfo) {
             if (id == 0) {
                 qCDebug(VideoManagerLog) << "Configure primary stream:" << pInfo->uri();
                 switch(pInfo->type()) {
-                case VIDEO_STREAM_TYPE_RTSP:
-                    if ((settingsChanged |= _updateVideoUri(id, pInfo->uri()))) {
-                        _toolbox->settingsManager()->videoSettings()->videoSource()->setRawValue(VideoSettings::videoSourceRTSP);
-                    }
-                    break;
-                case VIDEO_STREAM_TYPE_TCP_MPEG:
-                    if ((settingsChanged |= _updateVideoUri(id, pInfo->uri()))) {
-                        _toolbox->settingsManager()->videoSettings()->videoSource()->setRawValue(VideoSettings::videoSourceTCP);
-                    }
-                    break;
-                case VIDEO_STREAM_TYPE_RTPUDP:
-                    if ((settingsChanged |= _updateVideoUri(
-                             id,
-                             pInfo->uri().contains("udp://")
-                                 ? pInfo->uri() // Specced case
-                                 : QStringLiteral("udp://0.0.0.0:%1").arg(pInfo->uri())))) {
-                        _toolbox->settingsManager()->videoSettings()->videoSource()->setRawValue(VideoSettings::videoSourceUDPH264);
-                    }
-                    break;
-                case VIDEO_STREAM_TYPE_MPEG_TS_H264:
-                    if ((settingsChanged |= _updateVideoUri(id, QStringLiteral("mpegts://0.0.0.0:%1").arg(pInfo->uri())))) {
-                        _toolbox->settingsManager()->videoSettings()->videoSource()->setRawValue(VideoSettings::videoSourceMPEGTS);
-                    }
-                    break;
-                default:
-                    settingsChanged |= _updateVideoUri(id, pInfo->uri());
-                    break;
+                    case VIDEO_STREAM_TYPE_RTSP:
+                        if ((settingsChanged |= _updateVideoUri(id, pInfo->uri()))) {
+                            _toolbox->settingsManager()->videoSettings()->videoSource()->setRawValue(VideoSettings::videoSourceRTSP);
+                        }
+                        break;
+                    case VIDEO_STREAM_TYPE_TCP_MPEG:
+                        if ((settingsChanged |= _updateVideoUri(id, pInfo->uri()))) {
+                            _toolbox->settingsManager()->videoSettings()->videoSource()->setRawValue(VideoSettings::videoSourceTCP);
+                        }
+                        break;
+                    case VIDEO_STREAM_TYPE_RTPUDP:
+                        if ((settingsChanged |= _updateVideoUri(
+                                        id,
+                                        pInfo->uri().contains("udp://")
+                                            ? pInfo->uri() // Specced case
+                                            : QStringLiteral("udp://0.0.0.0:%1").arg(pInfo->uri())))) {
+                            _toolbox->settingsManager()->videoSettings()->videoSource()->setRawValue(VideoSettings::videoSourceUDPH264);
+                        }
+                        break;
+                    case VIDEO_STREAM_TYPE_MPEG_TS_H264:
+                        if ((settingsChanged |= _updateVideoUri(id, QStringLiteral("mpegts://0.0.0.0:%1").arg(pInfo->uri())))) {
+                            _toolbox->settingsManager()->videoSettings()->videoSource()->setRawValue(VideoSettings::videoSourceMPEGTS);
+                        }
+                        break;
+                    default:
+                        settingsChanged |= _updateVideoUri(id, pInfo->uri());
+                        break;
                 }
             }
             else if (id == 1) { //-- Thermal stream (if any)
@@ -830,23 +861,23 @@ VideoManager::_updateSettings(unsigned id)
                 if (pTinfo) {
                     qCDebug(VideoManagerLog) << "Configure secondary stream:" << pTinfo->uri();
                     switch(pTinfo->type()) {
-                    case VIDEO_STREAM_TYPE_RTSP:
-                    case VIDEO_STREAM_TYPE_TCP_MPEG:
-                        settingsChanged |= _updateVideoUri(id, pTinfo->uri());
-                        break;
-                    case VIDEO_STREAM_TYPE_RTPUDP:
-                        settingsChanged |= _updateVideoUri(
-                            id,
-                            pInfo->uri().contains("udp://")
-                                ? pInfo->uri() // Specced case
-                                : QStringLiteral("udp://0.0.0.0:%1").arg(pInfo->uri()));
-                        break;
-                    case VIDEO_STREAM_TYPE_MPEG_TS_H264:
-                        settingsChanged |= _updateVideoUri(id, QStringLiteral("mpegts://0.0.0.0:%1").arg(pTinfo->uri()));
-                        break;
-                    default:
-                        settingsChanged |= _updateVideoUri(id, pTinfo->uri());
-                        break;
+                        case VIDEO_STREAM_TYPE_RTSP:
+                        case VIDEO_STREAM_TYPE_TCP_MPEG:
+                            settingsChanged |= _updateVideoUri(id, pTinfo->uri());
+                            break;
+                        case VIDEO_STREAM_TYPE_RTPUDP:
+                            settingsChanged |= _updateVideoUri(
+                                            id,
+                                            pInfo->uri().contains("udp://")
+                                                ? pInfo->uri() // Specced case
+                                                : QStringLiteral("udp://0.0.0.0:%1").arg(pInfo->uri()));
+                            break;
+                        case VIDEO_STREAM_TYPE_MPEG_TS_H264:
+                            settingsChanged |= _updateVideoUri(id, QStringLiteral("mpegts://0.0.0.0:%1").arg(pTinfo->uri()));
+                            break;
+                        default:
+                            settingsChanged |= _updateVideoUri(id, pTinfo->uri());
+                            break;
                     }
                 }
             }
@@ -864,7 +895,7 @@ VideoManager::_updateSettings(unsigned id)
     else if (source == VideoSettings::videoSourceTCP)
         settingsChanged |= _updateVideoUri(0, QStringLiteral("tcp://%1").arg(_videoSettings->tcpUrl()->rawValue().toString()));
     else if (source == VideoSettings::videoSourceSRT)
-        settingsChanged |= _updateVideoUri(0, QStringLiteral("srt://%1").arg(_videoSettings->srtUrl()->rawValue().toString()));
+        settingsChanged |= _updateVideoUri(0, withScheme(_videoSettings->srtUrl()->rawValue().toString(), QStringLiteral("srt")));
     else if (source == VideoSettings::videoSourceStreamsList)
         settingsChanged |= _updateVideoUri(0, (_currentStreamIndex >= 0 && _currentStreamIndex < _streams.size()) ? _uriForStreamEntry(_streams[_currentStreamIndex]) : QString());
     else if (source == VideoSettings::videoSource3DRSolo)
@@ -903,13 +934,15 @@ VideoManager::_updateVideoUri(unsigned id, const QString& uri)
 
     _videoUri[id] = uri;
 
-    // Keep the SiYi camera control channel (TCP, fixed port) pointed at whatever
-    // camera is actually streaming - it only knows the camera's ip, so it's derived
-    // from the main stream's uri whenever it changes (RTSP/SRT carry the camera's
-    // ip in the uri; the other sources are listen-style and have no camera ip to give).
+    // GD: o controle da câmera SiYi (TCP) segue a câmera do vídeo principal.
+    // RTSP e SRT trazem o IP da câmera na URL; o analyzeIp da SiYi só entende
+    // rtsp://, então recebe só o host.
     if (id == 0 && (uri.startsWith(QStringLiteral("rtsp://"), Qt::CaseInsensitive) ||
-                     uri.startsWith(QStringLiteral("srt://"),  Qt::CaseInsensitive))) {
-        SiYi::instance()->cameraInstance()->analyzeIp(uri);
+                    uri.startsWith(QStringLiteral("srt://"), Qt::CaseInsensitive))) {
+        const QString host = QUrl(uri).host();
+        if (!host.isEmpty()) {
+            SiYi::instance()->cameraInstance()->analyzeIp(host);
+        }
     }
 
     return true;

@@ -161,7 +161,13 @@ private:
 
     static const int    _maxInitialRequestListRetry = 4;        ///< Maximum retries for request list
     int                 _initialRequestRetryCount;              ///< Current retry count for request list
+#ifdef GD_PARAM_LOAD_RETRIES
+    // Global Drones: a variante pode reduzir as novas tentativas por parâmetro
+    // na carga inicial (variant.pri; o GD70 usa 1)
+    static const int    _maxInitialLoadRetrySingleParam = GD_PARAM_LOAD_RETRIES;
+#else
     static const int    _maxInitialLoadRetrySingleParam = 5;    ///< Maximum retries for initial index based load of a single param
+#endif
     static const int    _maxReadWriteRetry = 5;                 ///< Maximum retries read/write
     bool                _disableAllRetries;                     ///< true: Don't retry any requests (used for testing)
 

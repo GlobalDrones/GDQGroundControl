@@ -39,21 +39,24 @@ LinuxBuild {
     }
 } else:WindowsBuild {
     #- gstreamer installed by default under c:/gstreamer
-    GST_ROOT = C:\gstreamer\1.0\msvc_x86_64
-    #GST_ROOT = D:/Programs/GStreamer/1.18.3/msvc_x86_64
+    # GD: outro local vem da linha de comando do qmake ou do ambiente, por exemplo
+    #   qmake ... "GST_ROOT=C:/Program Files/gstreamer/1.0/msvc_x86_64"
+    isEmpty(GST_ROOT): GST_ROOT = $$(GST_ROOT)
+    isEmpty(GST_ROOT): GST_ROOT = C:/gstreamer/1.0/msvc_x86_64
 
     exists($$GST_ROOT) {
         CONFIG      += VideoEnabled
 
-        LIBS        += -L$$GST_ROOT/lib -lgstreamer-1.0 -lgstgl-1.0 -lgstvideo-1.0 -lgstbase-1.0
+        # $$quote: o caminho pode ter espaços (C:/Program Files/...)
+        LIBS        += -L$$quote($$GST_ROOT/lib) -lgstreamer-1.0 -lgstgl-1.0 -lgstvideo-1.0 -lgstbase-1.0
         LIBS        += -lglib-2.0 -lintl -lgobject-2.0
 
         INCLUDEPATH += \
-            $$GST_ROOT/include \
-            $$GST_ROOT/include/gstreamer-1.0 \
-            $$GST_ROOT/include/glib-2.0 \
-            $$GST_ROOT/lib/gstreamer-1.0/include \
-            $$GST_ROOT/lib/glib-2.0/include
+            $$quote($$GST_ROOT/include) \
+            $$quote($$GST_ROOT/include/gstreamer-1.0) \
+            $$quote($$GST_ROOT/include/glib-2.0) \
+            $$quote($$GST_ROOT/lib/gstreamer-1.0/include) \
+            $$quote($$GST_ROOT/lib/glib-2.0/include)
 
         DESTDIR_WIN = $$replace(DESTDIR, "/", "\\")
         GST_ROOT_WIN = $$replace(GST_ROOT, "/", "\\")
@@ -63,16 +66,12 @@ LinuxBuild {
         QMAKE_POST_LINK += xcopy \"$$GST_ROOT_WIN\\bin\*.\" \"$$DESTDIR_WIN\" /S/Y $$escape_expand(\\n)
 
         # Copy GStreamer plugins
-        QMAKE_POST_LINK += $$escape_expand(\\n) xcopy "$$GST_ROOT_WIN/lib/gstreamer-1.0/*.dll" "$$DESTDIR_WIN/gstreamer-plugins/" /Y $$escape_expand(\\n)
-
+        QMAKE_POST_LINK += $$escape_expand(\\n) xcopy \"$$GST_ROOT_WIN\\lib\\gstreamer-1.0\\*.dll\" \"$$DESTDIR_WIN\\gstreamer-plugins\\\" /Y $$escape_expand(\\n)
+    } else {
+        message("GStreamer não encontrado em $$GST_ROOT: build sem vídeo. Informe GST_ROOT=<pasta msvc_x86_64>")
     }
 } else:AndroidBuild {
     #- gstreamer assumed to be installed in $$PWD/gstreamer-1.0-android-universal-1.18.6/***
-    message("gstreamer assumed to be installed in $$PWD/gstreamer-1.0-android-universal-1.18.6/***")
-    message("IF VIDEO OPTIONS NOT AVAILABLE, CHANGE PATH IN VIDEORECEIVER.PRI LINES 75 TO 83")
-    INCLUDEPATH += \
-        $$PWD
-
     contains(ANDROID_TARGET_ARCH, armeabi-v7a) {
         GST_ROOT = $$PWD/gstreamer-1.0-android-universal-1.18.6/armv7
     } else:contains(ANDROID_TARGET_ARCH, arm64-v8a) {

@@ -620,7 +620,6 @@ void APMSensorsComponentController::_handleCommandLong(mavlink_message_t& messag
 
     mavlink_msg_command_long_decode(&message, &commandLong);
 
-
     if (commandLong.command == MAV_CMD_ACCELCAL_VEHICLE_POS) {
         switch (static_cast<ACCELCAL_VEHICLE_POS>(static_cast<int>(commandLong.param1))) {
         case ACCELCAL_VEHICLE_POS_LEVEL:

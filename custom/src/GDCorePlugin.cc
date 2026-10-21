@@ -10,17 +10,8 @@
 #include "checklist/PreFlightChecklistBridge.h"
 #include "fence/GDFence.h"
 #include "rcoverride/GDRcOverride.h"
-#ifdef Q_OS_ANDROID
-#include "android/GDAndroidStorage.h"
-#endif
 
 #include <QQmlApplicationEngine>
-#include <QQuickWindow>
-#include <QQuickItem>
-#include <QQuickItemGrabResult>
-#include <QTimer>
-#include <QImage>
-#include <QDebug>
 
 GDCorePlugin::GDCorePlugin(QGCApplication* app, QGCToolbox* toolbox)
     : QGCCorePlugin(app, toolbox)
@@ -68,50 +59,6 @@ QQmlApplicationEngine* GDCorePlugin::createQmlApplicationEngine(QObject* parent)
     GDRcOverride::registerQmlTypes();
 
     return qmlEngine;
-}
-
-// Salva a janela principal num PNG (ver GD_SCREENSHOT em createRootWindow).
-// grabWindow() devolve imagem vazia na plataforma offscreen; grabToImage funciona.
-static void _saveRootWindowImage(QQmlApplicationEngine* qmlEngine, const QString& file)
-{
-    for (QObject* rootObject : qmlEngine->rootObjects()) {
-        QQuickWindow* window = qobject_cast<QQuickWindow*>(rootObject);
-        if (!window || !window->contentItem()) {
-            continue;
-        }
-        QSharedPointer<QQuickItemGrabResult> grab = window->contentItem()->grabToImage();
-        if (!grab) {
-            qWarning() << "GD screenshot: grabToImage falhou";
-            return;
-        }
-        QObject::connect(grab.data(), &QQuickItemGrabResult::ready, [grab, file]() {
-            const QImage image = grab->image();
-            qWarning() << "GD screenshot" << file << image.size() << image.save(file);
-        });
-        return;
-    }
-}
-
-void GDCorePlugin::createRootWindow(QQmlApplicationEngine* qmlEngine)
-{
-    QGCCorePlugin::createRootWindow(qmlEngine);
-
-#ifdef Q_OS_ANDROID
-    // Alvo 31: sem "Acesso a todos os arquivos" o QGC não salva logs e missões
-    QTimer::singleShot(3000, qmlEngine, []() { GDAndroidStorage::requestAllFilesAccessIfNeeded(); });
-#endif
-
-    // Só para desenvolvimento: GD_SCREENSHOT=<arquivo.png> salva a janela
-    // principal depois de GD_SCREENSHOT_DELAY ms (padrão 40000). Usado pelo
-    // custom/tools/smoke-win.ps1 para conferir o layout de cada variante.
-    const QString screenshotFile = qEnvironmentVariable("GD_SCREENSHOT");
-    if (screenshotFile.isEmpty()) {
-        return;
-    }
-    const int delay = qEnvironmentVariableIntValue("GD_SCREENSHOT_DELAY") > 0 ? qEnvironmentVariableIntValue("GD_SCREENSHOT_DELAY") : 40000;
-    QTimer::singleShot(delay, qmlEngine, [qmlEngine, screenshotFile]() {
-        _saveRootWindowImage(qmlEngine, screenshotFile);
-    });
 }
 
 bool GDCorePlugin::adjustSettingMetaData(const QString& settingsGroup, FactMetaData& metaData)

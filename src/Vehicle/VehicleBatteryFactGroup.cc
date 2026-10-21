@@ -19,6 +19,7 @@ const char* VehicleBatteryFactGroup::_batteryTypeFactName           = "batteryTy
 const char* VehicleBatteryFactGroup::_voltageFactName               = "voltage";
 const char* VehicleBatteryFactGroup::_percentRemainingFactName      = "percentRemaining";
 const char* VehicleBatteryFactGroup::_mahConsumedFactName           = "mahConsumed";
+const char* VehicleBatteryFactGroup::_mahConsumedAvgFactName        = "mahConsumedAvg";
 const char* VehicleBatteryFactGroup::_currentFactName               = "current";
 const char* VehicleBatteryFactGroup::_temperatureFactName           = "temperature";
 const char* VehicleBatteryFactGroup::_instantPowerFactName          = "instantPower";
@@ -36,6 +37,7 @@ VehicleBatteryFactGroup::VehicleBatteryFactGroup(uint8_t batteryId, QObject* par
     , _voltageFact          (0, _voltageFactName,                   FactMetaData::valueTypeDouble)
     , _currentFact          (0, _currentFactName,                   FactMetaData::valueTypeDouble)
     , _mahConsumedFact      (0, _mahConsumedFactName,               FactMetaData::valueTypeDouble)
+    , _mahConsumedAvgFact   (0, _mahConsumedAvgFactName,            FactMetaData::valueTypeDouble)
     , _temperatureFact      (0, _temperatureFactName,               FactMetaData::valueTypeDouble)
     , _percentRemainingFact (0, _percentRemainingFactName,          FactMetaData::valueTypeDouble)
     , _timeRemainingFact    (0, _timeRemainingFactName,             FactMetaData::valueTypeDouble)
@@ -49,6 +51,7 @@ VehicleBatteryFactGroup::VehicleBatteryFactGroup(uint8_t batteryId, QObject* par
     _addFact(&_voltageFact,                 _voltageFactName);
     _addFact(&_currentFact,                 _currentFactName);
     _addFact(&_mahConsumedFact,             _mahConsumedFactName);
+    _addFact(&_mahConsumedAvgFact,          _mahConsumedAvgFactName);
     _addFact(&_temperatureFact,             _temperatureFactName);
     _addFact(&_percentRemainingFact,        _percentRemainingFactName);
     _addFact(&_timeRemainingFact,           _timeRemainingFactName);
@@ -62,6 +65,7 @@ VehicleBatteryFactGroup::VehicleBatteryFactGroup(uint8_t batteryId, QObject* par
     _voltageFact.setRawValue            (qQNaN());
     _currentFact.setRawValue            (qQNaN());
     _mahConsumedFact.setRawValue        (qQNaN());
+    _mahConsumedAvgFact.setRawValue     (qQNaN());
     _temperatureFact.setRawValue        (qQNaN());
     _percentRemainingFact.setRawValue   (qQNaN());
     _timeRemainingFact.setRawValue      (qQNaN());
@@ -156,6 +160,7 @@ void VehicleBatteryFactGroup::_handleBatteryStatus(Vehicle* vehicle, mavlink_mes
     group->voltage()->setRawValue           (totalVoltage);
     group->current()->setRawValue           (batteryStatus.current_battery == -1 ?      qQNaN() : static_cast<double>(batteryStatus.current_battery) / 100.0);
     group->mahConsumed()->setRawValue       (batteryStatus.current_consumed == -1  ?    qQNaN() : batteryStatus.current_consumed);
+    group->_updateMahConsumedAvg            (group->mahConsumed()->rawValue().toDouble());
     group->percentRemaining()->setRawValue  (batteryStatus.battery_remaining == -1 ?    qQNaN() : batteryStatus.battery_remaining);
     group->timeRemaining()->setRawValue     (batteryStatus.time_remaining == 0 ?        qQNaN() : batteryStatus.time_remaining);
     group->chargeState()->setRawValue       (batteryStatus.charge_state);
@@ -186,6 +191,26 @@ VehicleBatteryFactGroup* VehicleBatteryFactGroup::_findOrAddBatteryGroupById(Veh
     vehicle->_addFactGroup(newBatteryGroup, QStringLiteral("%1%2").arg(_batteryFactGroupNamePrefix).arg(batteryId));
 
     return newBatteryGroup;
+}
+
+// Moving average of the last _mahConsumedAvgWindow valid samples. Used by the fuel level sensor (battery id 2),
+// which sometimes reports 255; those readings (and NaN) are ignored and do not enter the average.
+void VehicleBatteryFactGroup::_updateMahConsumedAvg(double mahConsumed)
+{
+    if (qIsNaN(mahConsumed) || qRound(mahConsumed) == _mahConsumedInvalidValue) {
+        return;
+    }
+
+    _mahConsumedSamples.append(mahConsumed);
+    while (_mahConsumedSamples.count() > _mahConsumedAvgWindow) {
+        _mahConsumedSamples.removeFirst();
+    }
+
+    double sum = 0;
+    for (double sample : _mahConsumedSamples) {
+        sum += sample;
+    }
+    _mahConsumedAvgFact.setRawValue(sum / _mahConsumedSamples.count());
 }
 
 void VehicleBatteryFactGroup::_timeRemainingChanged(QVariant value)

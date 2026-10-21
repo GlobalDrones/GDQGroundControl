@@ -30,23 +30,6 @@ AnalyzePage {
     property int    curCompID:          0
     property real   maxButtonWidth:     0
 
-    property real battery_tension: 0
-    property real gasoline_value: 0
-    property real generator_curr: 0
-
-    property var _RPM_FULL1
-    property var _RPM_FULL2
-    property int _RPM_R1: 10
-    property int _RPM_R2: 20
-    property int _RPM_R3: 30
-    property int _RPM_R4: 40
-    property int _RPM_R5: 50
-    property int _RPM_R6: 60
-
-    property real _RPM_MOTOR:0
-    property real _TEMP_MOTOR:0
-    property var array_valores_rc_MV: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-
     MAVLinkInspectorController {
         id: controller
     }

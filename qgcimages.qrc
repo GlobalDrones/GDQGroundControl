@@ -196,30 +196,5 @@
         <file alias="Yield.svg">src/ui/toolbar/Images/Yield.svg</file>
         <file alias="ZoomMinus.svg">src/FlightMap/Images/ZoomMinus.svg</file>
         <file alias="ZoomPlus.svg">src/FlightMap/Images/ZoomPlus.svg</file>
-        <file alias="GasCan.svg">resources/gas-can.svg</file>
-        <file alias="Generator.svg">resources/generator.svg</file>
-        <file alias="MotorTemp.svg">resources/motorTemp.svg</file>
-        <file alias="RotorsTemp.svg">resources/rotorsTemp.svg</file>
-        <file alias="GD25Layout.svg">resources/HexarotorLayout.svg</file>
-        <file alias="GD25.png">resources/GD25_Icon.PNG</file>
-        <file alias="MotorTermometer.png">resources/motorTermometerMask.png</file>
-        <file alias="rotorsAccell.png">resources/rotorsAccel.png</file>
-        <file alias="rotor1mask.png">resources/rotor1mask.png</file>
-        <file alias="rotor2mask.png">resources/rotor2mask.png</file>
-        <file alias="rotor6mask.png">resources/rotor6mask.png</file>
-        <file alias="rotor4mask.png">resources/rotor4mask.png</file>
-        <file alias="rotor5mask.png">resources/rotor5mask.png</file>
-        <file alias="rotor3mask.png">resources/rotor3mask.png</file>
-        <file alias="GD25_lowres.png">resources/GD25_Icon_lowres.PNG</file>
-        <file alias="rotor6mask_lowres.png">resources/rotor6mask_lowres.png</file>
-        <file alias="rotor5mask_lowres.png">resources/rotor5mask_lowres.png</file>
-        <file alias="rotor4mask_lowres.png">resources/rotor4mask_lowres.png</file>
-        <file alias="rotor3mask_lowres.png">resources/rotor3mask_lowres.png</file>
-        <file alias="rotor2mask_lowres.png">resources/rotor2mask_lowres.png</file>
-        <file alias="rotor1mask_lowres.png">resources/rotor1mask_lowres.png</file>
-        <file alias="GD60_lowres.png">resources/gd60_whiteIcon.png</file>
-        <file alias="trash.svg">resources/trash.svg</file>
-        <file alias="rollPointer.svg">resources/rollPointer.svg</file>
-        <file>resources/wifi.svg</file>
     </qresource>
 </RCC>

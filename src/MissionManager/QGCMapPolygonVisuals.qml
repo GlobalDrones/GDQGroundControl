@@ -227,101 +227,6 @@ Item {
         }
     }
 
-    Popup {
-        id: spacingInputPopup
-
-        modal: true
-        focus: true
-
-        width: Overlay.overlay.width * 0.4
-        height: Overlay.overlay.height * 0.25
-
-        x: (Overlay.overlay.width - width) / 2   // center horizontally
-        y: Overlay.overlay.height * 0.05         // near top
-
-        property var selectedFile: "" // To store the file path temporarily
-
-        // Use standard components for the content
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 10
-            //padding: 15
-
-            Label {
-                text: qsTr("Enter desired spacing value(m):")
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignHCenter
-                horizontalAlignment: Text.AlignHCenter   // centers the text itself
-            }
-
-            TextField  { // Changed from QGCTextInput to standard TextInput
-                id: spacingTextInput
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignHCenter
-                horizontalAlignment: TextInput.AlignHCenter
-                //placeholderText: qsTr("e.g., 5.0 meters")
-                text: "5" // Suggested default value
-                font.pixelSize: 15 // Set font size manually for visibility
-
-                // Note: Use TextField instead of TextInput if you need a visible border/background by default.
-
-                validator: DoubleValidator {
-                    bottom: 0.0
-                    notation: DoubleValidator.StandardNotation
-                }
-                inputMethodHints: Qt.ImhFormattedNumbersOnly
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: 10
-                spacing: 10
-
-                // Cancel button
-                Button { // Standard QtQuick.Controls Button
-                    text: qsTr("Cancel")
-                    onClicked: {
-                        spacingInputPopup.close()
-                    }
-                }
-
-                // Load button
-                Button { // Standard QtQuick.Controls Button
-                    text: qsTr("Load")
-                    Layout.fillWidth: true
-                    enabled: spacingTextInput.acceptableInput
-                    onClicked: {
-                        let spacingValue = parseFloat(spacingTextInput.text)
-                        if (!isNaN(spacingValue)) {
-                            // Call the function with the selected file and the user input
-                            mapPolygon.loadKMLwithSpacing(spacingInputPopup.selectedFile, spacingValue)
-                            mapFitFunctions.fitMapViewportToMissionItems()
-                            spacingInputPopup.close()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // --- 2. The Original File Dialog (Unchanged) ---
-    KMLOrSHPFileDialog {
-        id: kmlOrSHPLoadDialog_custom
-        title: qsTr("Select Polygon File")
-        selectExisting: true
-
-        onAcceptedForLoad: {
-            // Step A: Store the file path
-            spacingInputPopup.selectedFile = file
-
-            // Step B: Open the input popup to get the parameter
-            spacingInputPopup.open()
-
-            // Step C: Close the file dialog immediately
-            close()
-        }
-    }
-
     QGCMenu {
         id: menu
 
@@ -654,12 +559,6 @@ Item {
                 _horizontalPadding: 0
                 text:               qsTr("Load KML/SHP...")
                 onClicked:          kmlOrSHPLoadDialog.openForLoad()
-                visible:            !mapPolygon.traceMode
-            }
-            QGCButton {
-                _horizontalPadding: 0
-                text:               qsTr("Load Flight Zones")
-                onClicked:          kmlOrSHPLoadDialog_custom.openForLoad()
                 visible:            !mapPolygon.traceMode
             }
         }

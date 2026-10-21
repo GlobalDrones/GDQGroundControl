@@ -24,7 +24,6 @@ Item {
     anchors.top:    parent.top
     anchors.bottom: parent.bottom
     width:          batteryIndicatorRow.width
-    visible: true
 
     property bool showIndicator: true
 
@@ -92,59 +91,18 @@ Item {
                 return ""
             }
 
-            function getBatteryTensionText() {
-                if (isNaN(battery.voltage.rawValue)) {
-                    return qsTr("NaN")
-                } else if (!isNaN(battery.voltage.rawValue)) {
-                    return battery.voltage.valueString + battery.voltage.units
-                } else if (battery.chargeState.rawValue !== MAVLink.MAV_BATTERY_CHARGE_STATE_UNDEFINED) {
-                    return battery.chargeState.enumStringValue
-                }
-                return ""
-            }
-
             QGCColoredImage {
                 anchors.top:        parent.top
                 anchors.bottom:     parent.bottom
                 width:              height
                 sourceSize.width:   width
-                source: {
-                        switch (battery.id.rawValue) {
-                        case 2:
-                            return "/qmlimages/Battery.svg"
-                        case 1:
-                            return "/qmlimages/Battery.svg"
-                        default:
-                            return "/qmlimages/Battery.svg"
-                        }
-                    }
+                source:             "/qmlimages/Battery.svg"
                 fillMode:           Image.PreserveAspectFit
-                color: (!activeVehicle
-                        || activeVehicle.batteries.count === 0
-                        || !activeVehicle.batteries.get(0)
-                        || isNaN(activeVehicle.batteries.get(0).voltage.rawValue))
-                       ? "white"
-                       : (battery.id.rawValue === 2 || battery.id.rawValue === 3)
-                         ? "white"
-                         : (activeVehicle.batteries.get(0).voltage.rawValue > 47)
-                           ? "white"
-                           : (activeVehicle.batteries.get(0).voltage.rawValue < 42)
-                             ? "red"
-                             : "yellow"
-                anchors.leftMargin: {
-                        switch (battery.id.rawValue) {
-                        case 2:
-                            return width*0.2
-                        case 1:
-                            return width*0.2
-                        default:
-                            return 0
-                        }
-                    }
+                color:              getBatteryColor()
             }
 
             QGCLabel {
-                text:                   getBatteryTensionText()
+                text:                   getBatteryPercentageText()
                 font.pointSize:         ScreenTools.mediumFontPointSize
                 color:                  getBatteryColor()
                 anchors.verticalCenter: parent.verticalCenter

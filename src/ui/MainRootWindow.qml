@@ -21,7 +21,6 @@ import QGroundControl.FlightDisplay 1.0
 import QGroundControl.FlightMap     1.0
 
 import SiYi.Object 1.0
-import PreFlightChecklist.Object 1.0
 
 /// @brief Native QML top level window
 /// All properties defined here are visible to all QML pages.
@@ -32,10 +31,6 @@ ApplicationWindow {
     visible:        true
 
     property SiYiCamera siYiCamera: SiYi.camera
-    property var versao_software: "Versão 2.3.4"
-
-    property bool checklistVerified: false
-    property bool reportGenerated: false
 
     Component.onCompleted: {
         //-- Full screen on mobile or tiny screens
@@ -49,21 +44,6 @@ ApplicationWindow {
         // Start the sequence of first run prompt(s)
         firstRunPromptManager.nextPrompt()
     }
-
-    Connections {
-            target: PreFlightChecklist
-
-            function onChecklistResultChanged() {
-                        checklistVerified = true
-
-                }
-
-            function onReportResultChanged() {
-                console.log("Relatório atualizado!")
-                reportGenerated = true
-                console.log("Caminho:", PreFlightChecklist.reportPath)
-            }
-        }
 
     QtObject {
         id: firstRunPromptManager
@@ -434,36 +414,13 @@ ApplicationWindow {
                         }
                     }
 
-                    SubMenuButton {
-                        id:                 checklistButton
-                        height:             _toolButtonHeight
-                        Layout.fillWidth:   true
-                        text:               checklistVerified? qsTr("Finalizer Operação") : qsTr("Pre-Flight Checklist")
-                        imageResource:      "/qmlimages/Armed.svg"
-                        imageColor:         qgcPal.text
-
-                        onClicked: {
-                            if (!checklistVerified){
-
-                                    toolSelectDialog.hideDialog()
-                                    PreFlightChecklist.requestChecklist()
-                                    checklistVerified = true
-
-                            }
-                            else{
-                                PreFlightChecklist.finalizeOperation(PreFlightChecklist.checklistFile)
-                                checklistVerified = false
-                            }
-                        }
-                    }
-
                     ColumnLayout {
                         width:      innerLayout.width
                         spacing:    0
 
                         QGCLabel {
                             id:                     versionLabel
-                            text:                   qsTr("QGroundControl GD25_SRT - ")
+                            text:                   qsTr("%1 Version").arg(QGroundControl.appName)
                             font.pointSize:         ScreenTools.smallFontPointSize
                             wrapMode:               QGCLabel.WordWrap
                             Layout.maximumWidth:    parent.width
@@ -471,7 +428,7 @@ ApplicationWindow {
                         }
 
                         QGCLabel {
-                            text:                   qsTr(versao_software)
+                            text:                   QGroundControl.qgcVersion
                             font.pointSize:         ScreenTools.smallFontPointSize
                             wrapMode:               QGCLabel.WrapAnywhere
                             Layout.maximumWidth:    parent.width

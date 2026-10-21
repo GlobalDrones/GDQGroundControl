@@ -7,11 +7,6 @@ SiYiTransmitter::SiYiTransmitter(QObject *parent)
 
 }
 
-void SiYiTransmitter::setIp(const QString& ip)
-{
-    resetIp(ip);
-}
-
 QByteArray SiYiTransmitter::heartbeatMessage()
 {
 #if 0

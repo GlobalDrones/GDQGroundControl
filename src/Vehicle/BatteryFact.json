@@ -46,6 +46,13 @@
     "units":            "mAh"
 },
 {
+    "name":             "mahConsumedAvg",
+    "shortDesc":        "Consumed (Avg)",
+    "type":             "double",
+    "decimalPlaces":    0,
+    "units":            "mAh"
+},
+{
     "name":             "current",
     "shortDesc":        "Current",
     "type":             "double",

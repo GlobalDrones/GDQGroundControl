@@ -36,48 +36,13 @@ qmake <fonte>/qgroundcontrol.pro GD_VARIANT=gd60 "GST_ROOT=C:/Program Files/gstr
 jom (ou nmake / make)
 ```
 
-`GD_VARIANT` é obrigatório: gd25, gd30, gd60, gd70 ou gd150.
-
-### No Qt Creator
-
-1. Abra `qgroundcontrol.pro` e escolha os kits (Desktop Qt 5.15.2 MSVC2019 64bit
-   e/ou Android Qt 5.15.2 Clang).
-2. Em **Projects > Build**, crie uma configuração de build por produto: no
-   seletor "Edit build configuration", **Add > Clone Selected**, com o nome
-   do produto (ex.: "GD60 Release").
-3. Em cada configuração:
-   - **Build directory**: uma pasta só desse produto (ex.: `...\build-gd60-android`).
-   - **Build Steps > qmake > Additional arguments**: `GD_VARIANT=gd60`. No kit
-     Desktop, acrescente `"GST_ROOT=C:/Program Files/gstreamer/1.0/msvc_x86_64"`.
-   - No kit Android, em **ABIs** marque só `arm64-v8a`.
-   - Android: o Qt Creator pode ficar com o JDK 17/21 (Preferences > Android). O
-     build gera um `gradle.properties` que faz só o Gradle usar o JDK 11
-     (`C:/Program Files/Eclipse Adoptium/jdk-11.0.31.11-hotspot`, ou o caminho na
-     variável de ambiente `GD_GRADLE_JDK`). Não edite o `gradle.properties` à mão.
-4. Para trocar de produto, troque a configuração no seletor do canto inferior
-   esquerdo (ícone do computador) e compile. Package, nome do app, ícone e
-   versão vêm sozinhos do `variant.pri`.
-
-Se trocar o `GD_VARIANT` numa pasta que já foi de outro produto, o qmake para com
-"Esta pasta de build é da variante ...": crie outra configuração em vez de
-reaproveitar a pasta.
+`GD_VARIANT` é obrigatório: gd25, gd30, gd60, gd70 ou gd150. No Qt Creator,
+coloque `GD_VARIANT=gd60` em "Additional arguments" do passo qmake.
 
 Não passe `CONFIG+=StableBuild`. Todos os APKs já instalados foram gerados como
 build "Daily", e o QGC usa o nome `<aplicativo> Daily` para o arquivo de
 configurações (`QGroundControl Daily.ini`, `GD60_QGC Daily.ini`). Um build
 Stable leria outro arquivo e o tablet perderia as configurações.
-
-## Scripts (custom/tools)
-
-| Script | |
-|---|---|
-| `build-win.cmd <variante>` | Build Windows em `..\build-<variante>-win` (caminhos por VCVARS, QT_DIR, GST_ROOT, JOM) |
-| `build-android.cmd <variante>` | Build Android arm64 em `..\build-<variante>-android` (ANDROID_SDK_ROOT, ANDROID_NDK_ROOT, JAVA_HOME, QT_ANDROID_DIR) |
-| `smoke-win.ps1 -Variant <v>` | Abre o build Windows sem janela com um ArduPilot simulado (`fake-vehicle.py`, precisa de `pip install pymavlink`), salva `smoke.png` da tela de voo e lista avisos de QML. Salva e restaura `%APPDATA%\QGroundControl.org` |
-
-O build Windows usa o runtime VC++ de `libs/Microsoft/windows` (14.50). O de
-antes (14.16, VS2017) derrubava o app ao carregar os plugins C++ do GStreamer
-recente (SRT, D3D11).
 
 ## Como um arquivo da base é substituído
 
@@ -194,7 +159,6 @@ e `showCamControlAction`. A posição do instrumento de atitude/bússola vem do
 | Ordem das baterias | Mantida por produto |
 | HUD de pitch/roll | Só GD60 |
 | Joystick virtual | Oculto e sempre desligado |
-| Android | Alvo API 31 (Android 12), precisa da plataforma android-31 no SDK. Pede "Acesso a todos os arquivos" na primeira abertura para manter logs/missões em `/storage/emulated/0/<app>` |
 | Barra superior | Por produto: os drones não têm os mesmos sensores |
 | Nome do app / package | Mantidos, para não zerar configurações nem instalar app paralelo |
 

@@ -284,7 +284,6 @@ QGCCameraManager::_handleCaptureStatus(const mavlink_message_t &message)
         mavlink_camera_capture_status_t cap;
         mavlink_msg_camera_capture_status_decode(&message, &cap);
         pCamera->handleCaptureStatus(cap);
-        emit photoCapturedSignal();
     }
 }
 
@@ -423,7 +422,6 @@ QGCCameraManager::_triggerCamera()
     QGCCameraControl* pCamera = currentCameraInstance();
     if(pCamera) {
         pCamera->takePhoto();
-        emit photoCapturedSignal();
     }
 }
 
@@ -434,7 +432,6 @@ QGCCameraManager::_startVideoRecording()
     QGCCameraControl* pCamera = currentCameraInstance();
     if(pCamera) {
         pCamera->startVideo();
-        emit recordingStateChanged();
     }
 }
 
@@ -445,7 +442,6 @@ QGCCameraManager::_stopVideoRecording()
     QGCCameraControl* pCamera = currentCameraInstance();
     if(pCamera) {
         pCamera->stopVideo();
-        emit recordingStateChanged();
     }
 }
 

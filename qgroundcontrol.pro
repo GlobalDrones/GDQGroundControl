@@ -12,19 +12,6 @@ QMAKE_PROJECT_DEPTH = 0 # undocumented qmake flag to force absolute paths in mak
 # These are disabled until proven correct
 DEFINES += QGC_GST_TAISYNC_DISABLED
 DEFINES += QGC_GST_MICROHARD_DISABLED
-CONFIG += DISABLE_AIRMAP
-DEFINES +=DISABLE_AIRMAP
-DEFINES += GLIB_DISABLE_DEPRECATION_WARNINGS
-DEFINES += QGC_DISABLE_QTNFC
-CONFIG += QGC_DISABLE_PX4_PLUGIN_FACTORY
-DEFINES += QGC_DISABLE_PX4_PLUGIN_FACTORY
-CONFIG += QGC_DISABLE_PX4_PLUGIN_FACTORY
-DEFINES += QGC_DISABLE_PX4_PLUGIN
-
-#não faz diferença no tamanho do arquivo então da pra deixar. O maior impeditivo é a arquitetura Arm64-v8a
-#CONFIG += QGC_DISABLE_MAVLINK_INSPECTOR
-#DEFINES += QGC_DISABLE_MAVLINK_INSPECTOR
-
 
 exists($${OUT_PWD}/qgroundcontrol.pro) {
     error("You must use shadow build (e.g. mkdir build; cd build; qmake ../qgroundcontrol.pro).")
@@ -40,7 +27,7 @@ message(Qt version $$[QT_VERSION])
 
 include(QGCCommon.pri)
 
-TARGET   = GD25_QGC_DEV_SRT
+TARGET   = SiYiQGroundControl
 TEMPLATE = app
 QGCROOT  = $$PWD
 
@@ -70,7 +57,7 @@ WindowsBuild {
 # Branding
 #
 
-QGC_APP_NAME        = "GD25 QGC DEV_SRT"
+QGC_APP_NAME        = "SiYiQGroundControl"
 QGC_ORG_NAME        = "QGroundControl.org"
 QGC_ORG_DOMAIN      = "org.qgroundcontrol"
 QGC_APP_DESCRIPTION = "Open source ground control app provided by QGroundControl dev team"
@@ -367,7 +354,7 @@ CustomBuild {
         RESOURCES += $$PWD/resources/InstrumentValueIcons/InstrumentValueIcons.qrc
     }
 } else {
-    DEFINES += QGC_APPLICATION_NAME=\"\\\"GD25_QGC_DEV_SRT\\\"\"
+    DEFINES += QGC_APPLICATION_NAME=\"\\\"QGroundControl\\\"\"
     DEFINES += QGC_ORG_NAME=\"\\\"QGroundControl.org\\\"\"
     DEFINES += QGC_ORG_DOMAIN=\"\\\"org.qgroundcontrol\\\"\"
     RESOURCES += \
@@ -415,7 +402,6 @@ INCLUDEPATH += \
     src/QtLocationPlugin \
     src/QtLocationPlugin/QMLControl \
     src/Settings \
-    src/SiYi \
     src/Terrain \
     src/Vehicle \
     src/Audio \
@@ -779,9 +765,8 @@ contains (DEFINES, QGC_ENABLE_PAIRING) {
 }
 
 AndroidBuild {
-    QT += androidextras
-    HEADERS += \
-        src/Joystick/JoystickAndroid.h \
+HEADERS += \
+    src/Joystick/JoystickAndroid.h \
 }
 
 DebugBuild {
@@ -1497,7 +1482,7 @@ contains (CONFIG, DISABLE_VIDEOSTREAMING) {
     include(src/VideoReceiver/VideoReceiver.pri)
 }
 
-
+!VideoEnabled {
     INCLUDEPATH += \
         src/VideoReceiver
 
@@ -1507,7 +1492,7 @@ contains (CONFIG, DISABLE_VIDEOSTREAMING) {
 
     SOURCES += \
         src/VideoManager/GLVideoItemStub.cc
-
+}
 
 #-------------------------------------------------------------------------------------
 # Android
@@ -1519,7 +1504,6 @@ AndroidBuild {
         include(android.pri)
     }
 }
-
 
 #-------------------------------------------------------------------------------------
 #
@@ -1573,3 +1557,6 @@ LinuxBuild {
 }
 
 QMAKE_CXXFLAGS += -execution-charset:utf-8
+!AndroidBuild {
+QMAKE_CXXFLAGS += -source-charset:utf-8
+}

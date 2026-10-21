@@ -32,10 +32,9 @@ public:
     // QGCCorePlugin overrides
     void                    setToolbox                  (QGCToolbox* toolbox) override;
     QQmlApplicationEngine*  createQmlApplicationEngine  (QObject* parent) override;
-    void                    createRootWindow            (QQmlApplicationEngine* qmlEngine) override;
     bool                    adjustSettingMetaData       (const QString& settingsGroup, FactMetaData& metaData) override;
     bool                    mavlinkMessage              (Vehicle* vehicle, LinkInterface* link, mavlink_message_t message) override;
-    bool                    armingAllowed               (Vehicle* vehicle, QString& reason);
+    bool                    armingAllowed               (Vehicle* vehicle, QString& reason) override;
 
 private:
     GDSettings*         _gdSettings = nullptr;

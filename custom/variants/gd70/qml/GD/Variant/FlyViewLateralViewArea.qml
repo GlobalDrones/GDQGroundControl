@@ -1,9 +1,9 @@
 // GD70: painel lateral do FlyView comum (import GD.Variant 1.0).
 // Origem: archive/gd70 src/FlightDisplay/FlyViewLateralViewArea.qml.
 //
-// Correção: o archive lia a gasolina na instância 1 (a bateria, depois do
-// remapeamento de f6ba286) e o "Est. Time" saía do % da bateria. Agora usa a
-// mesma instância de gasolina do painel inferior (2).
+// Gasolina e "Est. Time" vêm do sensor de nível (bateria id 2), em litros, pela
+// média móvel mahConsumedAvg (leituras 255 ignoradas). Origem: GitHub
+// QGC-GD70/GD70_Dev 85dc9f7.
 
 import QtQuick          2.12
 import QtQuick.Layouts  1.12
@@ -17,21 +17,28 @@ Item {
     // Interface com o FlyView comum
     property var activeVehicle
 
-    property int    _gasolineIndex: 2
+    property int    _gasolineBatteryId: 2       // sensor de nível de combustível = Batt[2]
+    property real   _maxConsumed:       5000    // capacidade do tanque (mL), igual ao BatteryIndicator
+    property real   _secondsPerLiter:   600     // 1 L a cada 10 min
 
     property real   sectionHeight:  height / 6
 
-    property real gasolinaPercent: {
-        if (!activeVehicle) return 0
-        if (activeVehicle.batteries.count <= _gasolineIndex) return 0
-        return activeVehicle.batteries.get(_gasolineIndex).percentRemaining.rawValue
+    property real gasolinaLiters: {
+        if (!activeVehicle) return NaN
+        for (var i = 0; i < activeVehicle.batteries.count; i++) {
+            var battery = activeVehicle.batteries.get(i)
+            if (battery.id.rawValue === _gasolineBatteryId) {
+                return Math.max(0, (_maxConsumed - battery.mahConsumedAvg.rawValue) / 1000)
+            }
+        }
+        return NaN
     }
 
-    // Autonomia estimada: tanque cheio = 2 h
+    // Autonomia estimada pelos litros restantes
     property string estimatedTimeText: {
         if (!activeVehicle) return "--:--:--"
 
-        var totalSeconds = 7200 * (gasolinaPercent / 100)
+        var totalSeconds = gasolinaLiters * _secondsPerLiter
         if (!totalSeconds || isNaN(totalSeconds))
             return "--:--:--"
 

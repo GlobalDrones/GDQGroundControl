@@ -28,6 +28,7 @@ public:
     Q_PROPERTY(Fact* voltage            READ voltage            CONSTANT)
     Q_PROPERTY(Fact* current            READ current            CONSTANT)
     Q_PROPERTY(Fact* mahConsumed        READ mahConsumed        CONSTANT)
+    Q_PROPERTY(Fact* mahConsumedAvg     READ mahConsumedAvg     CONSTANT)
     Q_PROPERTY(Fact* percentRemaining   READ percentRemaining   CONSTANT)
     Q_PROPERTY(Fact* timeRemaining      READ timeRemaining      CONSTANT)
     Q_PROPERTY(Fact* timeRemainingStr   READ timeRemainingStr   CONSTANT)
@@ -40,6 +41,7 @@ public:
     Fact* voltage                   () { return &_voltageFact; }
     Fact* percentRemaining          () { return &_percentRemainingFact; }
     Fact* mahConsumed               () { return &_mahConsumedFact; }
+    Fact* mahConsumedAvg            () { return &_mahConsumedAvgFact; }
     Fact* current                   () { return &_currentFact; }
     Fact* temperature               () { return &_temperatureFact; }
     Fact* instantPower              () { return &_instantPowerFact; }
@@ -54,6 +56,7 @@ public:
     static const char* _voltageFactName;
     static const char* _currentFactName;
     static const char* _mahConsumedFactName;
+    static const char* _mahConsumedAvgFactName;
     static const char* _percentRemainingFactName;
     static const char* _timeRemainingFactName;
     static const char* _timeRemainingStrFactName;
@@ -76,6 +79,7 @@ private:
     static void                     _handleHighLatency2         (Vehicle* vehicle, mavlink_message_t& message);
     static void                     _handleBatteryStatus        (Vehicle* vehicle, mavlink_message_t& message);
     static VehicleBatteryFactGroup* _findOrAddBatteryGroupById  (Vehicle* vehicle, uint8_t batteryId);
+    void                            _updateMahConsumedAvg       (double mahConsumed);
 
     Fact            _batteryIdFact;
     Fact            _batteryFunctionFact;
@@ -83,6 +87,7 @@ private:
     Fact            _voltageFact;
     Fact            _currentFact;
     Fact            _mahConsumedFact;
+    Fact            _mahConsumedAvgFact;
     Fact            _temperatureFact;
     Fact            _percentRemainingFact;
     Fact            _timeRemainingFact;
@@ -90,5 +95,9 @@ private:
     Fact            _chargeStateFact;
     Fact            _instantPowerFact;
 
+    QList<double>   _mahConsumedSamples;    ///< Last valid mahConsumed samples used for the moving average
+
     static const char* _batteryFactGroupNamePrefix;
+    static const int   _mahConsumedAvgWindow        = 20;   ///< Moving average window size
+    static const int   _mahConsumedInvalidValue     = 255;  ///< Fuel level sensor reports 255 on bad readings
 };

@@ -18,15 +18,13 @@ isEmpty(GD_VARIANT) {
 # Uma pasta de build por variante. Reaproveitar a pasta de outra variante
 # mistura objetos e recursos já compilados dos dois produtos.
 GD_STAMP_FILE = $$OUT_PWD/gd_variant.txt
-GD_STAMP =
-
 exists($$GD_STAMP_FILE) {
     GD_STAMP = $$cat($$GD_STAMP_FILE)
-}
-
-!equals(GD_STAMP, $$GD_VARIANT) {
+    !equals(GD_STAMP, $$GD_VARIANT) {
+        error("Esta pasta de build é da variante $$GD_STAMP. Use outra pasta para $$GD_VARIANT.")
+    }
+} else {
     write_file($$GD_STAMP_FILE, GD_VARIANT)
-    message("Build variant changed to $$GD_VARIANT")
 }
 
 GD_VARIANT_DIR = $$PWD/variants/$$GD_VARIANT
@@ -142,7 +140,7 @@ SOURCES += \
     $$PWD/src/GDUrlInterceptor.cc
 
 # Cada módulo comum tem seu .pri em custom/src/<módulo>/<módulo>.pri
-GD_MODULES = telemetry rcoverride checklist fence android
+GD_MODULES = telemetry rcoverride checklist fence
 for(module, GD_MODULES) {
     include($$PWD/src/$${module}/$${module}.pri)
 }
@@ -161,4 +159,3 @@ RESOURCES += $$files($$GD_VARIANT_DIR/*.qrc)
 
 CUSTOM_ANDROID_VARIANT_DIR = $$GD_VARIANT_DIR/android
 CUSTOM_ANDROID_LABEL       = $$GD_ANDROID_LABEL
-

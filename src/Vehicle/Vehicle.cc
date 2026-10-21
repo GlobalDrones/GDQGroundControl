@@ -2116,11 +2116,11 @@ QGeoCoordinate Vehicle::homePosition()
 
 void Vehicle::setArmed(bool armed, bool showError)
 {
-    /*QString reason;
+    QString reason;
     if (armed && !_toolbox->corePlugin()->armingAllowed(this, reason)) {
         qgcApp()->showAppMessage(reason);
         return;
-    }*/
+    }
     // We specifically use COMMAND_LONG:MAV_CMD_COMPONENT_ARM_DISARM since it is supported by more flight stacks.
     sendMavCommand(_defaultComponentId,
                    MAV_CMD_COMPONENT_ARM_DISARM,
@@ -2130,11 +2130,11 @@ void Vehicle::setArmed(bool armed, bool showError)
 
 void Vehicle::forceArm(void)
 {
-    /*QString reason;
+    QString reason;
     if (!_toolbox->corePlugin()->armingAllowed(this, reason)) {
         qgcApp()->showAppMessage(reason);
         return;
-    }*/
+    }
     sendMavCommand(_defaultComponentId,
                    MAV_CMD_COMPONENT_ARM_DISARM,
                    true,    // show error if fails

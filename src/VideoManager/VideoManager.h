@@ -15,6 +15,8 @@
 #include <QTimer>
 #include <QTime>
 #include <QUrl>
+#include <QVariant>
+#include <QVector>
 
 #include "QGCMAVLink.h"
 #include "QGCLoggingCategory.h"
@@ -88,8 +90,8 @@ public:
         return QSize((size >> 16) & 0xFFFF, size & 0xFFFF);
     }
 
-    // FIXME: AV: they should be removed after finishing multiple video stream support
-    // new arcitecture does not assume direct access to video receiver from QML side, even if it works for now
+// FIXME: AV: they should be removed after finishing multiple video stream support
+// new arcitecture does not assume direct access to video receiver from QML side, even if it works for now
     virtual VideoReceiver*  videoReceiver           () { return _videoReceiver[0]; }
     virtual VideoReceiver*  thermalVideoReceiver    () { return _videoReceiver[1]; }
 
@@ -113,15 +115,15 @@ public:
 
     Q_INVOKABLE void grabImage(const QString& imageFile = QString());
 
-    // Expor para QML:
-    Q_INVOKABLE QVariantList streamsVar() const;
-    Q_INVOKABLE void addStream(int index, const QString& ip, const QString& alias, const QString& type);
-    Q_INVOKABLE void addStream(const QString& ip, const QString& alias, const QString& type);
-    Q_INVOKABLE void updateStream(int index, const QString& ip, const QString& alias, const QString& type);
-    Q_INVOKABLE void removeStream(int index);
-    Q_INVOKABLE void selectStream(int index);
+    // GD: lista da fonte "Streams List". Cada entrada é {ip, alias, type}, com
+    // type = um dos nomes de fonte do VideoSettings (RTSP, SRT, TCP...).
+    Q_INVOKABLE void addStream      (const QString& ip, const QString& alias, const QString& type);
+    Q_INVOKABLE void updateStream   (int index, const QString& ip, const QString& alias, const QString& type);
+    Q_INVOKABLE void removeStream   (int index);
+    Q_INVOKABLE void selectStream   (int index);
 
-    int currentStreamIndex() const { return _currentStreamIndex; }
+    QVariantList    streamsVar          () const;
+    int             currentStreamIndex  () const { return _currentStreamIndex; }
 
 signals:
     void hasVideoChanged            ();
@@ -188,14 +190,16 @@ protected:
     QString                 _videoSourceID;
     bool                    _fullScreen             = false;
     Vehicle*                _activeVehicle          = nullptr;
+
     struct StreamInfo { QString ip; QString alias; QString type; };
-    QVector<StreamInfo> _streams;
+    QVector<StreamInfo>     _streams;
     int                     _currentStreamIndex     = -1;
 
 private:
-    void loadStreams();
-    void saveStreams();
-    QString _uriForStreamEntry(const StreamInfo& stream) const;
+    void    _loadStreams            ();
+    void    _saveStreams            ();
+    bool    _streamsListActive      () const;
+    QString _uriForStreamEntry      (const StreamInfo& stream) const;
 };
 
 #endif

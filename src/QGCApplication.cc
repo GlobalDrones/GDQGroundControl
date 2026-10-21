@@ -66,7 +66,6 @@
 #include "VideoManager.h"
 #include "VideoReceiver.h"
 #include "LogDownloadController.h"
-//#include "PreFlightChecklist/PreFlightChecklistBridge.h"
 #if !defined(QGC_DISABLE_MAVLINK_INSPECTOR)
 #include "MAVLinkInspectorController.h"
 #endif
@@ -104,7 +103,6 @@
 #include "VehicleLinkManager.h"
 #include "Autotune.h"
 #include "SiYi/SiYi.h"
-//#include "PreFlightChecklist/PreFlightChecklistBridge.h"
 
 #if defined(QGC_ENABLE_PAIRING)
 #include "PairingManager.h"
@@ -539,12 +537,6 @@ void QGCApplication::_initCommon()
     qmlRegisterSingletonType<SiYi>("SiYi.Object", 1, 0, "SiYi", [](QQmlEngine*, QJSEngine*)->QObject*{
         return SiYi::instance();
     });
-
-    /*qmlRegisterSingletonType<PreFlightChecklistBridge>("PreFlightChecklist.Object", 1, 0, "PreFlightChecklist",
-                                                       [](QQmlEngine*, QJSEngine*)->QObject*{
-                                                           return PreFlightChecklistBridge::instance();
-                                                       });*/
-
     qmlRegisterUncreatableType<SiYiCamera>("SiYi.Object", 1, 0, "SiYiCamera", kRefOnly);
     qmlRegisterUncreatableType<SiYiTransmitter>("SiYi.Object", 1, 0, "SiYiTransmitter", kRefOnly);
 

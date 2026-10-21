@@ -32,10 +32,6 @@ exists($$PWD/custom/android) {
         android_source_dir_target.commands += && $$QMAKE_COPY_DIR $$shell_path($$CUSTOM_ANDROID_VARIANT_DIR/*) $$ANDROID_SOURCE_DIR_SHELL
     }
     android_source_dir_target.commands += && $$QMAKE_COPY $$shell_path($$CUSTOM_MANIFEST_FILE) $$shell_path($$ANDROID_PACKAGE_SOURCE_DIR/AndroidManifest.xml)
-    # Extra gradle.properties entries (e.g. org.gradle.java.home); androiddeployqt keeps them
-    !isEmpty(CUSTOM_GRADLE_PROPERTIES) {
-        android_source_dir_target.commands += && $$QMAKE_COPY $$shell_path($$CUSTOM_GRADLE_PROPERTIES) $$shell_path($$ANDROID_PACKAGE_SOURCE_DIR/gradle.properties)
-    }
     android_source_dir_target.depends = FORCE
 }
 

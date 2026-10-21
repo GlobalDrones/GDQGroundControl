@@ -52,7 +52,7 @@ QList<int> AppSettings::_rgPartialLanguages = {
 DECLARE_SETTINGGROUP(App, "")
 {
     qmlRegisterUncreatableType<AppSettings>("QGroundControl.SettingsManager", 1, 0, "AppSettings", "Reference only");
-    QGCPalette::setGlobalTheme(QGCPalette::Dark);
+    QGCPalette::setGlobalTheme(indoorPalette()->rawValue().toBool() ? QGCPalette::Dark : QGCPalette::Light);
 
     QSettings settings;
 

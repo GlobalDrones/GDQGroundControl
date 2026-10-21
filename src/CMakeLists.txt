@@ -110,8 +110,6 @@ add_library(qgc
 	stable_headers.h
 	TerrainTile.cc
 	TerrainTile.h
-	PreFlightChecklistBridge.h
-	PreFlightChecklistBridge.cpp
 )
 
 set_source_files_properties(QGCApplication.cc PROPERTIES COMPILE_DEFINITIONS GIT_VERSION="${GIT_VERSION}")
@@ -153,7 +151,6 @@ add_subdirectory(Vehicle)
 add_subdirectory(VehicleSetup)
 add_subdirectory(VideoManager)
 add_subdirectory(VideoReceiver)
-add_subdirectory(PreFlightChecklist)
 
 target_link_libraries(qgc
 	PRIVATE
@@ -191,7 +188,6 @@ target_link_libraries(qgc
 		VehicleSetup
 		VideoManager
 		z # zlib
-		PreFlightChecklist
 )
 
 if(GST_FOUND)
