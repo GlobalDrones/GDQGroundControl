@@ -52,13 +52,13 @@ Item {
     }
 
     property string generatorVoltageText: {
-        if (!activeVehicle) return "Generator Voltage: "
+        if (!activeVehicle) return "Bus Voltage: "
         if (activeVehicle.batteries.count <= _generatorIndex) return "Generator Voltage: "
         return "Generator Voltage: " + activeVehicle.batteries.get(_generatorIndex).voltage.rawValue.toFixed(1) + "V"
     }
 
     property string generatorCurrentText: {
-        if (!activeVehicle) return "Generator Current:"
+        if (!activeVehicle) return "Bus Current:"
         if (activeVehicle.batteries.count <= _generatorIndex) return "Generator Current:"
         return "Generator Current: " + activeVehicle.batteries.get(_generatorIndex).current.rawValue.toFixed(1) + "A"
     }
@@ -94,6 +94,45 @@ Item {
         if (isNaN(volts)) return "white"
         return volts < 42 ? "red" : (volts <= 47 ? "yellow" : "white")
     }
+
+
+
+    property string altLIDARText: ""
+    Binding {
+        target: bottomDataArea
+        property: "altLIDARText"
+        value: {
+            if (!activeVehicle) return "Altitude LIDAR:"
+            if (activeVehicle.batteries.count <= 0) return "Altitude LIDAR:"
+
+            /*return "Altitude LIDAR: " +
+                       activeVehicle.rangeFinderDist.value.toFixed(1)+"m"*/
+            return "Altitude LIDAR: " +
+                       activeVehicle.rangeFinderDist.value.toFixed(1)+"m"
+        }
+    }
+
+    property string flightTimeText: ""
+    Binding {
+        target: bottomDataArea
+        property: "flightTimeText"
+        value: {
+            if (!activeVehicle) return "Flighttime:"
+            if (activeVehicle.batteries.count <= 0) return "Flighttime:"
+
+            //TODO: descobrir porque o systime do 25 começa em 8 minutos
+            var totalSeconds = activeVehicle.flightTimeCustom.rawValue
+            var hours = Math.floor(totalSeconds / 3600)
+            var minutes = Math.floor((totalSeconds % 3600) / 60)
+            var seconds = Math.floor(totalSeconds % 60)
+
+            // Formata para garantir dois dígitos (00:00:00)
+            return "Flighttime: " + (hours > 0 ? (hours < 10 ? "0" + hours : hours) + ":" : "00:") +
+                   (minutes < 10 ? "0" + minutes : minutes) + ":" +
+                   (seconds < 10 ? "0" + seconds : seconds)
+        }
+    }
+
 
     // Yaw do gimbal com filtro: um zero isolado depois de um valor diferente
     // de zero é tratado como leitura espúria e mantém o valor anterior.
@@ -415,7 +454,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: batteryVoltageText
+                        text: flightTimeText
                         font.bold: true
                         font.pointSize: _dataBox._fontSize
                         color: "white"
@@ -468,7 +507,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: batteryCurrentText
+                        text: altLIDARText
                         font.bold: true
                         font.pointSize: _dataBox._fontSize
                         color: "white"

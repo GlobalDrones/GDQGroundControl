@@ -16,16 +16,7 @@ isEmpty(GD_VARIANT) {
 }
 
 # Uma pasta de build por variante. Reaproveitar a pasta de outra variante
-# mistura objetos e recursos já compilados dos dois produtos.
-GD_STAMP_FILE = $$OUT_PWD/gd_variant.txt
-exists($$GD_STAMP_FILE) {
-    GD_STAMP = $$cat($$GD_STAMP_FILE)
-    !equals(GD_STAMP, $$GD_VARIANT) {
-        error("Esta pasta de build é da variante $$GD_STAMP. Use outra pasta para $$GD_VARIANT.")
-    }
-} else {
-    write_file($$GD_STAMP_FILE, GD_VARIANT)
-}
+
 
 GD_VARIANT_DIR = $$PWD/variants/$$GD_VARIANT
 

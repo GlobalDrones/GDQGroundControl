@@ -190,14 +190,13 @@ Item {
 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
-                    text: activeVehicle ? safe(activeVehicle.airSpeed.value, 1) + " m/s" : "--"
-                    color: activeVehicle && activeVehicle.airSpeed.value > 17 ? "red" : "white"
+                    text: activeVehicle ? safe(activeVehicle.groundSpeed.value, 1) + " m/s" : "--"
+                    color: activeVehicle && activeVehicle.groundSpeed.value > 17 ? "red" : "white"
                     font.pointSize: 14
                     font.bold: true
                 }
             }
         }
-
         // VERT. SPEED
         Item {
             width: parent.width
