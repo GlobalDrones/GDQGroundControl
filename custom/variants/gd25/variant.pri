@@ -11,7 +11,7 @@ GD_BUILD           = 0
 
 # rc_override:           RC Override pela GCS (UniRC7 via SDK SiYi)
 # second_stream_thermal: trata o 2º stream anunciado pela câmera MAVLink como térmico
-GD_FEATURES        = rc_override second_stream_thermal
+GD_FEATURES        = rc_override second_stream_thermal checklist
 
 # Mapeamento NAMED_VALUE_FLOAT -> fatos do veículo deste produto
 SOURCES += $$PWD/telemetry.cc

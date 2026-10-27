@@ -53,14 +53,14 @@ Item {
 
     property string generatorVoltageText: {
         if (!activeVehicle) return "Bus Voltage: "
-        if (activeVehicle.batteries.count <= _generatorIndex) return "Generator Voltage: "
-        return "Generator Voltage: " + activeVehicle.batteries.get(_generatorIndex).voltage.rawValue.toFixed(1) + "V"
+        if (activeVehicle.batteries.count <= _generatorIndex) return "Bus Voltage: "
+        return "Bus Voltage: " + activeVehicle.batteries.get(_generatorIndex).voltage.rawValue.toFixed(1) + "V"
     }
 
     property string generatorCurrentText: {
         if (!activeVehicle) return "Bus Current:"
-        if (activeVehicle.batteries.count <= _generatorIndex) return "Generator Current:"
-        return "Generator Current: " + activeVehicle.batteries.get(_generatorIndex).current.rawValue.toFixed(1) + "A"
+        if (activeVehicle.batteries.count <= _generatorIndex) return "Bus Current:"
+        return "Bus Current: " + activeVehicle.batteries.get(_generatorIndex).current.rawValue.toFixed(1) + "A"
     }
 
     property string batteryVoltageText: {

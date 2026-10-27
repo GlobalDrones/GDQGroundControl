@@ -11,7 +11,7 @@ GD_BUILD           = 0
 
 # rc_override:           RC Override pela GCS (UniRC7 via SDK SiYi)
 # second_stream_thermal: trata o 2º stream anunciado pela câmera MAVLink como térmico
-GD_FEATURES        = second_stream_thermal
+GD_FEATURES        = second_stream_thermal checklist
 
 # O GD70 lê os parâmetros com uma única nova tentativa por parâmetro (1d7a2c3)
 DEFINES += GD_PARAM_LOAD_RETRIES=1

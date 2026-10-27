@@ -191,7 +191,7 @@ Item {
                 Text {
                     Layout.alignment: Qt.AlignHCenter
                     text: activeVehicle ? safe(activeVehicle.groundSpeed.value, 1) + " m/s" : "--"
-                    color: activeVehicle && activeVehicle.groundSpeed.value > 17 ? "red" : "white"
+                    color: activeVehicle && activeVehicle.groundSpeed.value > 15 ? "red" : "white"
                     font.pointSize: 14
                     font.bold: true
                 }
