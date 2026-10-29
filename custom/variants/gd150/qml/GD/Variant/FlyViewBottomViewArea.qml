@@ -25,6 +25,8 @@ Item {
     property real _tensao_bateria_1: 0
     property real _current_bateria_1: 0
     property int  _bat1Index: 0
+    property int  _bat3Index: 2
+    property real _current_generator: 0
 
     // GPS
     property real _satCount: 0
@@ -83,6 +85,20 @@ Item {
                 return 0
 
             return bottomDataArea._activeVehicle.batteries.get(_bat1Index).current.value
+        }
+    }
+
+    Binding {
+        target: bottomDataArea
+        property: "_current_generator"
+        value: {
+            if (!bottomDataArea._activeVehicle)
+                return 0
+
+            if (bottomDataArea._activeVehicle.batteries.count <= 0)
+                return 0
+
+            return bottomDataArea._activeVehicle.batteries.get(_bat3Index).current.value
         }
     }
 
@@ -295,7 +311,7 @@ Item {
             Layout.alignment:   Qt.AlignHCenter
             verticalAlignment:  Text.AlignVCenter
             color:              "White"
-            text:               "105 A"
+            text:               _current_generator + " A"
             font.bold:          true
             font.pointSize:     15
         }

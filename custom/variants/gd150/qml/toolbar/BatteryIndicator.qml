@@ -7,6 +7,10 @@
  *
  ****************************************************************************/
 
+// Global Drones GD25: substitui src/ui/toolbar/BatteryIndicator.qml (ver custom/README.md)
+// Diferenças: cada bateria mostra a tensão em vez da porcentagem, e o ícone
+// fica sempre branco.
+
 import QtQuick          2.11
 import QtQuick.Layouts  1.11
 
@@ -56,14 +60,33 @@ Item {
     Component {
         id: batteryVisual
 
-        // GD150: só o ícone de cada bateria, sempre branco e sem texto
-        // (fc2205a). Os valores ficam no painel inferior e no popup.
-        // Os limiares de cor 47 V/42 V herdados do GD25 nunca valeram aqui (o
-        // binding lia 'activeVehicle', inexistente neste escopo, e o ícone
-        // ficava no branco padrão). Mudar a cor depende de decisão de produto.
         Row {
             anchors.top:    parent.top
             anchors.bottom: parent.bottom
+
+            function getBatteryColor() {
+                switch (battery.chargeState.rawValue) {
+                case MAVLink.MAV_BATTERY_CHARGE_STATE_OK:
+                    return qgcPal.text
+                case MAVLink.MAV_BATTERY_CHARGE_STATE_LOW:
+                    return qgcPal.colorOrange
+                case MAVLink.MAV_BATTERY_CHARGE_STATE_CRITICAL:
+                case MAVLink.MAV_BATTERY_CHARGE_STATE_EMERGENCY:
+                case MAVLink.MAV_BATTERY_CHARGE_STATE_FAILED:
+                case MAVLink.MAV_BATTERY_CHARGE_STATE_UNHEALTHY:
+                    return qgcPal.colorRed
+                default:
+                    return qgcPal.text
+                }
+            }
+
+            // GD: tensão da bateria
+            function getBatteryVoltageText() {
+                if (isNaN(battery.voltage.rawValue)) {
+                    return qsTr("NaN")
+                }
+                return battery.voltage.valueString + battery.voltage.units
+            }
 
             QGCColoredImage {
                 anchors.top:        parent.top
@@ -72,7 +95,18 @@ Item {
                 sourceSize.width:   width
                 source:             "/qmlimages/Battery.svg"
                 fillMode:           Image.PreserveAspectFit
+                // GD: sempre branco, como aparece hoje em campo. O app anterior
+                // tentava colorir pela tensão da bateria 0 (amarelo até 47 V,
+                // vermelho abaixo de 42 V), mas a expressão usava 'activeVehicle',
+                // que não existe aqui, e caía no branco padrão.
                 color:              "white"
+            }
+
+            QGCLabel {
+                text:                   getBatteryVoltageText()
+                font.pointSize:         ScreenTools.mediumFontPointSize
+                color:                  getBatteryColor()
+                anchors.verticalCenter: parent.verticalCenter
             }
         }
     }
