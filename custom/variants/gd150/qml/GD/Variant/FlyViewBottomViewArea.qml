@@ -112,7 +112,9 @@ Item {
             if (bottomDataArea._activeVehicle.batteries.count <= 0)
                 return 0
 
-            return bottomDataArea._activeVehicle.batteries.get(_bat1Index).percentRemaining.value
+            var voltage = bottomDataArea._activeVehicle.batteries.get(_bat1Index).voltage.value
+
+            return (Math.max(0, Math.min(100, ((voltage - 10.0) / (12.6 - 10.0)) * 100))).toFixed(1)
         }
     }
 
