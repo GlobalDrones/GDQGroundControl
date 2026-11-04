@@ -103,8 +103,8 @@ bool GDFence::loadKMLwithSpacing(QObject* mapPolygonObject, const QString& file,
         shrunk.push_back({ centroid.x + dx * k, centroid.y + dy * k });
     }
 
-    // 50 pontos por aresta, sem os vértices; cada ponto é contraído de novo
-    const int kPointsPerEdge = 50;
+    // 5 pontos por aresta, sem os vértices; cada ponto é contraído de novo
+    const int kPointsPerEdge = 5;
     std::vector<Point> densified;
     densified.reserve(n * static_cast<size_t>(kPointsPerEdge));
     for (size_t i = 0; i < n; ++i) {

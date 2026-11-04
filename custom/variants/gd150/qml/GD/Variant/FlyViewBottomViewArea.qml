@@ -35,6 +35,8 @@ Item {
     // Vazão (GPM)
     property real _gpm: 0
 
+
+    property string altLIDARText
     // Média de RPM por rotor: valor fixo, como no FlyView anterior. Só posiciona
     // os marcadores de média, que estão ocultos.
     property real medAceleracaoRotor1: 1500
@@ -115,6 +117,20 @@ Item {
             var voltage = bottomDataArea._activeVehicle.batteries.get(_bat1Index).voltage.value
 
             return (Math.max(0, Math.min(100, ((voltage - 10.0) / (12.6 - 10.0)) * 100))).toFixed(1)
+        }
+    }
+
+    Binding {
+        target: bottomDataArea
+        property: "altLIDARText"
+        value: {
+            if (!bottomDataArea._activeVehicle) return "Altitude LIDAR:"
+            if (bottomDataArea._activeVehicle.batteries.count <= 0) return "Altitude LIDAR:"
+
+            /*return "Altitude LIDAR: " +
+                       activeVehicle.rangeFinderDist.value.toFixed(1)+"m"*/
+            return "Altitude LIDAR: " +
+                      bottomDataArea._activeVehicle.rangeFinderDist.value.toFixed(1)+"m"
         }
     }
 
@@ -557,5 +573,15 @@ Item {
                 visible:        false
             }
         }
+    }
+
+    Text {
+        anchors.left: rotorsTempArea.right
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.margins: toolsMargin*2
+        text: altLIDARText
+        font.bold: true
+        font.pointSize: 14
+        color: "white"
     }
 }
