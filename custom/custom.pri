@@ -6,7 +6,7 @@
 # Drones acrescenta fica em custom/: o que é comum aos produtos na raiz de
 # custom/ e o que é de um produto só em custom/variants/<variante>/.
 
-GD_VARIANTS = gd25 gd30 gd60 gd70 gd150
+GD_VARIANTS = gd15 gd25 gd30 gd60 gd70 gd150
 
 isEmpty(GD_VARIANT) {
     error("Informe a variante: qmake qgroundcontrol.pro GD_VARIANT=<$$join(GD_VARIANTS, "|")>")
@@ -150,3 +150,7 @@ RESOURCES += $$files($$GD_VARIANT_DIR/*.qrc)
 
 CUSTOM_ANDROID_VARIANT_DIR = $$GD_VARIANT_DIR/android
 CUSTOM_ANDROID_LABEL       = $$GD_ANDROID_LABEL
+
+DISTFILES += \
+    $$PWD/variants/gd15/qml/GD/Variant/FlyViewBottomViewArea.qml \
+    $$PWD/variants/gd15/qml/GD/Variant/FlyViewLateralViewArea.qml
