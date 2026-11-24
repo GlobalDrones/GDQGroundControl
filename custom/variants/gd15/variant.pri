@@ -6,7 +6,7 @@ GD_APP_NAME        = "GD15 QGC"
 GD_SETTINGS_NAME   = QGroundControl
 GD_ANDROID_PACKAGE = gd15dev.mavlink.qgroundcontrol
 GD_ANDROID_LABEL   = "GD 15 QGC DEV"
-GD_VERSION         = 0.1
+GD_VERSION         = 0.9
 GD_BUILD           = 0
 
 # rc_override:           RC Override pela GCS (UniRC7 via SDK SiYi)

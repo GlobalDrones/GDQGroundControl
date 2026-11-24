@@ -49,6 +49,12 @@ Item {
         return pad(h) + ":" + pad(m) + ":" + pad(s)
     }
 
+    property string altRelText: {
+        if (!activeVehicle || activeVehicle.batteries.count <= 0)
+            return "--"
+        return activeVehicle.altitudeRelative.value.toFixed(1) + "m"
+    }
+
     property real sectionHeight: height / 6
 
     function safe(v, digits) {
@@ -81,7 +87,7 @@ Item {
 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
-                    text: "Est. Time"
+                    text: "Alt. Rel"
                     color: "white"
                     font.pointSize: 14
                     font.bold: true
@@ -89,7 +95,7 @@ Item {
 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
-                    text: estimatedTimeText
+                    text: altRelText
                     color: "white"
                     font.pointSize: 14
                     font.bold: true

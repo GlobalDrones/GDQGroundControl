@@ -42,6 +42,8 @@ Item {
     property int _gasolineIndex:    1
     property int _generatorIndex:   2
 
+    property string currentDateText: Qt.formatDate(new Date(), "dd/MM/yyyy")
+
     property bool _selected_rotor_1
     property bool _selected_rotor_2
     property bool _selected_rotor_3
@@ -99,11 +101,24 @@ Item {
         }
     }
 
-    property string batteryVoltageText: {
-        if (!activeVehicle || activeVehicle.batteries.count <= _batteryIndex)
-            return "Battery Voltage: "
-        return "Battery Voltage: " +
-               activeVehicle.batteries.get(_batteryIndex).voltage.rawValue.toFixed(1) + "V"
+    property string currentTimeText: Qt.formatTime(
+        new Date(),
+        "hh:mm:ss"
+    )
+
+    Timer {
+        interval: 1000
+        running: true
+        repeat: true
+
+        onTriggered: {
+            var now = new Date()
+            var utcMinus3 = new Date(now.getTime() +
+                                     (now.getTimezoneOffset() - 180) * 60000)
+
+            currentTimeText = Qt.formatTime(utcMinus3, "hh:mm:ss")
+            currentDateText = Qt.formatDate(utcMinus3, "dd/MM/yyyy")
+        }
     }
 
     property string batteryCurrentText: {
@@ -128,21 +143,21 @@ Item {
 
     property string altLIDARText: {
         if (!activeVehicle || activeVehicle.batteries.count <= 0)
-            return "Altitude LIDAR:"
-        return "Altitude LIDAR: " + activeVehicle.rangeFinderDist.value.toFixed(1) + "m"
+            return "LiDAR Distance :"
+        return "LiDAR Distance : " + activeVehicle.rangeFinderDist.value.toFixed(1) + "m"
     }
 
     // Tempo no ar (flightTimeCustom, zera ao armar), em hh:mm:ss
     property string flightTimeText: {
         if (!activeVehicle || activeVehicle.batteries.count <= 0)
-            return "Flighttime:"
+            return "Flight Time:"
 
         var totalSeconds = activeVehicle.flightTimeCustom.rawValue
         var hours = Math.floor(totalSeconds / 3600)
         var minutes = Math.floor((totalSeconds % 3600) / 60)
         var seconds = Math.floor(totalSeconds % 60)
 
-        return "Flighttime: " + (hours > 0 ? (hours < 10 ? "0" + hours : hours) + ":" : "00:") +
+        return "Flight Time: " + (hours > 0 ? (hours < 10 ? "0" + hours : hours) + ":" : "00:") +
                (minutes < 10 ? "0" + minutes : minutes) + ":" +
                (seconds < 10 ? "0" + seconds : seconds)
     }
@@ -429,21 +444,12 @@ Item {
                     border.width: _dataBox._borderWidth
                     border.color: "white"
 
-                    // Tensão: amarelo até 47 V, vermelho abaixo de 42 V
                     Text {
                         anchors.centerIn: parent
-                        text: batteryVoltageText
+                        text: "Date: " + currentDateText
                         font.bold: true
                         font.pointSize: _dataBox._fontSize
-                        color: (!activeVehicle
-                                || activeVehicle.batteries.count <= _batteryIndex
-                                || isNaN(activeVehicle.batteries.get(_batteryIndex).voltage.rawValue))
-                               ? "white"
-                               : (activeVehicle.batteries.get(_batteryIndex).voltage.rawValue < 42
-                                  ? "red"
-                                  : activeVehicle.batteries.get(_batteryIndex).voltage.rawValue <= 47
-                                    ? "yellow"
-                                    : "white")
+                        color: "white"
                     }
                 }
 
@@ -493,7 +499,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: batteryCurrentText
+                        text: "Time: " + currentTimeText
                         font.bold: true
                         font.pointSize: _dataBox._fontSize
                         color: "white"
@@ -509,7 +515,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: groundSpeedText
+                        text: batteryCurrentText
                         font.bold: true
                         font.pointSize: _dataBox._fontSize
                         color: "white"

@@ -16,6 +16,8 @@
 
 static const char* kQmlGlobalKeyName = "QGCQml";
 
+static const char* _mavlinkSystemIDSettingsKey = "MavlinkSystemID";
+
 const char* QGroundControlQmlGlobal::_flightMapPositionSettingsGroup =          "FlightMapPosition";
 const char* QGroundControlQmlGlobal::_flightMapPositionLatitudeSettingsKey =    "Latitude";
 const char* QGroundControlQmlGlobal::_flightMapPositionLongitudeSettingsKey =   "Longitude";
@@ -36,6 +38,7 @@ QGroundControlQmlGlobal::QGroundControlQmlGlobal(QGCApplication* app, QGCToolbox
     _coord.setLatitude(settings.value(_flightMapPositionLatitudeSettingsKey,    _coord.latitude()).toDouble());
     _coord.setLongitude(settings.value(_flightMapPositionLongitudeSettingsKey,  _coord.longitude()).toDouble());
     _zoom = settings.value(_flightMapZoomSettingsKey, _zoom).toDouble();
+
 }
 
 QGroundControlQmlGlobal::~QGroundControlQmlGlobal()
@@ -45,6 +48,11 @@ QGroundControlQmlGlobal::~QGroundControlQmlGlobal()
 void QGroundControlQmlGlobal::setToolbox(QGCToolbox* toolbox)
 {
     QGCTool::setToolbox(toolbox);
+    QSettings settings;
+    settings.beginGroup(kQmlGlobalKeyName);
+
+    int systemID = settings.value(_mavlinkSystemIDSettingsKey, 255).toInt();
+    toolbox->mavlinkProtocol()->setSystemId(systemID);
 
     _linkManager            = toolbox->linkManager();
     _multiVehicleManager    = toolbox->multiVehicleManager();
@@ -178,6 +186,11 @@ void QGroundControlQmlGlobal::setIsVersionCheckEnabled(bool enable)
 void QGroundControlQmlGlobal::setMavlinkSystemID(int id)
 {
     qgcApp()->toolbox()->mavlinkProtocol()->setSystemId(id);
+
+    QSettings settings;
+    settings.beginGroup(kQmlGlobalKeyName);
+    settings.setValue(_mavlinkSystemIDSettingsKey, id);
+
     emit mavlinkSystemIDChanged(id);
 }
 

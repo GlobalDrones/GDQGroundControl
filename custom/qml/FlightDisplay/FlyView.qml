@@ -148,7 +148,7 @@ Item {
         GuidedActionList {
             id:                         guidedActionList
             anchors.margins:            _margins
-            anchors.bottom:             parent.bottom
+            anchors.top:             parent.top
             anchors.horizontalCenter:   parent.horizontalCenter
             z:                          QGroundControl.zOrderTopMost
             guidedController:           _guidedController
@@ -249,6 +249,7 @@ Item {
             z:                          QGroundControl.zOrderTopMost
             vehicle:                    _activeVehicle
             geoFenceController:         _geoFenceController
+            visible: false
         }
 
         // Botão e confirmação do RC Override, embaixo no centro. O tamanho padrão
